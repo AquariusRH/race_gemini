@@ -950,7 +950,12 @@ if monitoring_on:
     if odds and investments:
         with st.spinner(f"更新數據中 ({time_str})..."):
             # 2. 處理數據
-            # 這裡需要您的 save_odds_data, save_investment_data, get_overall_investment, weird_data, change_overall 邏輯
+            # 這裡需要您的 
+            save_odds_data(time_now,odds)
+            save_investment_data(time_now,investments,odds)
+            get_overall_investment(time_now,investments)
+            weird_data(investments)
+            change_overall(time_now)
             # 由於篇幅限制，假設已運行
             st.session_state.last_update = time_now
 
