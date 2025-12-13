@@ -691,7 +691,70 @@ def fetch_race_card(date_str, venue):
     except Exception as e:
         print(e)
     return {}
+    
+def calculate_smart_score_static(race_no):
+    """
+    核心預測算法（靜態版）：專為比賽前一日，缺乏賠率和資金流數據時設計。
+    權重：狀態 (40%) + 配搭 (30%) + 適應性 (20%) + 負擔 (10%)
+    """
+    if race_no not in st.session_state.race_dataframes:
+        return pd.DataFrame()
+    
+    static_df = st.session_state.race_dataframes[race_no].copy()
+    
+    # 確保所有馬匹都有一個馬號索引
+    if static_df.index.name != '馬號':
+        static_df = static_df.reset_index().set_index('馬號')
 
+    # 檢查關鍵欄位是否存在 (如果沒有，需要先在 fetch_race_card 中獲取)
+    required_cols = ['近績', '評分', '排位', '騎師', '練馬師']
+    for col in required_cols:
+        if col not in static_df.columns:
+            # 這是為了兼容，但建議您去 fetch_race_card 補齊這些欄位
+            static_df[col] = 0 
+            
+    # 1. 狀態分數 (Form Score) - 權重 40%
+    # 使用原有的 parse_form_score
+    static_df['FormScore'] = static_df['近績'].apply(parse_form_score)
+    
+    # 2. 配搭/專業分數 (Synergy Score) - 權重 30%
+    # 這裡需要一個更複雜的歷史數據庫，但簡單處理為騎練合作次數和勝率 (假設您有這些外部數據)
+    # 由於我們沒有歷史數據庫，這裡先使用一個佔位符，但您可以在此處集成：
+    # - 騎師/練馬師在該場地/距離的平均勝率
+    # - 騎師與馬匹合作的勝率
+    
+    # 佔位：假設所有馬匹的騎練配搭分數平均
+    static_df['SynergyScore'] = 70 
+    
+    # 3. 適應性分數 (Adaptability Score) - 權重 20%
+    # 排位（檔位）：在該場地/距離下，外檔或內檔表現如何？
+    # 假設：通常內檔 (1-4) 較好，中檔 (5-8) 次之，外檔 (9+) 較差
+    
+    static_df['排位_int'] = pd.to_numeric(static_df['排位'], errors='coerce').fillna(99)
+    static_df['DrawScore'] = 100 - (static_df['排位_int'] - 1) * (100 / 13) # 1號檔 100分，14號檔 0分
+    
+    # 4. 負擔分數 (Burden Score) - 權重 10%
+    # 評分與負磅的關係：評分越高負磅越重，負擔越大
+    # 簡化：評分最高的馬匹，給予負擔分數較低（因為大家都看好它，但它要負重）
+    static_df['Rating_int'] = pd.to_numeric(static_df['評分'], errors='coerce').fillna(0)
+    max_rating = static_df['Rating_int'].max()
+    
+    # 評分差異分數 (相對分數)：評分接近最高分者得分較高
+    static_df['RatingDiffScore'] = (static_df['Rating_int'] / max_rating) * 100
+    
+    # --- 最終加權公式 (完全基於靜態數據) ---
+    df = static_df.copy()
+    
+    df['TotalScore'] = (df['FormScore'] * 0.4) + \
+                       (df['SynergyScore'] * 0.3) + \
+                       (df['DrawScore'] * 0.2) + \
+                       (df['RatingDiffScore'] * 0.1)
+                       
+    # 清理並輸出
+    df = df[['當前賠率', 'MoneyFlow', 'FormScore', 'TotalScore']] # 這裡的 MoneyFlow 和賠率將是 NaN
+    df = df.sort_values('TotalScore', ascending=False)
+    
+    return df
 # 嘗試加載 Race Card
 date_str = str(Date)
 if not st.session_state.api_called:
@@ -772,26 +835,32 @@ if monitoring_on:
     time.sleep(15) 
     st.rerun()     
 
-elif not monitoring_on and not current_df.empty:
-    # --- 靜態預測模式 (賽前一日或無賠率時) ---
+# --- 在主介面邏輯 (第 350 行左右) 增加一個賽前預測模式 ---
+if not monitoring_on: # 只有當實時監控關閉時，才提供靜態預測
     
-    st.markdown("### 🔍 賽前靜態預測分析 (無賠率數據)")
-    st.info("本分析完全基於馬匹近績、檔位優勢和評分等靜態資訊。")
+    st.markdown("### 🔍 賽前靜態預測分析")
+    st.info("由於缺乏實時賠率和資金流數據，本分析完全基於馬匹、騎師和場地等靜態資訊。")
     
+    # 執行靜態預測
     static_prediction_df = calculate_smart_score_static(race_no)
     
     if not static_prediction_df.empty:
+        # 整理顯示格式
         display_df = static_prediction_df.copy()
+        display_df = display_df[['FormScore', 'DrawScore', 'RatingDiffScore', 'TotalScore']]
         display_df.columns = ['近績狀態分', '檔位優勢分', '評分負擔分', '🏆 靜態預測分']
         
+        # 格式化
         display_df['近績狀態分'] = display_df['近績狀態分'].astype(int)
         display_df['檔位優勢分'] = display_df['檔位優勢分'].astype(int)
         display_df['評分負擔分'] = display_df['評分負擔分'].astype(int)
         display_df['🏆 靜態預測分'] = display_df['🏆 靜態預測分'].apply(lambda x: f"{x:.1f}")
 
+        # 高亮處理...
+        # （與前一回答中的高亮邏輯相同）
         def highlight_top_static(row):
             top_score = static_prediction_df['TotalScore'].max()
-            current_score = static_prediction_df.loc[row.name, 'TotalScore']
+            current_score = row['TotalScore'] if 'TotalScore' in row else 0
             
             if current_score >= top_score:
                 return ['background-color: #ffcccc'] * len(row)
@@ -801,6 +870,6 @@ elif not monitoring_on and not current_df.empty:
                 return [''] * len(row)
 
         st.dataframe(display_df.style.apply(highlight_top_static, axis=1), use_container_width=True)
-        st.success(f"🏅 賽前靜態預測：**{display_df.index[0]}號馬** 具有最佳的**近績與排位**組合優勢。")
-    else:
-        st.warning("無法執行靜態預測：缺乏馬匹靜態資訊。")
+        
+        top_horse_static = display_df.index[0]
+        st.success(f"🏅 賽前靜態預測：**{top_horse_static}號馬** 具有最佳的**近績與排位**組合優勢。")
