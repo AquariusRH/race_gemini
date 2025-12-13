@@ -791,7 +791,62 @@ def parse_form_score(last6run_str):
         
     except Exception:
         return 50
+def calculate_smart_score(race_no, method='WIN'):
+    """
+    核心預測算法：結合 1.資金流向(40%) 2.賠率價值(30%) 3.近績實力(30%)
+    """
+    if 'WIN' not in st.session_state.odds_dict or st.session_state.odds_dict['WIN'].empty:
+        return pd.DataFrame()
+    
+    # 1. 獲取基礎數據
+    latest_odds = st.session_state.odds_dict['WIN'].tail(1).T
+    latest_odds.columns = ['Odds']
+    
+    # 2. 獲取資金流向 (Momentum / Diff)
+    if 'WIN' in st.session_state.diff_dict and not st.session_state.diff_dict['WIN'].empty:
+        # 取最近 15 分鐘的資金累積變化
+        money_flow = st.session_state.diff_dict['WIN'].tail(10).sum().to_frame(name='MoneyFlow')
+    else:
+        money_flow = pd.DataFrame(0, index=latest_odds.index, columns=['MoneyFlow'])
         
+    # 3. 獲取馬匹實力 (從靜態數據)
+    form_scores = {}
+    if race_no in st.session_state.race_dataframes:
+        static_df = st.session_state.race_dataframes[race_no]
+        for idx, row in static_df.iterrows():
+            # 注意：您的 df index 是馬號，這裡要確保對齊
+            h_score = parse_form_score(str(row.get('近績', '')))
+            form_scores[idx] = h_score
+    
+    form_series = pd.Series(form_scores, name='FormScore')
+    
+    # --- 合併數據表 ---
+    df = pd.concat([latest_odds, money_flow], axis=1)
+    df['FormScore'] = form_series
+    
+    # 4. 計算綜合得分 (Smart Score)
+    # ----------------------------------------------------
+    # A. 資金分數 (0-100): 資金流入越多越高
+    # 使用 MinMax Scaling
+    min_flow = df['MoneyFlow'].min()
+    max_flow = df['MoneyFlow'].max()
+    if max_flow != min_flow:
+        df['MoneyScore'] = (df['MoneyFlow'] - min_flow) / (max_flow - min_flow) * 100
+    else:
+        df['MoneyScore'] = 50
+        
+    # B. 價值分數 (0-100): 賠率越低代表市場越看好 (但也越沒肉吃)
+    # 這裡我們用 "Implied Probability" (隱含勝率) 作為分數
+    df['ValueScore'] = (1 / df['Odds']) * 100
+    
+    # C. 最終加權公式 (您可以調整這裡的權重！)
+    # 假設：實力 30% + 資金流向 50% + 賠率熱度 20%
+    df['TotalScore'] = (df['FormScore'] * 0.3) + \
+                       (df['MoneyScore'] * 0.5) + \
+                       (df['ValueScore'] * 0.2)
+                       
+    return df.sort_values('TotalScore', ascending=False)
+    
 def calculate_smart_score_static(race_no):
     """
     核心預測算法（靜態版）：專為比賽前一日，缺乏賠率和資金流數據時設計。
