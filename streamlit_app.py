@@ -934,7 +934,16 @@ else:
 
 methodlist = ['WIN', 'PLA', 'QIN', 'QPL'] # 簡化預設
 print_list = ['WIN&QIN', 'PLA&QPL']
-
+for method in methodlist:
+    # 確保 odds_dict, investment_dict, overall_investment_dict, diff_dict 都有 WIN/PLA/QIN/QPL 鍵
+    st.session_state.odds_dict.setdefault(method, pd.DataFrame())
+    st.session_state.investment_dict.setdefault(method, pd.DataFrame())
+    st.session_state.overall_investment_dict.setdefault(method, pd.DataFrame())
+    st.session_state.diff_dict.setdefault(method, pd.DataFrame())
+    
+# 確保 overall 鍵存在於整體投注量和差異字典中
+st.session_state.overall_investment_dict.setdefault('overall', pd.DataFrame())
+st.session_state.diff_dict.setdefault('overall', pd.DataFrame())
 if monitoring_on:
     # --- 實時監控模式 (比賽當日) ---
     st.markdown("### 🟢 實時監控與資金流預測中...")
