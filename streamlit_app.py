@@ -71,218 +71,271 @@ init_session_state()
 
 # ==================== 2. 數據下載與處理函數 ====================
 
-def get_investment_data(Date, place, race_no, methodlist):
-    url = 'https://info.cld.hkjc.com/graphql/base/'
-    headers = {'Content-Type': 'application/json'}
-    payload_investment = {
-        "operationName": "racing",
-        "variables": {
-            "date": str(Date),
-            "venueCode": place,
-            "raceNo": int(race_no),
-            "oddsTypes": methodlist
-        },
-        "query": """
-        query racing($date: String, $venueCode: String, $oddsTypes: [OddsType], $raceNo: Int) {
-            raceMeetings(date: $date, venueCode: $venueCode) {
-            poolInvs: pmPools(oddsTypes: $oddsTypes, raceNo: $raceNo) {
-                id
-                oddsType
-                investment
-            }
-            }
-        }
-        """
-    }
-    try:
-        response = requests.post(url, headers=headers, json=payload_investment, timeout=5)
-        if response.status_code == 200:
-            investment_data = response.json()
-            investments = {k: [] for k in ["WIN", "PLA", "QIN", "QPL", "FCT", "TRI", "FF"]}
-            
-            race_meetings = investment_data.get('data', {}).get('raceMeetings', [])
-            if race_meetings:
-                for meeting in race_meetings:
-                    pool_invs = meeting.get('poolInvs', [])
-                    for pool in pool_invs:
-                        if place not in ['ST','HV']:
-                            id_val = pool.get('id', '')
-                            if len(id_val) >= 10 and id_val[8:10] != place:
-                                continue                
-                        odds_type = pool.get('oddsType')
-                        if odds_type in investments:
-                            investments[odds_type].append(float(pool.get('investment', 0)))
-            return investments
-    except Exception as e:
-        print(f"Error fetching investment: {e}")
-    return None
+def get_investment_data():
+  url = 'https://info.cld.hkjc.com/graphql/base/'
+  headers = {'Content-Type': 'application/json'}
 
-def get_odds_data(Date, place, race_no, methodlist):
-    url = 'https://info.cld.hkjc.com/graphql/base/'
-    headers = {'Content-Type': 'application/json'}
-    payload_odds = {
-        "operationName": "racing",
-        "variables": {
-            "date": str(Date),
-            "venueCode": place,
-            "raceNo": int(race_no),
-            "oddsTypes": methodlist
-        },
-        "query": """
-        query racing($date: String, $venueCode: String, $oddsTypes: [OddsType], $raceNo: Int) {
-            raceMeetings(date: $date, venueCode: $venueCode) {
-            pmPools(oddsTypes: $oddsTypes, raceNo: $raceNo) {
-                id
-                oddsType
-                oddsNodes {
+  payload_investment = {
+      "operationName": "racing",
+      "variables": {
+          "date": str(Date),
+          "venueCode": place,
+          "raceNo": int(race_no),
+          "oddsTypes": methodlist
+      },
+      "query": """
+      query racing($date: String, $venueCode: String, $oddsTypes: [OddsType], $raceNo: Int) {
+        raceMeetings(date: $date, venueCode: $venueCode) {
+          totalInvestment
+          poolInvs: pmPools(oddsTypes: $oddsTypes, raceNo: $raceNo) {
+            id
+            leg {
+              number
+              races
+            }
+            status
+            sellStatus
+            oddsType
+            investment
+            mergedPoolId
+            lastUpdateTime
+          }
+        }
+      }
+      """
+  }
+
+  response = requests.post(url, headers=headers, json=payload_investment)
+
+  if response.status_code == 200:
+      investment_data = response.json()
+
+      # Extracting the investment into different types of oddsType
+      investments = {
+          "WIN": [],
+          "PLA": [],
+          "QIN": [],
+          "QPL": [],
+          "FCT": [],
+          "TRI": [],
+          "FF": []
+      }
+
+      race_meetings = investment_data.get('data', {}).get('raceMeetings', [])
+      if race_meetings:
+          for meeting in race_meetings:
+              pool_invs = meeting.get('poolInvs', [])
+              for pool in pool_invs:
+                  if place not in ['ST','HV']:
+                    id = pool.get('id')
+                    if id[8:10] != place:
+                      continue                
+                  investment = float(pool.get('investment'))
+                  investments[pool.get('oddsType')].append(investment)
+
+          #print("Investments:", investments)
+      else:
+          print("No race meetings found in the response.")
+
+      return investments
+  else:
+      print(f"Error: {response.status_code}")
+
+def get_odds_data():
+  url = 'https://info.cld.hkjc.com/graphql/base/'
+  headers = {'Content-Type': 'application/json'}
+  payload_odds = {
+      "operationName": "racing",
+      "variables": {
+          "date": str(Date),
+          "venueCode": place,
+          "raceNo": int(race_no),
+          "oddsTypes": methodlist
+      },
+      "query": """
+      query racing($date: String, $venueCode: String, $oddsTypes: [OddsType], $raceNo: Int) {
+        raceMeetings(date: $date, venueCode: $venueCode) {
+          pmPools(oddsTypes: $oddsTypes, raceNo: $raceNo) {
+            id
+            status
+            sellStatus
+            oddsType
+            lastUpdateTime
+            guarantee
+            minTicketCost
+            name_en
+            name_ch
+            leg {
+              number
+              races
+            }
+            cWinSelections {
+              composite
+              name_ch
+              name_en
+              starters
+            }
+            oddsNodes {
+              combString
+              oddsValue
+              hotFavourite
+              oddsDropValue
+              bankerOdds {
                 combString
                 oddsValue
-                }
+              }
             }
-            }
+          }
         }
-        """
-    }
-    try:
-        response = requests.post(url, headers=headers, json=payload_odds, timeout=5)
-        if response.status_code == 200:
-            odds_data = response.json()
-            odds_values = {k: [] for k in ["WIN", "PLA", "QIN", "QPL", "FCT", "TRI", "FF"]}
-            
-            race_meetings = odds_data.get('data', {}).get('raceMeetings', [])
-            for meeting in race_meetings:
-                pm_pools = meeting.get('pmPools', [])
-                for pool in pm_pools:
-                    if place not in ['ST', 'HV']:
-                        id_val = pool.get('id', '')
-                        if len(id_val) >= 10 and id_val[8:10] != place:
-                            continue
-                    
-                    odds_type = pool.get('oddsType')
-                    if not odds_type or odds_type not in odds_values:
-                        continue
-                        
-                    odds_nodes = pool.get('oddsNodes', [])
-                    for node in odds_nodes:
-                        oddsValue = node.get('oddsValue')
-                        if oddsValue == 'SCR':
-                            oddsValue = np.inf
-                        else:
-                            try:
-                                oddsValue = float(oddsValue)
-                            except (ValueError, TypeError):
-                                continue
-                        
-                        if odds_type in ["QIN", "QPL", "FCT", "TRI", "FF"]:
-                            comb_string = node.get('combString')
-                            if comb_string:
-                                odds_values[odds_type].append((comb_string, oddsValue))
-                        else:
-                            odds_values[odds_type].append(oddsValue)
-            
-            # Sort complex pools
-            for ot in ["QIN", "QPL", "FCT", "TRI", "FF"]:
-                odds_values[ot].sort(key=lambda x: x[0], reverse=False)
-            return odds_values
-    except Exception as e:
-        print(f"Error fetching odds: {e}")
-    return None
+      }
+      """
+  }
 
-def save_odds_data(time_now, odds, methodlist):
-    for method in methodlist:
-        if method in ['WIN', 'PLA']:
-            if not odds[method]: continue
-            if st.session_state.odds_dict[method].empty:
-                st.session_state.odds_dict[method] = pd.DataFrame(columns=np.arange(1, len(odds[method]) + 1))
-            st.session_state.odds_dict[method].loc[time_now] = odds[method]
-        elif method in ['QIN','QPL',"FCT","TRI","FF"]:
-            if odds[method]:
-                combination, odds_array = zip(*odds[method])
-                if st.session_state.odds_dict[method].empty:
-                    st.session_state.odds_dict[method] = pd.DataFrame(columns=combination)
-                st.session_state.odds_dict[method].loc[time_now] = odds_array
+  response = requests.post(url, headers=headers, json=payload_odds)
+  if response.status_code == 200:
+      odds_data = response.json()
+          # Extracting the oddsValue into different types of oddsType and sorting by combString for QIN and QPL
+      # Initialize odds_values with empty lists for each odds type
+      odds_values = {
+          "WIN": [],
+          "PLA": [],
+          "QIN": [],
+          "QPL": [],
+          "FCT": [],
+          "TRI": [],
+          "FF": []
+      }
+      
+      race_meetings = odds_data.get('data', {}).get('raceMeetings', [])
+      for meeting in race_meetings:
+          pm_pools = meeting.get('pmPools', [])
+          for pool in pm_pools:
+              if place not in ['ST', 'HV']:
+                  id = pool.get('id')
+                  if id and id[8:10] != place:  # Check if id exists before slicing
+                      continue
+              odds_nodes = pool.get('oddsNodes', [])
+              odds_type = pool.get('oddsType')
+              odds_values[odds_type] = []
+              # Skip if odds_type is invalid or not in odds_values
+              if not odds_type or odds_type not in odds_values:
+                  continue
+              for node in odds_nodes:
+                  oddsValue = node.get('oddsValue')
+                  # Skip iteration if oddsValue is None, empty, or '---'
+                  if oddsValue == 'SCR':
+                      oddsValue = np.inf
+                  else:
+                      try:
+                          oddsValue = float(oddsValue)
+                      except (ValueError, TypeError):
+                          continue  # Skip if oddsValue can't be converted to float
+                  # Store data based on odds_type
+                  if odds_type in ["QIN", "QPL", "FCT", "TRI", "FF"]:
+                      comb_string = node.get('combString')
+                      if comb_string:  # Ensure combString exists
+                          odds_values[odds_type].append((comb_string, oddsValue))
+                  else:
+                      odds_values[odds_type].append(oddsValue)
+      # Sorting the odds values for specific types by combString in ascending order
+      for odds_type in ["QIN", "QPL", "FCT", "TRI", "FF"]:
+          odds_values[odds_type].sort(key=lambda x: x[0], reverse=False)
+      return odds_values
 
-def save_investment_data(time_now, investment, odds, methodlist):
-    for method in methodlist:
-        if method not in investment or not investment[method]: continue
-        
-        # Calculate investment per combination (Total Pool / 1000 / Odds) approx
-        # Note: This formula assumes even distribution which is an estimation
-        
-        if method in ['WIN', 'PLA']:
-            if not odds[method]: continue
-            if st.session_state.investment_dict[method].empty:
-                st.session_state.investment_dict[method] = pd.DataFrame(columns=np.arange(1, len(odds[method]) + 1))
-            
-            # Simple estimation
-            inv_val = investment[method][0]
-            investment_df = [round(inv_val / 1000 / (odd if odd != np.inf and odd > 0 else 9999), 2) for odd in odds[method]]
-            st.session_state.investment_dict[method].loc[time_now] = investment_df
-            
-        elif method in ['QIN','QPL',"FCT","TRI","FF"]:
-            if odds[method]:
-                combination, odds_array = zip(*odds[method])
-                if st.session_state.investment_dict[method].empty:
-                    st.session_state.investment_dict[method] = pd.DataFrame(columns=combination)
-                
-                inv_val = investment[method][0]
-                investment_df = [round(inv_val / 1000 / (odd if odd != np.inf and odd > 0 else 9999), 2) for odd in odds_array]
-                st.session_state.investment_dict[method].loc[time_now] = investment_df
+      #print("WIN Odds Values:", odds_values["WIN"])
+      #print("PLA Odds Values:", odds_values["PLA"])
+      #print("QIN Odds Values (sorted by combString):", [value for _, value in odds_values["QIN"]])
+      #print("QPL Odds Values (sorted by combString):", [value for _, value in odds_values["QPL"]])
 
-def investment_combined(time_now, method, df):
-    sums = {}
-    for col in df.columns:
-        try:
-            num1, num2 = str(col).split(',')
-            num1, num2 = int(num1), int(num2)
-            col_sum = df[col].sum()
-            sums[num1] = sums.get(num1, 0) + col_sum
-            sums[num2] = sums.get(num2, 0) + col_sum
-        except:
-            continue
-    return pd.DataFrame([sums], index=[time_now]) / 2
+  else:
+      print(f"Error: {response.status_code}")
 
-def get_overall_investment(time_now, methodlist):
+def save_odds_data(time_now,odds):
+  for method in methodlist:
+      if method in ['WIN', 'PLA']:
+        if st.session_state.odds_dict[method].empty:
+            # Initialize the DataFrame with the correct number of columns
+            st.session_state.odds_dict[method] = pd.DataFrame(columns=np.arange(1, len(odds[method]) + 1))
+        st.session_state.odds_dict[method].loc[time_now] = odds[method]
+      elif method in ['QIN','QPL',"FCT","TRI","FF"]:
+        if odds[method]:
+          combination, odds_array = zip(*odds[method])
+          if st.session_state.odds_dict[method].empty:
+            st.session_state.odds_dict[method] = pd.DataFrame(columns=combination)
+            # Set the values with the specified index
+          st.session_state.odds_dict[method].loc[time_now] = odds_array
+  #st.write(st.session_state.odds_dict)
+
+def save_investment_data(time_now,investment,odds):
+  for method in methodlist:
+      if method in ['WIN', 'PLA']:
+        if st.session_state.investment_dict[method].empty:
+            # Initialize the DataFrame with the correct number of columns
+            st.session_state.investment_dict[method] = pd.DataFrame(columns=np.arange(1, len(odds[method]) + 1))
+        investment_df = [round(investments[method][0]  / 1000 / odd, 2) for odd in odds[method]]
+        st.session_state.investment_dict[method].loc[time_now] = investment_df
+      elif method in ['QIN','QPL',"FCT","TRI","FF"]:
+        if odds[method]:
+          combination, odds_array = zip(*odds[method])
+          if st.session_state.investment_dict[method].empty:
+            st.session_state.investment_dict[method] = pd.DataFrame(columns=combination)
+          investment_df = [round(investments[method][0]  / 1000 / odd, 2) for odd in odds_array]
+              # Set the values with the specified index
+          st.session_state.investment_dict[method].loc[time_now] = investment_df
+
+def investment_combined(time_now,method,df):
+  sums = {}
+  for col in df.columns:
+      # Split the column name to get the numbers
+      num1, num2 = col.split(',')
+      # Convert to integers
+      num1, num2 = int(num1), int(num2)
+
+      # Sum the column values
+      col_sum = df[col].sum()
+
+      # Add the sum to the corresponding numbers in the dictionary
+      if num1 in sums:
+          sums[num1] += col_sum
+      else:
+          sums[num1] = col_sum
+
+      if num2 in sums:
+          sums[num2] += col_sum
+      else:
+          sums[num2] = col_sum
+
+  # Convert the sums dictionary to a dataframe for better visualization
+  sums_df = pd.DataFrame([sums],index = [time_now]) /2
+  return sums_df
+
+def get_overall_investment(time_now,dict):
     investment_df = st.session_state.investment_dict
-    if investment_df['WIN'].empty: return
-
     no_of_horse = len(investment_df['WIN'].columns)
-    total_investment_df = pd.DataFrame(index=[time_now], columns=np.arange(1, no_of_horse + 1))
-    
-    # Update individual method tracking
+    total_investment_df = pd.DataFrame(index =[time_now], columns=np.arange(1,no_of_horse +1))
     for method in methodlist:
-        if st.session_state.investment_dict[method].empty: continue
-        
-        last_row = st.session_state.investment_dict[method].tail(1)
-        
-        if method in ['WIN','PLA']:
-            st.session_state.overall_investment_dict[method] = pd.concat([
-                st.session_state.overall_investment_dict.get(method, pd.DataFrame()), 
-                last_row
-            ])
-        elif method in ['QIN','QPL']:
-            combined_row = investment_combined(time_now, method, last_row)
-            st.session_state.overall_investment_dict[method] = pd.concat([
-                st.session_state.overall_investment_dict.get(method, pd.DataFrame()), 
-                combined_row
-            ])
+      if method in ['WIN','PLA']:
+        st.session_state.overall_investment_dict[method] = st.session_state.overall_investment_dict[method]._append(st.session_state.investment_dict[method].tail(1))
+      elif method in ['QIN','QPL']:
+        if not investment_df[method].empty:
+          st.session_state.overall_investment_dict[method] = st.session_state.overall_investment_dict[method]._append(investment_combined(time_now,method,st.session_state.investment_dict[method].tail(1)))
+        else:
+          continue
 
-    # Sum all methods for 'overall'
-    for horse in range(1, no_of_horse + 1):
-        total_inv = 0
-        for method in ['WIN', 'PLA', 'QIN', 'QPL']:
-            if method in st.session_state.overall_investment_dict and \
-               not st.session_state.overall_investment_dict[method].empty:
-                try:
-                    total_inv += st.session_state.overall_investment_dict[method][horse].values[-1]
-                except:
-                    pass
-        total_investment_df[horse] = total_inv
-        
-    st.session_state.overall_investment_dict['overall'] = pd.concat([
-        st.session_state.overall_investment_dict.get('overall', pd.DataFrame()), 
-        total_investment_df
-    ])
+    for horse in range(1,no_of_horse+1):
+        total_investment = 0
+        for method in methodlist:
+            if method in ['WIN', 'PLA']:
+                investment = st.session_state.overall_investment_dict[method][horse].values[-1]
+            elif method in ['QIN','QPL']:
+              if not investment_df[method].empty: 
+                investment = st.session_state.overall_investment_dict[method][horse].values[-1]
+              else:
+                continue
+            total_investment += investment
+        total_investment_df[horse] = total_investment
+    st.session_state.overall_investment_dict['overall'] = st.session_state.overall_investment_dict['overall']._append(total_investment_df)
+
 
 def weird_data(time_now, investments, odds, methodlist):
     for method in methodlist:
@@ -314,19 +367,20 @@ def weird_data(time_now, investments, odds, methodlist):
             # st.error(f"Error in weird_data: {e}")
             pass
 
-def change_overall(time_now, methodlist):
-    total_investment = 0
-    valid_calc = False
-    for method in methodlist:
-        if method in st.session_state.diff_dict and not st.session_state.diff_dict[method].empty:
-            total_investment += st.session_state.diff_dict[method].tail(1).fillna(0).values
-            valid_calc = True
-            
-    if valid_calc:
-        # Assuming columns match overall
-        cols = st.session_state.overall_investment_dict['overall'].columns
-        total_df = pd.DataFrame(total_investment, index=[time_now], columns=cols)
-        st.session_state.diff_dict['overall'] = pd.concat([st.session_state.diff_dict.get('overall', pd.DataFrame()), total_df])
+def weird_data(investments):
+
+  for method in methodlist:
+    if st.session_state.investment_dict[method].empty:
+      continue
+    latest_investment = st.session_state.investment_dict[method].tail(1).values
+    last_time_odds = st.session_state.odds_dict[method].tail(2).head(1)
+    expected_investment = investments[method][0] / 1000 / last_time_odds
+    diff = round(latest_investment - expected_investment,0)
+    if method in ['WIN','PLA']:
+        st.session_state.diff_dict[method] = st.session_state.diff_dict[method]._append(diff)
+    elif method in ['QIN','QPL']:
+        st.session_state.diff_dict[method] = st.session_state.diff_dict[method]._append(investment_combined(time_now,method,diff))
+    
 
 # ==================== 3. 繪圖函數 (簡化版) ====================
 
