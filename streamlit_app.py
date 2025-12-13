@@ -381,7 +381,12 @@ def weird_data(investments):
     elif method in ['QIN','QPL']:
         st.session_state.diff_dict[method] = st.session_state.diff_dict[method]._append(investment_combined(time_now,method,diff))
     
-
+def change_overall(time_now):
+  total_investment = 0
+  for method in methodlist:
+    total_investment += st.session_state.diff_dict[method].sum(axis=0)
+  total_investment_df = pd.DataFrame([total_investment],index = [time_now])
+  st.session_state.diff_dict['overall'] = st.session_state.diff_dict['overall']._append(total_investment_df)
 # ==================== 3. 繪圖函數 (簡化版) ====================
 
 def print_bubble(race_no, print_list):
