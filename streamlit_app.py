@@ -814,20 +814,11 @@ def calculate_smart_score(race_no, method='WIN'):
     else:
         money_flow = pd.DataFrame(0, index=latest_odds.index, columns=['MoneyFlow'])
         
-    # 3. 獲取馬匹實力 (從靜態數據)
-    form_scores = {}
-    if race_no in st.session_state.race_dataframes:
-        static_df = st.session_state.race_dataframes[race_no]
-        for idx, row in static_df.iterrows():
-            # 注意：您的 df index 是馬號，這裡要確保對齊
-            h_score = parse_form_score(str(row.get('近績', '')))
-            form_scores[idx] = h_score
-    
-    form_series = pd.Series(form_scores, name='FormScore')
-    
-    # --- 合併數據表 ---
+
+    static_df = st.session_state.race_dataframes[race_no]
+    df['FormScore'] = static_df['近績'].apply(parse_form_score)
     df = pd.concat([latest_odds, money_flow], axis=1)
-    df['FormScore'] = form_series
+
     
     # 4. 計算綜合得分 (Smart Score)
     # ----------------------------------------------------
