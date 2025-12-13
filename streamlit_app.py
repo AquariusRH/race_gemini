@@ -692,6 +692,52 @@ def fetch_race_card(date_str, venue):
         print(e)
     return {}
     
+def parse_form_score(last6run_str):
+    """
+    將 '1/2/4/11/2' 這樣的字串轉換為實力分數 (0-100)
+    名次越小分數越高。
+    """
+    if not last6run_str or not isinstance(last6run_str, str):
+        return 50 # 預設值
+    
+    try:
+        # 提取最近 3 場名次 (越近期的權重越高)
+        runs = []
+        parts = last6run_str.split('/')
+        for p in parts:
+            # 處理像 '12DH' 或 'PU' 這樣的異常值
+            clean_p = ''.join(filter(str.isdigit, p))
+            if clean_p:
+                runs.append(int(clean_p))
+        
+        if not runs:
+            return 50
+            
+        # 取最近 4 場
+        recent_runs = runs[-4:] 
+        
+        # 計算平均名次 (加權：越近期的比賽權重越重)
+        weights = [1, 1.2, 1.5, 2.0] # 權重
+        weighted_sum = 0
+        total_weight = 0
+        
+        # 對齊權重與場次
+        actual_weights = weights[-len(recent_runs):]
+        
+        for r, w in zip(recent_runs, actual_weights):
+            weighted_sum += r * w
+            total_weight += w
+            
+        avg_rank = weighted_sum / total_weight
+        
+        # 轉換為分數 (1名=100分, 14名=0分)
+        # 公式: 100 - (名次 - 1) * (100 / 13)
+        score = 100 - (avg_rank - 1) * 7.7
+        return max(0, min(100, score))
+        
+    except Exception:
+        return 50
+        
 def calculate_smart_score_static(race_no):
     """
     核心預測算法（靜態版）：專為比賽前一日，缺乏賠率和資金流數據時設計。
