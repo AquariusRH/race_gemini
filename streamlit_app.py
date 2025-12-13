@@ -814,11 +814,9 @@ def calculate_smart_score(race_no, method='WIN'):
     else:
         money_flow = pd.DataFrame(0, index=latest_odds.index, columns=['MoneyFlow'])
         
-
+    df = pd.concat([latest_odds, money_flow], axis=1)
     static_df = st.session_state.race_dataframes[race_no]
     df['FormScore'] = static_df['近績'].apply(parse_form_score)
-    df = pd.concat([latest_odds, money_flow], axis=1)
-
     
     # 4. 計算綜合得分 (Smart Score)
     # ----------------------------------------------------
