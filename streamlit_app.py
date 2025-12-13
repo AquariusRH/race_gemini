@@ -815,8 +815,57 @@ def calculate_smart_score(race_no, method='WIN'):
         money_flow = pd.DataFrame(0, index=latest_odds.index, columns=['MoneyFlow'])
         
     df = pd.concat([latest_odds, money_flow], axis=1)
-    static_df = st.session_state.race_dataframes[race_no]
-    df['FormScore'] = static_df['近績'].apply(parse_form_score)
+    if race_no not in st.session_state.race_dataframes:
+        return pd.DataFrame()
+    
+    static_df = st.session_state.race_dataframes[race_no].copy()
+    
+    # 確保所有馬匹都有一個馬號索引
+    if static_df.index.name != '馬號':
+        static_df = static_df.reset_index().set_index('馬號')
+
+    # 檢查關鍵欄位是否存在 (如果沒有，需要先在 fetch_race_card 中獲取)
+    required_cols = ['近績', '評分', '排位', '騎師', '練馬師']
+    for col in required_cols:
+        if col not in static_df.columns:
+            # 這是為了兼容，但建議您去 fetch_race_card 補齊這些欄位
+            static_df[col] = 0 
+            
+    # 1. 狀態分數 (Form Score) - 權重 40%
+    # 使用原有的 parse_form_score
+    static_df['FormScore'] = static_df['近績'].apply(parse_form_score)
+    
+    # 2. 配搭/專業分數 (Synergy Score) - 權重 30%
+    # 這裡需要一個更複雜的歷史數據庫，但簡單處理為騎練合作次數和勝率 (假設您有這些外部數據)
+    # 由於我們沒有歷史數據庫，這裡先使用一個佔位符，但您可以在此處集成：
+    # - 騎師/練馬師在該場地/距離的平均勝率
+    # - 騎師與馬匹合作的勝率
+    
+    # 佔位：假設所有馬匹的騎練配搭分數平均
+    static_df['SynergyScore'] = 70 
+    
+    # 3. 適應性分數 (Adaptability Score) - 權重 20%
+    # 排位（檔位）：在該場地/距離下，外檔或內檔表現如何？
+    # 假設：通常內檔 (1-4) 較好，中檔 (5-8) 次之，外檔 (9+) 較差
+    
+    static_df['排位_int'] = pd.to_numeric(static_df['排位'], errors='coerce').fillna(99)
+    static_df['DrawScore'] = 100 - (static_df['排位_int'] - 1) * (100 / 13) # 1號檔 100分，14號檔 0分
+    
+    # 4. 負擔分數 (Burden Score) - 權重 10%
+    # 評分與負磅的關係：評分越高負磅越重，負擔越大
+    # 簡化：評分最高的馬匹，給予負擔分數較低（因為大家都看好它，但它要負重）
+    static_df['Rating_int'] = pd.to_numeric(static_df['評分'], errors='coerce').fillna(0)
+    max_rating = static_df['Rating_int'].max()
+    
+    # 評分差異分數 (相對分數)：評分接近最高分者得分較高
+    static_df['RatingDiffScore'] = (static_df['Rating_int'] / max_rating) * 100
+    
+    # --- 最終加權公式 (完全基於靜態數據) ---
+    
+    df['TotalFormScore'] = (static_df['FormScore'] * 0.4) + \
+                       (static_df['SynergyScore'] * 0.3) + \
+                       (static_df['DrawScore'] * 0.2) + \
+                       (static_df['RatingDiffScore'] * 0.1)
     
     # 4. 計算綜合得分 (Smart Score)
     # ----------------------------------------------------
@@ -835,7 +884,7 @@ def calculate_smart_score(race_no, method='WIN'):
     
     # C. 最終加權公式 (您可以調整這裡的權重！)
     # 假設：實力 30% + 資金流向 50% + 賠率熱度 20%
-    df['TotalScore'] = (df['FormScore'] * 0.3) + \
+    df['TotalScore'] = (df['TotalFormScore'] * 0.3) + \
                        (df['MoneyScore'] * 0.5) + \
                        (df['ValueScore'] * 0.2)
                        
