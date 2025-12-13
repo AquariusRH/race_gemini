@@ -1024,7 +1024,7 @@ if monitoring_on:
         
         if not prediction_df.empty:
             display_df = prediction_df.copy()
-            display_df = display_df[['Odds', 'MoneyFlow', 'FormScore', 'TotalScore']]
+            display_df = display_df[['Odds', 'MoneyFlow', 'TotalFormScore', 'TotalScore']]
             display_df.columns = ['當前賠率', '近期資金流(K)', '近績評分', '🔥綜合推薦分']
             
             display_df['近期資金流(K)'] = display_df['近期資金流(K)'].apply(lambda x: f"{x:.1f}")
