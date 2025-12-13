@@ -944,8 +944,8 @@ if monitoring_on:
     time_str = time_now.strftime('%H:%M:%S')
     
     # 1. 抓取數據 (這裡需要您的實際抓取邏輯)
-    odds = get_odds_data(Date, place, race_no, methodlist)
-    investments = get_investment_data(Date, place, race_no, methodlist)
+    odds = get_odds_data()
+    investments = get_investment_data()
     
     if odds and investments:
         with st.spinner(f"更新數據中 ({time_str})..."):
