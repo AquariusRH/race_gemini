@@ -906,7 +906,7 @@ def calculate_smart_score_static(race_no):
                        (df['RatingDiffScore'] * 0.1)
                        
     # 清理並輸出
-    df = df[['當前賠率', 'MoneyFlow', 'FormScore', 'TotalScore']] # 這裡的 MoneyFlow 和賠率將是 NaN
+    df = df[['FormScore', 'TotalScore']] # 這裡的 MoneyFlow 和賠率將是 NaN
     df = df.sort_values('TotalScore', ascending=False)
     
     return df
