@@ -990,8 +990,8 @@ if monitoring_on:
             display_df.columns = ['當前賠率', '近期資金流(K)', '近績評分', '🔥綜合推薦分']
             
             display_df['近期資金流(K)'] = display_df['近期資金流(K)'].apply(lambda x: f"{x:.1f}")
-            display_df['近績評分'] = display_df['近績評分'].astype(int)
-            display_df['🔥綜合推薦分'] = display_df['🔥綜合推薦分'].apply(lambda x: f"{x:.1f}")
+            display_df['近績評分'] = display_df['近績評分'].astype(float).round(0).astype('Int64')
+            display_df['🔥綜合推薦分'] = display_df['🔥綜合推薦分'].astype(float).round(0).astype('Int64')
             
             def highlight_top_realtime(row):
                 # 這裡假設您的 prediction_df 已經排序
