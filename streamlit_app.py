@@ -814,7 +814,6 @@ def calculate_smart_score(race_no, method='WIN'):
     else:
         money_flow = pd.DataFrame(0, index=latest_odds.index, columns=['MoneyFlow'])
         
-    df = pd.concat([latest_odds, money_flow], axis=1)
     if race_no not in st.session_state.race_dataframes:
         return pd.DataFrame()
     
@@ -866,31 +865,30 @@ def calculate_smart_score(race_no, method='WIN'):
                        (static_df['SynergyScore'] * 0.3) + \
                        (static_df['DrawScore'] * 0.2) + \
                        (static_df['RatingDiffScore'] * 0.1)
-    st.write(static_df)
-    aligned_form_score = static_df['TotalFormScore'].reindex(df.index) 
-    df['TotalFormScore'] = aligned_form_score
+    static_df['Odds'] = latest_odds
+    static_df['MoneyFlow'] = money_flow
     # 4. 計算綜合得分 (Smart Score)
     # ----------------------------------------------------
     # A. 資金分數 (0-100): 資金流入越多越高
     # 使用 MinMax Scaling
-    min_flow = df['MoneyFlow'].min()
-    max_flow = df['MoneyFlow'].max()
+    min_flow = static_df['MoneyFlow'].min()
+    max_flow = static_df['MoneyFlow'].max()
     if max_flow != min_flow:
-        df['MoneyScore'] = (df['MoneyFlow'] - min_flow) / (max_flow - min_flow) * 100
+        static_df['MoneyScore'] = (static_df['MoneyFlow'] - min_flow) / (max_flow - min_flow) * 100
     else:
-        df['MoneyScore'] = 50
+        static_df['MoneyScore'] = 50
         
     # B. 價值分數 (0-100): 賠率越低代表市場越看好 (但也越沒肉吃)
     # 這裡我們用 "Implied Probability" (隱含勝率) 作為分數
-    df['ValueScore'] = (1 / df['Odds']) * 100
+    static_df['ValueScore'] = (1 / static_df['Odds']) * 100
     
     # C. 最終加權公式 (您可以調整這裡的權重！)
     # 假設：實力 30% + 資金流向 50% + 賠率熱度 20%
-    df['TotalScore'] = (df['TotalFormScore'] * 0.3) + \
-                       (df['MoneyScore'] * 0.5) + \
-                       (df['ValueScore'] * 0.2)
+    static_df['TotalScore'] = (static_df['TotalFormScore'] * 0.3) + \
+                       (static_df['MoneyScore'] * 0.5) + \
+                       (static_df['ValueScore'] * 0.2)
                        
-    return df.sort_values('TotalScore', ascending=False)
+    return static_df.sort_values('TotalScore', ascending=False)
     
 def calculate_smart_score_static(race_no):
     """
