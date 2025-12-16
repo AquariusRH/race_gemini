@@ -866,7 +866,7 @@ def calculate_smart_score(race_no, method='WIN'):
                        (static_df['SynergyScore'] * 0.3) + \
                        (static_df['DrawScore'] * 0.2) + \
                        (static_df['RatingDiffScore'] * 0.1)
-    
+    st.write(static_df)
     aligned_form_score = static_df['TotalFormScore'].reindex(df.index) 
     df['TotalFormScore'] = aligned_form_score
     # 4. 計算綜合得分 (Smart Score)
