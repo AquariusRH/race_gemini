@@ -866,7 +866,7 @@ def calculate_smart_score(race_no, method='WIN'):
                        (static_df['SynergyScore'] * 0.3) + \
                        (static_df['DrawScore'] * 0.2) + \
                        (static_df['RatingDiffScore'] * 0.1)
-   aligned_form_score = static_df['TotalFormScore'].reindex(df.index)
+    aligned_form_score = static_df['TotalFormScore'].reindex(df.index)
 
     # 3. 賦值 (現在它們的索引完全匹配，賦值不會產生錯位或 NaN)
     df['TotalFormScore'] = aligned_form_score
