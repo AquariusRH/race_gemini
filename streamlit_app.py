@@ -866,7 +866,7 @@ def calculate_smart_score(race_no, method='WIN'):
                        (static_df['SynergyScore'] * 0.3) + \
                        (static_df['DrawScore'] * 0.2) + \
                        (static_df['RatingDiffScore'] * 0.1)
-    df = pd.concat([df, static_df['TotalFormScore']], axis=1)
+    df = pd.concat([df, static_df['TotalFormScore']], axis=0)
     # 4. 計算綜合得分 (Smart Score)
     # ----------------------------------------------------
     # A. 資金分數 (0-100): 資金流入越多越高
