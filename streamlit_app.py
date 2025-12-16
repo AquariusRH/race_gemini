@@ -796,99 +796,127 @@ def parse_form_score(last6run_str):
         
     except Exception:
         return 50
-def calculate_smart_score(race_no, method='WIN'):
+def calculate_race_scores_unified(race_no):
     """
-    核心預測算法：結合 1.資金流向(40%) 2.賠率價值(30%) 3.近績實力(30%)
+    計算單場賽事的綜合評分，並將所有中間結果整合到單一 df。
     """
+    
+    # ----------------------------------------------------
+    # I. 數據準備與初始 df 建立
+    # ----------------------------------------------------
+    
+    # 1. 獲取最新賠率 (Odds)
     if 'WIN' not in st.session_state.odds_dict or st.session_state.odds_dict['WIN'].empty:
         return pd.DataFrame()
-    
-    # 1. 獲取基礎數據
+        
     latest_odds = st.session_state.odds_dict['WIN'].tail(1).T
     latest_odds.columns = ['Odds']
     
-    # 2. 獲取資金流向 (Momentum / Diff)
+    # 2. 獲取資金流向 (MoneyFlow)
     if 'WIN' in st.session_state.diff_dict and not st.session_state.diff_dict['WIN'].empty:
-        # 取最近 15 分鐘的資金累積變化
         money_flow = st.session_state.diff_dict['WIN'].tail(10).sum().to_frame(name='MoneyFlow')
     else:
         money_flow = pd.DataFrame(0, index=latest_odds.index, columns=['MoneyFlow'])
         
+    # 3. 建立基礎 df (包含動態數據)
+    df = pd.concat([latest_odds, money_flow], axis=1)
+    
+    # 4. 獲取靜態數據
     if race_no not in st.session_state.race_dataframes:
         return pd.DataFrame()
-    
+        
+    # 我們只需要 '馬號' 和計算分數所需的欄位
     static_df = st.session_state.race_dataframes[race_no].copy()
     
-    # 確保所有馬匹都有一個馬號索引
+    # ----------------------------------------------------
+    # II. 索引標準化 (確保合併成功)
+    # ----------------------------------------------------
+    
+    # 確保 static_df 以 '馬號' 作為索引
     if static_df.index.name != '馬號':
         static_df = static_df.reset_index().set_index('馬號')
-
-    # 檢查關鍵欄位是否存在 (如果沒有，需要先在 fetch_race_card 中獲取)
-    required_cols = ['近績', '評分', '排位', '騎師', '練馬師']
+        
+    # **關鍵步驟：強制將兩個 DataFrame 的索引類型統一為字串**
+    try:
+        df.index = df.index.astype(str)
+        static_df.index = static_df.index.astype(str)
+    except Exception as e:
+        print(f"索引轉換錯誤: {e}")
+        return pd.DataFrame()
+        
+    # ----------------------------------------------------
+    # III. 靜態數據分數計算 (在 static_df 上計算)
+    # ----------------------------------------------------
+    
+    # 檢查並補齊必要的欄位
+    required_cols = ['近績', '評分', '排位'] # 只需要計算所需欄位
     for col in required_cols:
         if col not in static_df.columns:
-            # 這是為了兼容，但建議您去 fetch_race_card 補齊這些欄位
-            static_df[col] = 0 
+            static_df[col] = 0
             
     # 1. 狀態分數 (Form Score) - 權重 40%
-    # 使用原有的 parse_form_score
     static_df['FormScore'] = static_df['近績'].apply(parse_form_score)
     
-    # 2. 配搭/專業分數 (Synergy Score) - 權重 30%
-    # 這裡需要一個更複雜的歷史數據庫，但簡單處理為騎練合作次數和勝率 (假設您有這些外部數據)
-    # 由於我們沒有歷史數據庫，這裡先使用一個佔位符，但您可以在此處集成：
-    # - 騎師/練馬師在該場地/距離的平均勝率
-    # - 騎師與馬匹合作的勝率
+    # 2. 配搭/專業分數 (Synergy Score) - 權重 30% (佔位)
+    static_df['SynergyScore'] = 70
     
-    # 佔位：假設所有馬匹的騎練配搭分數平均
-    static_df['SynergyScore'] = 70 
-    
-    # 3. 適應性分數 (Adaptability Score) - 權重 20%
-    # 排位（檔位）：在該場地/距離下，外檔或內檔表現如何？
-    # 假設：通常內檔 (1-4) 較好，中檔 (5-8) 次之，外檔 (9+) 較差
-    
+    # 3. 適應性分數 (Draw Score) - 權重 20%
     static_df['排位_int'] = pd.to_numeric(static_df['排位'], errors='coerce').fillna(99)
-    static_df['DrawScore'] = 100 - (static_df['排位_int'] - 1) * (100 / 13) # 1號檔 100分，14號檔 0分
+    static_df['DrawScore'] = 100 - (static_df['排位_int'] - 1) * (100 / 13) 
     
-    # 4. 負擔分數 (Burden Score) - 權重 10%
-    # 評分與負磅的關係：評分越高負磅越重，負擔越大
-    # 簡化：評分最高的馬匹，給予負擔分數較低（因為大家都看好它，但它要負重）
+    # 4. 負擔分數 (Rating Score) - 權重 10%
     static_df['Rating_int'] = pd.to_numeric(static_df['評分'], errors='coerce').fillna(0)
-    max_rating = static_df['Rating_int'].max()
+    max_rating = static_df['Rating_int'].replace(0, np.nan).max() # 避免 max_rating 為 0
     
-    # 評分差異分數 (相對分數)：評分接近最高分者得分較高
-    static_df['RatingDiffScore'] = (static_df['Rating_int'] / max_rating) * 100
-    
-    # --- 最終加權公式 (完全基於靜態數據) ---
-    
-    static_df['TotalFormScore'] = (static_df['FormScore'] * 0.4) + \
-                       (static_df['SynergyScore'] * 0.3) + \
-                       (static_df['DrawScore'] * 0.2) + \
-                       (static_df['RatingDiffScore'] * 0.1)
-    static_df['Odds'] = latest_odds
-    static_df['MoneyFlow'] = money_flow
-    # 4. 計算綜合得分 (Smart Score)
-    # ----------------------------------------------------
-    # A. 資金分數 (0-100): 資金流入越多越高
-    # 使用 MinMax Scaling
-    min_flow = static_df['MoneyFlow'].min()
-    max_flow = static_df['MoneyFlow'].max()
-    if max_flow != min_flow:
-        static_df['MoneyScore'] = (static_df['MoneyFlow'] - min_flow) / (max_flow - min_flow) * 100
+    if pd.isna(max_rating):
+        static_df['RatingDiffScore'] = 50
     else:
-        static_df['MoneyScore'] = 50
-        
-    # B. 價值分數 (0-100): 賠率越低代表市場越看好 (但也越沒肉吃)
-    # 這裡我們用 "Implied Probability" (隱含勝率) 作為分數
-    static_df['ValueScore'] = (1 / static_df['Odds']) * 100
+        static_df['RatingDiffScore'] = (static_df['Rating_int'] / max_rating) * 100 
     
-    # C. 最終加權公式 (您可以調整這裡的權重！)
-    # 假設：實力 30% + 資金流向 50% + 賠率熱度 20%
-    static_df['TotalScore'] = (static_df['TotalFormScore'] * 0.3) + \
-                       (static_df['MoneyScore'] * 0.5) + \
-                       (static_df['ValueScore'] * 0.2)
-                       
-    return static_df.sort_values('TotalScore', ascending=False)
+    # 最終靜態加權公式
+    static_df['TotalFormScore'] = (static_df['FormScore'] * 0.4) + \
+                                  (static_df['SynergyScore'] * 0.3) + \
+                                  (static_df['DrawScore'] * 0.2) + \
+                                  (static_df['RatingDiffScore'] * 0.1)
+    
+    # ----------------------------------------------------
+    # IV. 使用 join/merge 將靜態分數整合到 df (達成單一 df 目的)
+    # ----------------------------------------------------
+    
+    # 只取出計算好的分數欄位
+    static_scores = static_df[['TotalFormScore', 'FormScore', 'SynergyScore', 'DrawScore', 'RatingDiffScore']]
+    
+    # 使用 join 進行合併：左連接，以 df 的馬號為準。
+    # 由於索引已統一為字串，join 將正確地按馬號匹配。
+    df = df.join(static_scores, how='left')
+    
+    # 如果有馬匹在靜態數據中找不到 (例如 TotalFormScore 為 NaN)，則填入預設值
+    df['TotalFormScore'] = df['TotalFormScore'].fillna(50) 
+    
+    # ----------------------------------------------------
+    # V. 在單一 df 上計算最終綜合得分 (TotalScore)
+    # ----------------------------------------------------
+    
+    # A. 資金分數 (MoneyScore)
+    min_flow = df['MoneyFlow'].min()
+    max_flow = df['MoneyFlow'].max()
+    
+    # 避免 MoneyFlow 都是 0 時除以 0
+    if max_flow != min_flow:
+        df['MoneyScore'] = (df['MoneyFlow'] - min_flow) / (max_flow - min_flow) * 100
+    else:
+        df['MoneyScore'] = 50
+        
+    # B. 價值分數 (ValueScore: 隱含勝率/熱度)
+    # 避免 Odds 為 0 或 NaN 時除以 0
+    df['ValueScore'] = np.where(df['Odds'].replace(0, np.nan).isna(), 0, (1 / df['Odds']) * 100)
+    
+    # C. 最終加權公式 (實力 30% + 資金流向 50% + 賠率熱度 20%)
+    df['TotalScore'] = (df['TotalFormScore'] * 0.3) + \
+                       (df['MoneyScore'] * 0.5) + \
+                       (df['ValueScore'] * 0.2)
+                            
+    return df.sort_values('TotalScore', ascending=False)
     
 def calculate_smart_score_static(race_no):
     """
