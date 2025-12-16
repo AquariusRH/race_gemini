@@ -796,7 +796,7 @@ def parse_form_score(last6run_str):
         
     except Exception:
         return 50
-def calculate_race_scores_unified(race_no):
+def calculate_smart_score(race_no):
     """
     計算單場賽事的綜合評分，並將所有中間結果整合到單一 df。
     """
