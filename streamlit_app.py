@@ -1021,7 +1021,7 @@ if monitoring_on:
         # B. 實時預測排名
         st.markdown("### 🤖 實時資金流綜合預測排名")
         prediction_df = calculate_smart_score(race_no)
-        
+        st.write(prediction_df)
         if not prediction_df.empty:
             display_df = prediction_df.copy()
             display_df = display_df[['Odds', 'MoneyFlow', 'TotalFormScore', 'TotalScore']]
