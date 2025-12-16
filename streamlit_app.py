@@ -1054,7 +1054,7 @@ if monitoring_on:
             display_df = prediction_df.copy()
             display_df = display_df[['Odds', 'MoneyFlow', 'TotalFormScore', 'TotalScore']]
             display_df.columns = ['當前賠率', '近期資金流(K)', '近績評分', '🔥綜合推薦分']
-            display_df['當前賠率'] = display_df['當前賠率'].round(1)
+            display_df['當前賠率'] = display_df['當前賠率'].apply(lambda x: f"{x:.1f}")
             display_df['近期資金流(K)'] = display_df['近期資金流(K)'].apply(lambda x: f"{x:.1f}")
             display_df['近績評分'] = display_df['近績評分'].astype(float).round(0).astype('Int64')
             display_df['🔥綜合推薦分'] = display_df['🔥綜合推薦分'].astype(float).round(0).astype('Int64')
