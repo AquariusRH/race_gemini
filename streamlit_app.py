@@ -958,29 +958,36 @@ def calculate_jockey_score(jockey_name, ranking_df):
     根據騎師的排名數據計算其專業分數。
     分數基於當前賽季的勝率，並使用對數平滑化來減少極端值影響。
     """
-    if ranking_df.empty:
-        return 10 # 無數據給予平均分
-    ranking_df['騎師'] = ranking_df['騎師'].str.strip()
-    jockey_row = ranking_df[ranking_df['騎師'] == jockey_name]
-    
+   if ranking_df is None or ranking_df.empty:
+        return 50.0
+
+    jockey_row = ranking_df[ranking_df['騎師'] == str(jockey_name).strip()]
     if jockey_row.empty:
-        return 20 # 找不到該騎師，給予平均分
+        return 50.0
 
     wins = jockey_row['冠'].iloc[0]
     runs = jockey_row['總出賽次數'].iloc[0]
     
     if runs == 0:
-        return 30 # 未出賽，給予平均分
+        return 50.0
     
-    win_rate = wins / runs
+    # 1. 計算該騎師的個人勝率
+    personal_win_rate = wins / runs
     
-    # 標準化和加權：將勝率 (0-1) 轉換為 1-100 分。
-    # 使用 log 函數對勝場數進行平滑處理，避免極少數出賽次數對勝率分數的誇大。
-    # log(wins + 1) * win_rate
-    score = (win_rate * 100) * (log(wins + 1) / log(ranking_df['冠'].max() + 1))
+    # 2. 獲取全港排名表中的最高勝率作為基準 (避免分母為0)
+    # 我們只計算出賽超過 10 次的騎師，避免極端數據
+    ranking_df['win_rate'] = ranking_df['冠'] / ranking_df['總出賽次數']
+    max_win_rate = ranking_df[ranking_df['總出賽次數'] > 10]['win_rate'].max()
     
-    # 確保分數在合理範圍內，例如最高 100
-    return min(score, 100)
+    if pd.isna(max_win_rate) or max_win_rate == 0:
+        max_win_rate = 0.2 # 預設基準 (通常頂級騎師勝率約 20%)
+
+    # 3. 線性得分：將個人勝率對標最高勝率，拉回 0-100 區間
+    # 假設最高勝率者得 100 分
+    score = (personal_win_rate / max_win_rate) * 100
+    
+    # 限制在 10 到 100 分之間，不要出現個位數
+    return min(max(score, 10), 100)
 
 
 def calculate_trainer_score(trainer_name, ranking_df):
@@ -988,26 +995,30 @@ def calculate_trainer_score(trainer_name, ranking_df):
     根據練馬師的排名數據計算其專業分數。
     邏輯與騎師分數相似，但針對練馬師欄位。
     """
-    if ranking_df.empty:
-        return 10
-    trainer_name = str(trainer_name).strip()
-    trainer_row = ranking_df[ranking_df['練馬師'] == trainer_name]
-    
+    if ranking_df is None or ranking_df.empty:
+        return 50.0
+
+    trainer_row = ranking_df[ranking_df['練馬師'] == str(trainer_name).strip()]
     if trainer_row.empty:
-        return 20
+        return 50.0
 
     wins = trainer_row['冠'].iloc[0]
     runs = trainer_row['總出賽次數'].iloc[0]
     
     if runs == 0:
-        return 30
+        return 50.0
+
+    personal_win_rate = wins / runs
     
-    win_rate = wins / runs
+    ranking_df['win_rate'] = ranking_df['冠'] / ranking_df['總出賽次數']
+    max_win_rate = ranking_df[ranking_df['總出賽次數'] > 10]['win_rate'].max()
     
-    # 標準化和加權
-    score = (win_rate * 100) * (log(wins + 1) / log(ranking_df['冠'].max() + 1))
+    if pd.isna(max_win_rate) or max_win_rate == 0:
+        max_win_rate = 0.15 # 練馬師最高勝率通常約 15%
+
+    score = (personal_win_rate / max_win_rate) * 100
     
-    return min(score, 100)
+    return min(max(score, 10), 100)
 def calculate_smart_score(race_no):
     """
     計算單場賽事的綜合評分，並將所有中間結果整合到單一 df。
