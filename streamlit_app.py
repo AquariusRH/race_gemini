@@ -671,7 +671,28 @@ def print_bar_chart(time_now):
       ax1.set_ylabel('投注額',fontsize=15)
       ax1.tick_params(axis='y')
       fig.legend()
-
+      HK_TZ = timezone(timedelta(hours=8))
+            now_naive = datetime.now()
+            now = now_naive + datere.relativedelta(hours=8)
+            now = now.replace(tzinfo=HK_TZ)
+            post_time_raw = st.session_state.post_time_dict.get(race_no)
+            
+            if post_time_raw is None:
+                time_str = "未載入"
+            else:
+                # 確保 post_time 也有時區
+                if post_time_raw.tzinfo is None:
+                    post_time = post_time_raw.replace(tzinfo=HK_TZ)
+                else:
+                    post_time = post_time_raw  # 已有時區
+            
+                seconds_left = (post_time - now).total_seconds()
+                
+                if seconds_left <= 0:
+                    time_str = "已開跑"
+                else:
+                    minutes = int(seconds_left // 60)
+                    time_str = f"離開跑 {minutes} 分"  
       if method == 'overall':
           plt.title('綜合', fontsize=15)
       elif method == 'QIN':
@@ -683,9 +704,9 @@ def print_bar_chart(time_now):
       elif method == 'PLA':
           plt.title('位置', fontsize=15)
       elif method == 'WIN&QIN':
-          plt.title('獨贏及連贏', fontsize=15)
+          plt.title(f'獨贏及連贏|{time_str}', fontsize=15)
       elif method == 'PLA&QPL':
-          plt.title('位置及位置Q', fontsize=15)          
+          plt.title(f'位置及位置Q|{time_str}', fontsize=15)          
       st.pyplot(fig)
 def print_bubble(race_no, print_list):
     # 確保有數據
