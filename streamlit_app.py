@@ -249,7 +249,85 @@ def get_odds_data():
 
   else:
       print(f"Error: {response.status_code}")
+def extract_jockey_data(html_content):
+    """
+    Extracts jockey ranking data from the HKJC HTML content.
+
+    Args:
+        html_content (str): The HTML string containing the jockey ranking tables.
+
+    Returns:
+        list: A list of dictionaries, where each dictionary represents a jockey.
+    """
+    # 1. Parse the HTML content
+    # 
+    soup = BeautifulSoup(html_content, 'html.parser')
+    
+    # 2. Find the main ranking table (it has class 'table_bd')
+    # Note: Use select_one to find the single instance of the table
+    ranking_table = soup.select_one('table.table_bd')
+    
+    if not ranking_table:
+        print("Error: Ranking table not found in HTML.")
+        return []
+
+    jockey_data = []
+
+    # Define the column headers in Chinese (to use as dictionary keys)
+    # They correspond to: Jockey, 1st, 2nd, 3rd, 4th, 5th, Total Runs, Prize Money
+    headers_chinese = ["騎師", "冠", "亞", "季", "殿", "第五", "總出賽次數", "所贏獎金"]
+
+    # Get all <tr> elements from the <tbody> sections within the main table
+    # We target tr elements directly under tbody to skip the header and section rows 
+    # that span multiple columns (like '在港現役騎師' and '其他').
+    data_rows = ranking_table.find_all('tbody', class_='f_tac f_fs12')
+    
+    # Iterate through both tbody sections (Active Jockeys and Others)
+    for tbody in data_rows:
+        for row in tbody.find_all('tr'):
+            # Find all data cells in the row
+            td_elements = row.find_all('td')
+            
+            # Skip rows that are separators or don't have the expected number of columns (8)
+            if len(td_elements) != len(headers_chinese):
+                continue
+
+            row_data = {}
+            
+            # 3a. Jockey Name (Column 0: inside an <a> tag)
+            jockey_cell = td_elements[0].find('a')
+            jockey_name = jockey_cell.get_text(strip=True) if jockey_cell else td_elements[0].get_text(strip=True)
+            row_data[headers_chinese[0]] = jockey_name
+            
+            # 3b. Numeric Data (Columns 1-7)
+            for i in range(1, len(headers_chinese)):
+                value = td_elements[i].get_text(strip=True)
+                header = headers_chinese[i]
+                
+                if header == "所贏獎金":
+                    # Clean up the prize money string: remove '$' and ','
+                    # e.g., '$95,375,070' -> '95375070'
+                    cleaned_value = re.sub(r'[$,]', '', value)
+                    try:
+                        row_data[header] = int(cleaned_value)
+                    except ValueError:
+                        row_data[header] = 0 # Handle unexpected data gracefully
+                else:
+                    # Convert other columns (wins, runs) to integers
+                    try:
+                        row_data[header] = int(value)
+                    except ValueError:
+                        row_data[header] = 0 # Handle unexpected data gracefully
+            
+            jockey_data.append(row_data)
+
+    return jockey_data
+
+
 def get_jockey_ranking():
+    """
+    Fetches the HKJC Jockey Ranking page and extracts the data into a structured list.
+    """
     url = "https://racing.hkjc.com/racing/information/Chinese/Jockey/JockeyRanking.aspx"
     
     # Define a standard browser User-Agent
@@ -258,14 +336,25 @@ def get_jockey_ranking():
     }
     
     try:
-        response = requests.get(url, headers=headers) # Pass the headers here
-        if response.status_code == 200:
-            #jockey_data = response.json()
-            #text = jockey_data.get("commContent")
-            return response.text
-        # ... (error handling)
-    except requests.exceptions.RequestException:
+        response = requests.get(url, headers=headers, timeout=10) # Added timeout
+        response.raise_for_status() # Raises an HTTPError for bad responses (4xx or 5xx)
+        
+        # Pass the HTML text to the extraction function
+        jockey_ranking_list = extract_jockey_data(response.text)
+        
+        return jockey_ranking_list
+
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred during the HTTP request: {e}")
         return None
+
+# --- Example of running the function ---
+# ranking = get_jockey_ranking()
+# if ranking:
+#     # Print the top 3 jockeys in a readable format
+#     print(json.dumps(ranking[:3], indent=2, ensure_ascii=False))
+# else:
+#     print("Failed to retrieve or parse ranking data.")
     
 def save_odds_data(time_now,odds):
   for method in methodlist:
