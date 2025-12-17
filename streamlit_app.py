@@ -1080,8 +1080,19 @@ def calculate_smart_score(race_no):
     # 1. 狀態分數 (Form Score) - 權重 40%
     static_df['FormScore'] = static_df['近績'].apply(parse_form_score)
     
-    # 2. 配搭/專業分數 (Synergy Score) - 權重 30% (佔位)
-    static_df['SynergyScore'] = 70
+    # 2. 騎師分數 (Jockey Score) - 權重 15% (取代部分 Synergy)
+    st.session_state.jockey_ranking_df=get_jockey_ranking()
+    st.session_state.trainer_ranking_df=get_trainer_ranking()
+    j_df = st.session_state.jockey_ranking_df
+    t_df = st.session_state.trainer_ranking_df
+    static_df['JockeyScore'] = static_df['騎師'].apply(
+        lambda x: calculate_jockey_score(str(x).strip(), j_df)
+    )
+    
+    # 練馬師分數 (15%)
+    static_df['TrainerScore'] = static_df['練馬師'].apply(
+        lambda x: calculate_trainer_score(str(x).strip(), t_df)
+    )
     
     # 3. 適應性分數 (Draw Score) - 權重 20%
     static_df['排位_int'] = pd.to_numeric(static_df['排位'], errors='coerce').fillna(99)
@@ -1098,7 +1109,8 @@ def calculate_smart_score(race_no):
     
     # 最終靜態加權公式
     static_df['TotalFormScore'] = (static_df['FormScore'] * 0.4) + \
-                                  (static_df['SynergyScore'] * 0.3) + \
+                                  (static_df['JockeyScore'] * 0.15) + \
+                                  (static_df['TrainerScore'] * 0.15) + \
                                   (static_df['DrawScore'] * 0.2) + \
                                   (static_df['RatingDiffScore'] * 0.1)
     
@@ -1171,7 +1183,6 @@ def calculate_smart_score_static(race_no):
     st.session_state.trainer_ranking_df=get_trainer_ranking()
     j_df = st.session_state.jockey_ranking_df
     t_df = st.session_state.trainer_ranking_df
-    st.write(j_df)
     static_df['JockeyScore'] = static_df['騎師'].apply(
         lambda x: calculate_jockey_score(str(x).strip(), j_df)
     )
