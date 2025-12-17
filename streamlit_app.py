@@ -544,7 +544,148 @@ def change_overall(time_now):
   total_investment_df = pd.DataFrame([total_investment],index = [time_now])
   st.session_state.diff_dict['overall'] = st.session_state.diff_dict['overall']._append(total_investment_df)
 # ==================== 3. 繪圖函數 (簡化版) ====================
+def print_bar_chart(time_now):
+  post_time = st.session_state.post_time_dict[race_no]
+  time_25_minutes_before = np.datetime64(post_time - timedelta(minutes=25) + timedelta(hours=8))
+  time_5_minutes_before = np.datetime64(post_time - timedelta(minutes=5) + timedelta(hours=8))
+  
+  for method in print_list:
+      odds_list = pd.DataFrame()
+      df = pd.DataFrame()
+      if method == 'overall':
+          df = st.session_state.overall_investment_dict[method]
+          change_data = st.session_state.diff_dict[method].iloc[-1]
+      elif method == 'WIN&QIN':
+          df = st.session_state.overall_investment_dict['WIN'] + st.session_state.overall_investment_dict['QIN']
+          change_data_1 = st.session_state.diff_dict['WIN'].tail(10).sum(axis = 0) 
+          change_data_2 = st.session_state.diff_dict['QIN'].tail(10).sum(axis = 0)
+          odds_list = st.session_state.odds_dict['WIN']
+      elif method == 'PLA&QPL':
+          df = st.session_state.overall_investment_dict['PLA'] + st.session_state.overall_investment_dict['QPL']
+          change_data_1 = st.session_state.diff_dict['PLA'].tail(10).sum(axis=0)
+          change_data_2 = st.session_state.diff_dict['QPL'].tail(10).sum(axis=0)
+          odds_list = st.session_state.odds_dict['PLA']
+      elif method in methodlist:
+          df = st.session_state.overall_investment_dict[method]
+          change_data_1 = st.session_state.diff_dict[method].tail(10).sum(axis = 0)
+          change_data_2 = pd.Series(0, index=df.columns)
+          odds_list = st.session_state.odds_dict[method]
+      if df.empty:
+        continue
+      fig, ax1 = plt.subplots(figsize=(12, 6))
+      df.index = pd.to_datetime(df.index)
+      df_1st = pd.DataFrame()
+      df_1st_2nd = pd.DataFrame()
+      df_2nd = pd.DataFrame()
+      #df_3rd = pd.DataFrame()
+      df_1st = df[df.index< time_25_minutes_before].tail(1)
+      df_1st_2nd = df[df.index >= time_25_minutes_before].head(1)
+      df_2nd = df[df.index >= time_25_minutes_before].tail(1)
+      df_3rd = df[df.index>= time_5_minutes_before].tail(1)
+       
+      change_df_1 = pd.DataFrame([change_data_1.apply(lambda x: x*6 if x > 0 else x*3)],columns=change_data_1.index,index =[df.index[-1]])
+      change_df_2 = pd.DataFrame([change_data_2.apply(lambda x: x*6 if x > 0 else x*3)],columns=change_data_2.index,index =[df.index[-1]])
 
+      if method in ['WIN', 'PLA', 'WIN&QIN','PLA&QPL']:
+        odds_list.index = pd.to_datetime(odds_list.index)
+        odds_1st = odds_list[odds_list.index< time_25_minutes_before].tail(1)
+        odds_2nd = odds_list[odds_list.index >= time_25_minutes_before].tail(1)
+        #odds_3rd = odds_list[odds_list.index>= time_5_minutes_before].tail(1)
+
+      bars_1st = None
+      bars_2nd = None
+      #bars_3rd = None
+      # Initialize data_df
+      if not df_1st.empty:
+          data_df = df_1st
+          data_df = data_df._append(df_2nd)
+      elif not df_1st_2nd.empty:
+          data_df = df_1st_2nd
+          if not df_2nd.empty and not df_2nd.equals(df_1st_2nd):  # Avoid appending identical df_2nd
+              data_df = data_df._append(df_2nd)
+      else:
+          data_df = pd.DataFrame()  # Fallback if both are empty
+      #final_data_df = data_df._append(df_3rd)
+      final_data_df = data_df
+      sorted_final_data_df = final_data_df.sort_values(by=final_data_df.index[0], axis=1, ascending=False)
+      diff = sorted_final_data_df.diff().dropna()
+      diff[diff < 0] = 0
+      X = sorted_final_data_df.columns
+      X_axis = np.arange(len(X))
+      sorted_change_1 = change_df_1[X]
+      sorted_change_2 = change_df_2[X]
+      if df_3rd.empty:
+                  bar_colour = 'blue'
+      else:
+                  bar_colour = 'red'
+      if not df_1st.empty:
+          if df_2nd.empty:
+                bars_1st = ax1.bar(X_axis, sorted_final_data_df.iloc[0], 0.4, label='投注額', color='pink')
+          else:
+                bars_2nd = ax1.bar(X_axis - 0.2, sorted_final_data_df.iloc[1], 0.4, label='25分鐘', color=bar_colour)
+                bar = ax1.bar(X_axis+0.2,sorted_change_1.iloc[0],0.4,label='WIN/PLA改變',color='grey')
+                if not sorted_change_2.empty:
+                    bar = ax1.bar(X_axis+0.2,sorted_change_2.iloc[0].clip(lower=0),0.4,label='QIN/QPL改變',color='green',bottom = sorted_change_1.iloc[0].clip(lower=0))
+                    bar = ax1.bar(X_axis+0.2,sorted_change_2.iloc[0].clip(upper=0),0.4,color='green',bottom = sorted_change_1.iloc[0].clip(upper=0))
+                    
+                #if not df_3rd.empty:
+                    #bars_3rd = ax1.bar(X_axis, diff.iloc[0], 0.3, label='5分鐘', color='red')
+      else:
+            if df_2nd.equals(df_1st_2nd):
+              bars_2nd = ax1.bar(X_axis - 0.2, sorted_final_data_df.iloc[0], 0.4, label='25分鐘', color=bar_colour)
+            else:
+                bars_2nd = ax1.bar(X_axis - 0.2, sorted_final_data_df.iloc[1], 0.4, label='25分鐘', color=bar_colour)
+                bar = ax1.bar(X_axis+0.2,sorted_change_1.iloc[0],0.4,label='WIN/PLA改變',color='grey')
+                if not sorted_change_2.empty:
+                    bar = ax1.bar(X_axis+0.2,sorted_change_2.iloc[0].clip(lower=0),0.4,label='QIN/QPL改變',color='green',bottom = sorted_change_1.iloc[0].clip(lower=0))
+                    bar = ax1.bar(X_axis+0.2,sorted_change_2.iloc[0].clip(upper=0),0.4,color='green',bottom = sorted_change_1.iloc[0].clip(upper=0))
+                #if not df_3rd.empty:
+                    #bars_3rd = ax1.bar(X_axis, diff.iloc[0], 0.3, label='5分鐘', color='red')
+            #else:
+                #bars_3rd = ax1.bar(X_axis-0.2, sorted_final_data_df.iloc[0], 0.4, label='5分鐘', color='red')
+                #bar = ax1.bar(X_axis+0.2,sorted_change_df.iloc[0],0.4,label='改變',color='grey')
+
+      # Add numbers above bars
+      if method in ['WIN', 'PLA','WIN&QIN','PLA&QPL']:
+        if bars_2nd is not None:
+          sorted_odds_list_2nd = odds_2nd[X].iloc[0]
+          for bar, odds in zip(bars_2nd, sorted_odds_list_2nd):
+              yval = bar.get_height()
+              ax1.text(bar.get_x() + bar.get_width() / 2, yval, odds, ha='center', va='bottom')
+        #if bars_3rd is not None:
+          #sorted_odds_list_3rd = odds_3rd[X].iloc[0]
+          #for bar, odds in zip(bars_3rd, sorted_odds_list_3rd):
+               # yval = bar.get_height()
+                #ax1.text(bar.get_x() + bar.get_width() / 2, yval, odds, ha='center', va='bottom')
+        elif bars_1st is not None:
+          sorted_odds_list_1st = odds_1st[X].iloc[0]
+          for bar, odds in zip(bars_1st, sorted_odds_list_1st):
+              yval = bar.get_height()
+              ax1.text(bar.get_x() + bar.get_width() / 2, yval, odds, ha='center', va='bottom')
+
+      namelist_sort = [numbered_dict[race_no][i - 1] for i in X]
+      formatted_namelist = [label.split('.')[0] + '.' + '\n'.join(label.split('.')[1]) for label in namelist_sort]
+      plt.xticks(X_axis, formatted_namelist, fontsize=12)
+      ax1.grid(color='lightgrey', axis='y', linestyle='--')
+      ax1.set_ylabel('投注額',fontsize=15)
+      ax1.tick_params(axis='y')
+      fig.legend()
+
+      if method == 'overall':
+          plt.title('綜合', fontsize=15)
+      elif method == 'QIN':
+          plt.title('連贏', fontsize=15)
+      elif method == 'QPL':
+          plt.title('位置Q', fontsize=15)
+      elif method == 'WIN':
+          plt.title('獨贏', fontsize=15)
+      elif method == 'PLA':
+          plt.title('位置', fontsize=15)
+      elif method == 'WIN&QIN':
+          plt.title('獨贏及連贏', fontsize=15)
+      elif method == 'PLA&QPL':
+          plt.title('位置及位置Q', fontsize=15)          
+      st.pyplot(fig)
 def print_bubble(race_no, print_list):
     # 確保有數據
     if 'WIN' not in st.session_state.overall_investment_dict or st.session_state.overall_investment_dict['WIN'].empty:
@@ -1314,7 +1455,7 @@ if monitoring_on:
         
         # A. 氣泡圖 (資金流向視覺化)
         print_bubble(race_no, print_list)
-        
+        print_bar_chart(time_now)
         
         # B. 實時預測排名
         st.markdown("### 🤖 實時資金流綜合預測排名")
