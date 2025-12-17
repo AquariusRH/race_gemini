@@ -1451,9 +1451,6 @@ st.session_state.diff_dict.setdefault('overall', pd.DataFrame())
 # ==================== 5. 監控與顯示邏輯 (使用 Fragment 避免閃爍) ====================
 
 if monitoring_on:
-    start_time = time.time()
-    end_time = start_time + 60*10000
-    while time.time() <= end_time:
         # --- 實時監控模式 (比賽當日) ---
         st.markdown("### 🟢 實時監控與資金流預測中...")
         placeholder = st.empty()
@@ -1545,6 +1542,7 @@ if monitoring_on:
                 st.info(f"💡 AI 實時建議：目前綜合數據最強的是 **{display_df.index[0]}號馬** (基於資金流、賠率和近績)。")
            
         time.sleep(15)
+        st.rerun()
 
 
 else:
