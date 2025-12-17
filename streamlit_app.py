@@ -63,8 +63,8 @@ def init_session_state():
         'ucb_dict': {},
         'api_called': False,
         'last_update': None,
-        'jockey_data': [],
-        'trainer_data': []
+        'jockey_ranking_df': pd.DataFrame(),
+        'trainer_ranking_df': pd.DataFrame()
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -1155,24 +1155,22 @@ def calculate_smart_score_static(race_no):
     static_df['FormScore'] = static_df['近績'].apply(parse_form_score)
     
     # 2. 騎師分數 (Jockey Score) - 權重 15% (取代部分 Synergy)
-    jockey_df = st.session_state.get('jockey_ranking_df', pd.DataFrame())
-    st.write(jockey_df)
-    trainer_df = st.session_state.get('trainer_ranking_df', pd.DataFrame())
-    st.write(trainer_df)
-    if '騎師' in static_df.columns:
-        static_df['JockeyScore'] = static_df['騎師'].apply(
-            lambda x: calculate_jockey_score(x, jockey_df)
-        )
-    else:
-        static_df['JockeyScore'] = 50.0
+    if st.session_state['jockey_ranking_df'].empty:
+        get_jockey_ranking() # 你的函數現在會自動寫入 st.session_state
         
-    # 3. 練馬師分數 (Trainer Score) - 權重 15% (取代部分 Synergy)
-    if '練馬師' in static_df.columns:
-        static_df['TrainerScore'] = static_df['練馬師'].apply(
-            lambda x: calculate_trainer_score(x, trainer_df)
-        )
-    else:
-        static_df['TrainerScore'] = 50.0
+    if st.session_state['trainer_ranking_df'].empty:
+        get_trainer_ranking()
+
+    j_df = st.session_state['jockey_ranking_df']
+    t_df = st.session_state['trainer_ranking_df']
+    static_df['JockeyScore'] = static_df['騎師'].apply(
+        lambda x: calculate_jockey_score(str(x).strip(), j_df)
+    )
+    
+    # 練馬師分數 (15%)
+    static_df['TrainerScore'] = static_df['練馬師'].apply(
+        lambda x: calculate_trainer_score(str(x).strip(), t_df)
+    )
     
     # 3. 適應性分數 (Adaptability Score) - 權重 20%
     # 排位（檔位）：在該場地/距離下，外檔或內檔表現如何？
