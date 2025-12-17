@@ -1349,10 +1349,6 @@ if not monitoring_on: # 只有當實時監控關閉時，才提供靜態預測
     
     # 執行靜態預測
     static_prediction_df = calculate_smart_score_static(race_no)
-    jockey_ranking = get_jockey_ranking()
-    st.write(jockey_ranking)
-    trainer_ranking = get_trainer_ranking()
-    st.write(trainer_ranking)
     if not static_prediction_df.empty:
         # 整理顯示格式
         display_df = static_prediction_df.copy()
