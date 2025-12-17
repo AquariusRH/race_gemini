@@ -1290,7 +1290,7 @@ if monitoring_on:
         st.metric("最後更新", st.session_state.last_update.strftime('%H:%M:%S') if st.session_state.last_update else "N/A")
         
         # A. 氣泡圖 (資金流向視覺化)
-        print_bar_chart(time_now)
+        print_bubble(race_no, print_list)
         
         
         # B. 實時預測排名
