@@ -326,7 +326,84 @@ def get_jockey_ranking():
 #     print(json.dumps(ranking[:3], indent=2, ensure_ascii=False))
 # else:
 #     print("Failed to retrieve or parse ranking data.")
+def extract_trainer_data(html_content):
+    """
+    從香港賽馬會練馬師排名 HTML 內容中提取數據，並返回一個 Pandas DataFrame。
+    (Extracts trainer ranking data from HKJC HTML and returns a Pandas DataFrame.)
+    """
+    soup = BeautifulSoup(html_content, 'html.parser')
     
+    # 練馬師排名的表格同樣使用 'table_bd' class
+    ranking_table = soup.select_one('table.table_bd')
+    
+    if not ranking_table:
+        # 如果找不到表格，返回空的 DataFrame
+        return pd.DataFrame() 
+
+    trainer_data = []
+    
+    # 練馬師排名的欄位標題:
+    # Trainer, 1st, 2nd, 3rd, 4th, 5th, Total Runs, Prize Money
+    headers_chinese = ["練馬師", "冠", "亞", "季", "殿", "第五", "總出賽次數", "所贏獎金"]
+
+    # 數據同樣位於 class 為 'f_tac f_fs12' 的 tbody 標籤中
+    # (現役練馬師 和 其他練馬師)
+    data_sections = ranking_table.find_all('tbody', class_='f_tac f_fs12')
+    
+    for tbody in data_sections:
+        for row in tbody.find_all('tr'):
+            td_elements = row.find_all('td')
+            
+            # 確保行中有 8 個數據欄位
+            if len(td_elements) != len(headers_chinese):
+                continue
+
+            row_data = {}
+            
+            # 1. 提取練馬師名稱 (位於 <a> 標籤內)
+            trainer_cell = td_elements[0].find('a')
+            row_data["練馬師"] = trainer_cell.get_text(strip=True) if trainer_cell else td_elements[0].get_text(strip=True)
+            
+            # 2. 提取數字數據
+            for i in range(1, len(headers_chinese)):
+                header = headers_chinese[i]
+                raw_value = td_elements[i].get_text(strip=True)
+                
+                # 清理貨幣符號和逗號
+                clean_value = re.sub(r'[$,]', '', raw_value)
+                try:
+                    row_data[header] = int(clean_value)
+                except ValueError:
+                    row_data[header] = 0
+            
+            trainer_data.append(row_data)
+
+    # 將字典列表轉換為 DataFrame
+    return pd.DataFrame(trainer_data)
+
+
+def get_trainer_ranking():
+    """
+    獲取香港賽馬會練馬師排名頁面，並將數據提取為 DataFrame。
+    (Fetches the HKJC Trainer Ranking page and returns the data as a DataFrame.)
+    """
+    url = "https://racing.hkjc.com/racing/information/Chinese/Trainers/TrainerRanking.aspx"
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+    
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status() # 檢查 HTTP 請求是否成功
+        
+        # 將 HTML 內容傳遞給提取函數
+        df = extract_trainer_data(response.text)
+        return df
+
+    except requests.exceptions.RequestException as e:
+        print(f"Request Error: {e}")
+        return pd.DataFrame() # 請求失敗時返回空的 DataFrame
+        
 def save_odds_data(time_now,odds):
   for method in methodlist:
       if method in ['WIN', 'PLA']:
@@ -1193,6 +1270,8 @@ if not monitoring_on: # 只有當實時監控關閉時，才提供靜態預測
     static_prediction_df = calculate_smart_score_static(race_no)
     jockey_ranking = get_jockey_ranking()
     st.write(jockey_ranking)
+    trainer_ranking = get_trainer_ranking()
+    st.write(trainer_ranking)
     if not static_prediction_df.empty:
         # 整理顯示格式
         display_df = static_prediction_df.copy()
