@@ -1536,37 +1536,42 @@ if monitoring_on:
 else:
     # 4. 賽前預測模式 (靜態)
     st.markdown("### 🔍 賽前靜態預測分析")
-    st.info("由於缺乏實時賠率數據，本分析基於騎練、檔位等靜態資訊。")
-    
+    st.info("由於缺乏實時賠率和資金流數據，本分析完全基於馬匹、騎師和場地等靜態資訊。")
+
+    # 執行靜態預測
     static_prediction_df = calculate_smart_score_static(race_no)
     if not static_prediction_df.empty:
+        # 整理顯示格式
         display_df = static_prediction_df.copy()
-        
-        # 整理欄位
-        display_df['馬匹'] = display_df['馬號'].astype(str) + ". " + display_df['馬名']
-        display_df = display_df[['馬匹', 'FormScore', 'JockeyScore', 'TrainerScore', 
-                                 'DrawScore', 'RatingDiffScore', 'TotalScore']]
-        display_df.columns = ['馬匹','近績狀態','騎師分','練馬師分', '檔位優勢', '評分負擔', '🏆 靜態預測分']
-        
-        # 格式化數值
-        cols_to_fix = ['近績狀態','騎師分','練馬師分', '檔位優勢', '評分負擔']
-        display_df[cols_to_fix] = display_df[cols_to_fix].astype(float).round(0).astype(int)
-        display_df['🏆 靜態預測分'] = display_df['🏆 靜態預測分'].apply(lambda x: f"{float(x):.1f}")
+        display_df = display_df[['馬名', 'FormScore', 'JockeyScore', 'TrainerScore', 
+                   'DrawScore', 'RatingDiffScore', 'TotalScore']]
+        display_df.columns = ['馬名','近績狀態分','騎師分','練馬師分', '檔位優勢分', '評分負擔分', '🏆 靜態預測分']
+
+        # 格式化
+        display_df['近績狀態分'] = display_df['近績狀態分'].astype(int)
+        display_df['騎師分'] = display_df['騎師分'].astype(int)
+        display_df['練馬師分'] = display_df['練馬師分'].astype(int)
+        display_df['檔位優勢分'] = display_df['檔位優勢分'].astype(int)
+        display_df['評分負擔分'] = display_df['評分負擔分'].astype(int)
+        display_df['🏆 靜態預測分'] = display_df['🏆 靜態預測分'].apply(lambda x: f"{x:.1f}")
+
+        # 高亮處理...
+        # （與前一回答中的高亮邏輯相同）
 
         def highlight_top_static(row):
-            # 靜態分數高亮邏輯
-            try:
-                curr_score = float(row['🏆 靜態預測分'])
-                all_static_scores = static_prediction_df['TotalScore'].astype(float)
-                if curr_score >= all_static_scores.max():
-                    return ['background-color: #ffcccc'] * len(row)
-                elif curr_score >= all_static_scores.nlargest(3).iloc[-1]:
-                    return ['background-color: #ffffcc'] * len(row)
-            except:
-                pass
-            return [''] * len(row)
+            top_score = static_prediction_df['TotalScore'].max()
+            current_score = row['TotalScore'] if 'TotalScore' in row else 0
+            
+            if current_score >= top_score:
+                return ['background-color: #ffcccc'] * len(row)
+            elif current_score >= static_prediction_df['TotalScore'].nlargest(3).iloc[-1]:
+                return ['background-color: #ffffcc'] * len(row)
+            else:
+                return [''] * len(row)
+
+
 
         st.dataframe(display_df.style.apply(highlight_top_static, axis=1), use_container_width=True)
-        
-        top_horse_static = display_df['馬匹'].iloc[0]
-        st.success(f"🏅 賽前靜態預測：**{top_horse_static}** 具有最佳的綜合優勢。")
+
+        top_horse_static = display_df.index[0]
+        st.success(f"🏅 賽前靜態預測：**{top_horse_static}號馬** 具有最佳的**近績與排位**組合優勢。")
