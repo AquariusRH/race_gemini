@@ -662,8 +662,7 @@ def print_bar_chart(time_now):
           for bar, odds in zip(bars_1st, sorted_odds_list_1st):
               yval = bar.get_height()
               ax1.text(bar.get_x() + bar.get_width() / 2, yval, odds, ha='center', va='bottom')
-      namelist_raw = st.session_state.race_dataframes[race_no]
-      st.write(namelist_raw)
+      namelist_raw = st.session_state.race_dataframes[race_no]['馬名']
       namelist_sort =  [namelist_raw[i - 1] for i in X]
       #formatted_namelist = [label.split('.')[0] + '.' + '\n'.join(label.split('.')[1]) for label in namelist_sort]
       
@@ -1050,7 +1049,6 @@ def fetch_race_card(date_str, venue):
                             "騎師": r['jockey']['name_ch'] if r['jockey'] else '',
                             "練馬師": r['trainer']['name_ch'] if r['trainer'] else '',
                             "近績": r.get('last6run', ''),
-                            '馬號馬名':str(r['no'] + '.' + r['name_ch']),
                             
                             # 使用轉換後的數值
                             "評分": rating_val,
