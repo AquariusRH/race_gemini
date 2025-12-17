@@ -585,6 +585,28 @@ def print_bubble(race_no, print_list):
             df = df[df['總投注量'] > 0] # Filter out scratched
             if df.empty: continue
 
+            HK_TZ = timezone(timedelta(hours=8))
+            now_naive = datetime.now()
+            now = now_naive + datere.relativedelta(hours=8)
+            now = now.replace(tzinfo=HK_TZ)
+            post_time_raw = st.session_state.post_time_dict.get(race_no)
+            
+            if post_time_raw is None:
+                time_str = "未載入"
+            else:
+                # 確保 post_time 也有時區
+                if post_time_raw.tzinfo is None:
+                    post_time = post_time_raw.replace(tzinfo=HK_TZ)
+                else:
+                    post_time = post_time_raw  # 已有時區
+            
+                seconds_left = (post_time - now).total_seconds()
+                
+                if seconds_left <= 0:
+                    time_str = "已開跑"
+                else:
+                    minutes = int(seconds_left // 60)
+                    time_str = f"離開跑 {minutes} 分"
             # Normalization for bubble size
             raw_size = df['總投注量']
             bubble_size = 20 + (raw_size - raw_size.min()) / (raw_size.max() - raw_size.min() + 1e-6) * 80
@@ -613,7 +635,7 @@ def print_bubble(race_no, print_list):
             fig.add_hline(y=0, line_color="lightgrey")
             fig.add_vline(x=0, line_color="lightgrey")
             fig.update_layout(
-                title=f"{method} 氣泡圖 (第{race_no}場)",
+                title=f"{method} 氣泡圖 (第{race_no}場) | {time_str}",
                 xaxis_title=method_name[0],
                 yaxis_title=method_name[1],
                 height=500,
