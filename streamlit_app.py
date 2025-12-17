@@ -1050,7 +1050,7 @@ def fetch_race_card(date_str, venue):
                             "騎師": r['jockey']['name_ch'] if r['jockey'] else '',
                             "練馬師": r['trainer']['name_ch'] if r['trainer'] else '',
                             "近績": r.get('last6run', ''),
-                            '馬號馬名':r['no'] + '.' + r['name_ch'],
+                            '馬號馬名':str(r['no'] + '.' + r['name_ch']),
                             
                             # 使用轉換後的數值
                             "評分": rating_val,
