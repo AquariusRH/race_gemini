@@ -663,7 +663,6 @@ def print_bar_chart(time_now):
               yval = bar.get_height()
               ax1.text(bar.get_x() + bar.get_width() / 2, yval, odds, ha='center', va='bottom')
       namelist_raw = st.session_state.numbered_list_dict.get(race_no)  
-      st.write(namelist_raw)
       namelist_sort =  [namelist_raw[i - 1] for i in X]
       #formatted_namelist = [label.split('.')[0] + '.' + '\n'.join(label.split('.')[1]) for label in namelist_sort]
       
@@ -1404,6 +1403,7 @@ if not st.session_state.api_called:
             st.session_state.race_dataframes = {k: v['df'] for k,v in race_card_data.items()}
             st.session_state.post_time_dict = {k: v['post_time'] for k,v in race_card_data.items()}
             st.session_state.numbered_list_dict = {k: v['numbered_list'] for k,v in race_card_data.items()}
+            st.write({k: v['numbered_list'] for k,v in race_card_data.items()})
             st.session_state.api_called = True
 
 # --- 顯示賽事資訊 ---
