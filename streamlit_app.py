@@ -62,7 +62,8 @@ def init_session_state():
         'race_dataframes': {},
         'ucb_dict': {},
         'api_called': False,
-        'last_update': None
+        'last_update': None,
+        'jockey_data': []
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -252,102 +253,71 @@ def get_odds_data():
       print(f"Error: {response.status_code}")
 def extract_jockey_data(html_content):
     """
-    Extracts jockey ranking data from the HKJC HTML content.
-
-    Args:
-        html_content (str): The HTML string containing the jockey ranking tables.
-
-    Returns:
-        list: A list of dictionaries, where each dictionary represents a jockey.
+    Extracts jockey ranking data from HKJC HTML and returns a Pandas DataFrame.
     """
-    # 1. Parse the HTML content
-    # 
     soup = BeautifulSoup(html_content, 'html.parser')
-    
-    # 2. Find the main ranking table (it has class 'table_bd')
-    # Note: Use select_one to find the single instance of the table
     ranking_table = soup.select_one('table.table_bd')
     
     if not ranking_table:
-        print("Error: Ranking table not found in HTML.")
-        return []
+        return pd.DataFrame() # Return empty DF if table not found
 
     jockey_data = []
-
-    # Define the column headers in Chinese (to use as dictionary keys)
-    # They correspond to: Jockey, 1st, 2nd, 3rd, 4th, 5th, Total Runs, Prize Money
     headers_chinese = ["騎師", "冠", "亞", "季", "殿", "第五", "總出賽次數", "所贏獎金"]
 
-    # Get all <tr> elements from the <tbody> sections within the main table
-    # We target tr elements directly under tbody to skip the header and section rows 
-    # that span multiple columns (like '在港現役騎師' and '其他').
-    data_rows = ranking_table.find_all('tbody', class_='f_tac f_fs12')
+    # Locate the specific data-containing tbodies
+    data_sections = ranking_table.find_all('tbody', class_='f_tac f_fs12')
     
-    # Iterate through both tbody sections (Active Jockeys and Others)
-    for tbody in data_rows:
+    for tbody in data_sections:
         for row in tbody.find_all('tr'):
-            # Find all data cells in the row
             td_elements = row.find_all('td')
             
-            # Skip rows that are separators or don't have the expected number of columns (8)
             if len(td_elements) != len(headers_chinese):
                 continue
 
             row_data = {}
             
-            # 3a. Jockey Name (Column 0: inside an <a> tag)
+            # 1. Extract Jockey Name
             jockey_cell = td_elements[0].find('a')
-            jockey_name = jockey_cell.get_text(strip=True) if jockey_cell else td_elements[0].get_text(strip=True)
-            row_data[headers_chinese[0]] = jockey_name
+            row_data["騎師"] = jockey_cell.get_text(strip=True) if jockey_cell else td_elements[0].get_text(strip=True)
             
-            # 3b. Numeric Data (Columns 1-7)
+            # 2. Extract Numbers
             for i in range(1, len(headers_chinese)):
-                value = td_elements[i].get_text(strip=True)
                 header = headers_chinese[i]
+                raw_value = td_elements[i].get_text(strip=True)
                 
-                if header == "所贏獎金":
-                    # Clean up the prize money string: remove '$' and ','
-                    # e.g., '$95,375,070' -> '95375070'
-                    cleaned_value = re.sub(r'[$,]', '', value)
-                    try:
-                        row_data[header] = int(cleaned_value)
-                    except ValueError:
-                        row_data[header] = 0 # Handle unexpected data gracefully
-                else:
-                    # Convert other columns (wins, runs) to integers
-                    try:
-                        row_data[header] = int(value)
-                    except ValueError:
-                        row_data[header] = 0 # Handle unexpected data gracefully
+                # Clean currency and commas
+                clean_value = re.sub(r'[$,]', '', raw_value)
+                try:
+                    row_data[header] = int(clean_value)
+                except ValueError:
+                    row_data[header] = 0
             
             jockey_data.append(row_data)
 
-    return jockey_data
+    # Convert the list of dictionaries to a DataFrame immediately
+    return pd.DataFrame(jockey_data)
 
 
 def get_jockey_ranking():
     """
-    Fetches the HKJC Jockey Ranking page and extracts the data into a structured list.
+    Fetches the HKJC page and returns the jockey rankings as a DataFrame.
     """
     url = "https://racing.hkjc.com/racing/information/Chinese/Jockey/JockeyRanking.aspx"
-    
-    # Define a standard browser User-Agent
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     }
     
     try:
-        response = requests.get(url, headers=headers, timeout=10) # Added timeout
-        response.raise_for_status() # Raises an HTTPError for bad responses (4xx or 5xx)
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
         
-        # Pass the HTML text to the extraction function
-        jockey_ranking_list = extract_jockey_data(response.text)
-        
-        return jockey_ranking_list
+        # This now returns a DataFrame instead of a list
+        df = extract_jockey_data(response.text)
+        return df
 
     except requests.exceptions.RequestException as e:
-        print(f"An error occurred during the HTTP request: {e}")
-        return None
+        print(f"Request Error: {e}")
+        return pd.DataFrame() # Return empty DF on error
 
 # --- Example of running the function ---
 # ranking = get_jockey_ranking()
