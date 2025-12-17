@@ -1540,6 +1540,11 @@ if monitoring_on:
             # 應用高亮函數
             st.dataframe(display_df.style.apply(highlight_top_realtime, axis=1), use_container_width=True)
             st.info(f"💡 AI 實時建議：目前綜合數據最強的是 **{display_df.index[0]}號馬** (基於資金流、賠率和近績)。")
+       
+    time.sleep(15)
+    st.rerun()
+
+
 else:
     # 4. 賽前預測模式 (靜態)
     st.markdown("### 🔍 賽前靜態預測分析")
