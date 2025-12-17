@@ -1037,7 +1037,13 @@ def fetch_race_card(date_str, venue):
                         # 將馬號轉換為數字並排序，確保順序正確
                         df['馬號_int'] = pd.to_numeric(df['馬號'], errors='coerce')
                         df = df.sort_values("馬號_int").drop(columns=['馬號_int']).set_index("馬號")
-                    
+                    numbered_dict = {}
+                    for race_number in race_dict:
+                            df = pd.DataFrame(race_dict[race_number])
+                            df.index += 1
+                            numbered_list = [f"{i+1}. {name}" for i, name in enumerate(race_dict[race_number]['馬名'])]
+                            numbered_dict[race_number] = numbered_list
+                    st.session_state.numbered_dict = numbered_dict
                     # Post Time
                     pt_str = race.get("postTime")
                     pt = datetime.fromisoformat(pt_str) if pt_str else None
