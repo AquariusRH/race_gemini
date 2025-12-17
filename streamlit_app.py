@@ -1451,98 +1451,100 @@ st.session_state.diff_dict.setdefault('overall', pd.DataFrame())
 # ==================== 5. 監控與顯示邏輯 (使用 Fragment 避免閃爍) ====================
 
 if monitoring_on:
-    # --- 實時監控模式 (比賽當日) ---
-    st.markdown("### 🟢 實時監控與資金流預測中...")
-    placeholder = st.empty()
-    time_now = datetime.now()
-    time_str = time_now.strftime('%H:%M:%S')
-
-    # 1. 抓取數據 (這裡需要您的實際抓取邏輯)
-
-
-    odds = get_odds_data()
-    investments = get_investment_data()
-
-    if odds and investments:
-        with st.spinner(f"更新數據中 ({time_str})..."):
-            # 2. 處理數據
-            # 這裡需要您的 
-            save_odds_data(time_now,odds)
-            save_investment_data(time_now,investments,odds)
-            get_overall_investment(time_now,investments)
-            weird_data(investments)
-            change_overall(time_now)
-            # 由於篇幅限制，假設已運行
-            st.session_state.last_update = time_now
-
-    # 3. 顯示結果
-    with placeholder.container():
-        st.metric("最後更新", st.session_state.last_update.strftime('%H:%M:%S') if st.session_state.last_update else "N/A")
-        
-        # A. 氣泡圖 (資金流向視覺化)
-        #print_bubble(race_no, print_list)
-        print_bar_chart(time_now)
-
-        # B. 實時預測排名
-        st.markdown("### 🤖 實時資金流綜合預測排名")
-        prediction_df = calculate_smart_score(race_no)
-
-        if not prediction_df.empty:
-            display_df = prediction_df.copy()
-            display_df = display_df[['馬名','Odds', 'MoneyFlow', 'TotalFormScore', 'TotalScore']]
-            display_df.columns = ['馬名','當前賠率', '近期資金流(K)', '近績評分', '🔥綜合推薦分']
-            display_df['當前賠率'] = display_df['當前賠率'].apply(lambda x: f"{x:.1f}")
-            display_df['近期資金流(K)'] = display_df['近期資金流(K)'].apply(lambda x: f"{x:.1f}")
-            display_df['近績評分'] = display_df['近績評分'].astype(float).round(0).astype('Int64')
-            display_df['🔥綜合推薦分'] = display_df['🔥綜合推薦分'].astype(float).round(0).astype('Int64')
-
-
-            def highlight_top_realtime(row):
-                # 【關鍵修正：檢查 NaN】
-                # 如果 '🔥綜合推薦分' 是 NaN (空值)，則不進行高亮，返回空字串列表
-                if pd.isna(row['🔥綜合推薦分']):
-                    return [''] * len(row)
-        
-                # 這裡假設 prediction_df 已經排序，並取其最大值作為比較基礎
-                # 由於 TotalScore 來自於計算，它應該是 float 或 NaN。
-                top_score = prediction_df['TotalScore'].max()
-                
-                # 【修正：使用 row 的值】
-                # row['🔥綜合推薦分'] 已經是 float 或 Int64 類型，可以直接比較，不需要再次 float() 轉換。
-                current_score = row['🔥綜合推薦分']
-                
-                # 確保 top_score 不是 NaN，避免與 NaN 比較
-                if pd.isna(top_score):
-                    return [''] * len(row)
-        
-                # 比較邏輯
-                # 這裡的比較值應根據您的業務邏輯定義 (例如: 總分最高 vs 總分第二高)
-                # 由於 prediction_df 應該是排序好的，top_score 應該是 prediction_df['TotalScore'].iloc[0] (最高分)
-                
-                # 為了安全，我們使用 max()
-                # 假設您的邏輯是與最高分和第二高分比較：
-
-                # 1. 找出最高分
-                top_score = prediction_df['TotalScore'].max()
-                # 2. 找出第二高分 (如果只有一匹馬，這個會是 NaN 或與最高分相同)
-                second_top_score = prediction_df['TotalScore'].nlargest(2).iloc[-1] if len(prediction_df) >= 2 else top_score
-        
-                # 紅色高亮：最高分
-                if current_score == top_score:
-                    return ['background-color: #ffcccc'] * len(row)
-                # 黃色高亮：第二高分 (或與最高分接近的分數)
-                elif current_score == second_top_score:
-                     return ['background-color: #ffffcc'] * len(row)
-                else:
-                    return [''] * len(row)
-
-
-            # 應用高亮函數
-            st.dataframe(display_df.style.apply(highlight_top_realtime, axis=1), use_container_width=True)
-            st.info(f"💡 AI 實時建議：目前綜合數據最強的是 **{display_df.index[0]}號馬** (基於資金流、賠率和近績)。")
-       
-    time.sleep(15)
-    st.rerun()
+    start_time = time.time()
+    end_time = start_time + 60*10000
+    while time.time() <= end_time:
+        # --- 實時監控模式 (比賽當日) ---
+        st.markdown("### 🟢 實時監控與資金流預測中...")
+        placeholder = st.empty()
+        time_now = datetime.now()
+        time_str = time_now.strftime('%H:%M:%S')
+    
+        # 1. 抓取數據 (這裡需要您的實際抓取邏輯)
+    
+    
+        odds = get_odds_data()
+        investments = get_investment_data()
+    
+        if odds and investments:
+            with st.spinner(f"更新數據中 ({time_str})..."):
+                # 2. 處理數據
+                # 這裡需要您的 
+                save_odds_data(time_now,odds)
+                save_investment_data(time_now,investments,odds)
+                get_overall_investment(time_now,investments)
+                weird_data(investments)
+                change_overall(time_now)
+                # 由於篇幅限制，假設已運行
+                st.session_state.last_update = time_now
+    
+        # 3. 顯示結果
+        with placeholder.container():
+            st.metric("最後更新", st.session_state.last_update.strftime('%H:%M:%S') if st.session_state.last_update else "N/A")
+            
+            # A. 氣泡圖 (資金流向視覺化)
+            #print_bubble(race_no, print_list)
+            print_bar_chart(time_now)
+    
+            # B. 實時預測排名
+            st.markdown("### 🤖 實時資金流綜合預測排名")
+            prediction_df = calculate_smart_score(race_no)
+    
+            if not prediction_df.empty:
+                display_df = prediction_df.copy()
+                display_df = display_df[['馬名','Odds', 'MoneyFlow', 'TotalFormScore', 'TotalScore']]
+                display_df.columns = ['馬名','當前賠率', '近期資金流(K)', '近績評分', '🔥綜合推薦分']
+                display_df['當前賠率'] = display_df['當前賠率'].apply(lambda x: f"{x:.1f}")
+                display_df['近期資金流(K)'] = display_df['近期資金流(K)'].apply(lambda x: f"{x:.1f}")
+                display_df['近績評分'] = display_df['近績評分'].astype(float).round(0).astype('Int64')
+                display_df['🔥綜合推薦分'] = display_df['🔥綜合推薦分'].astype(float).round(0).astype('Int64')
+    
+    
+                def highlight_top_realtime(row):
+                    # 【關鍵修正：檢查 NaN】
+                    # 如果 '🔥綜合推薦分' 是 NaN (空值)，則不進行高亮，返回空字串列表
+                    if pd.isna(row['🔥綜合推薦分']):
+                        return [''] * len(row)
+            
+                    # 這裡假設 prediction_df 已經排序，並取其最大值作為比較基礎
+                    # 由於 TotalScore 來自於計算，它應該是 float 或 NaN。
+                    top_score = prediction_df['TotalScore'].max()
+                    
+                    # 【修正：使用 row 的值】
+                    # row['🔥綜合推薦分'] 已經是 float 或 Int64 類型，可以直接比較，不需要再次 float() 轉換。
+                    current_score = row['🔥綜合推薦分']
+                    
+                    # 確保 top_score 不是 NaN，避免與 NaN 比較
+                    if pd.isna(top_score):
+                        return [''] * len(row)
+            
+                    # 比較邏輯
+                    # 這裡的比較值應根據您的業務邏輯定義 (例如: 總分最高 vs 總分第二高)
+                    # 由於 prediction_df 應該是排序好的，top_score 應該是 prediction_df['TotalScore'].iloc[0] (最高分)
+                    
+                    # 為了安全，我們使用 max()
+                    # 假設您的邏輯是與最高分和第二高分比較：
+    
+                    # 1. 找出最高分
+                    top_score = prediction_df['TotalScore'].max()
+                    # 2. 找出第二高分 (如果只有一匹馬，這個會是 NaN 或與最高分相同)
+                    second_top_score = prediction_df['TotalScore'].nlargest(2).iloc[-1] if len(prediction_df) >= 2 else top_score
+            
+                    # 紅色高亮：最高分
+                    if current_score == top_score:
+                        return ['background-color: #ffcccc'] * len(row)
+                    # 黃色高亮：第二高分 (或與最高分接近的分數)
+                    elif current_score == second_top_score:
+                         return ['background-color: #ffffcc'] * len(row)
+                    else:
+                        return [''] * len(row)
+    
+    
+                # 應用高亮函數
+                st.dataframe(display_df.style.apply(highlight_top_realtime, axis=1), use_container_width=True)
+                st.info(f"💡 AI 實時建議：目前綜合數據最強的是 **{display_df.index[0]}號馬** (基於資金流、賠率和近績)。")
+           
+        time.sleep(15)
 
 
 else:
