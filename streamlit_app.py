@@ -704,9 +704,9 @@ def print_bar_chart(time_now):
       elif method == 'PLA':
           plt.title('位置', fontsize=15)
       elif method == 'WIN&QIN':
-          plt.title(f'獨贏及連贏|{time_str}', fontsize=15)
+          plt.title(f'獨贏及連贏 | {time_str}', fontsize=15)
       elif method == 'PLA&QPL':
-          plt.title(f'位置及位置Q|{time_str}', fontsize=15)          
+          plt.title(f'位置及位置Q | {time_str}', fontsize=15)          
       st.pyplot(fig)
 def print_bubble(race_no, print_list):
     # 確保有數據
