@@ -672,14 +672,14 @@ def print_bar_chart(time_now):
       ax1.tick_params(axis='y')
       fig.legend()
       HK_TZ = timezone(timedelta(hours=8))
-            now_naive = datetime.now()
-            now = now_naive + datere.relativedelta(hours=8)
-            now = now.replace(tzinfo=HK_TZ)
-            post_time_raw = st.session_state.post_time_dict.get(race_no)
+      now_naive = datetime.now()
+      now = now_naive + datere.relativedelta(hours=8)
+      now = now.replace(tzinfo=HK_TZ)
+      post_time_raw = st.session_state.post_time_dict.get(race_no)
             
-            if post_time_raw is None:
+      if post_time_raw is None:
                 time_str = "未載入"
-            else:
+      else:
                 # 確保 post_time 也有時區
                 if post_time_raw.tzinfo is None:
                     post_time = post_time_raw.replace(tzinfo=HK_TZ)
