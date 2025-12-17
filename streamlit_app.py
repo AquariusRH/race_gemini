@@ -663,7 +663,7 @@ def print_bar_chart(time_now):
               yval = bar.get_height()
               ax1.text(bar.get_x() + bar.get_width() / 2, yval, odds, ha='center', va='bottom')
       namelist_raw = st.session_state.race_dataframes[race_no]['馬名']
-      namelist_sort =  [str(i + '.' + namelist_raw[i - 1]) for i in X]
+      namelist_sort =  [str(i) + '.' + str(namelist_raw[i - 1]) for i in X]
       #formatted_namelist = [label.split('.')[0] + '.' + '\n'.join(label.split('.')[1]) for label in namelist_sort]
       
       plt.xticks(X_axis, namelist_sort, fontsize=12)
