@@ -662,9 +662,10 @@ def print_bar_chart(time_now):
           for bar, odds in zip(bars_1st, sorted_odds_list_1st):
               yval = bar.get_height()
               ax1.text(bar.get_x() + bar.get_width() / 2, yval, odds, ha='center', va='bottom')
-
-      namelist_sort = [numbered_dict[race_no][i - 1] for i in X]
+    
+      namelist_sort =  [st.session_state.race_dataframes[race_no][i - 1] for i in X]
       formatted_namelist = [label.split('.')[0] + '.' + '\n'.join(label.split('.')[1]) for label in namelist_sort]
+      
       plt.xticks(X_axis, formatted_namelist, fontsize=12)
       ax1.grid(color='lightgrey', axis='y', linestyle='--')
       ax1.set_ylabel('投注額',fontsize=15)
