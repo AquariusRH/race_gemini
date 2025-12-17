@@ -260,9 +260,9 @@ def get_jockey_ranking():
     try:
         response = requests.get(url, headers=headers) # Pass the headers here
         if response.status_code == 200:
-            jockey_data = response.json()
+            #jockey_data = response.json()
             #text = jockey_data.get("commContent")
-            return jockey_data.text
+            return response.text
         # ... (error handling)
     except requests.exceptions.RequestException:
         return None
