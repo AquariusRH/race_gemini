@@ -12,6 +12,7 @@ import os
 from warnings import simplefilter
 from bs4 import BeautifulSoup
 import re
+from math import log
 simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
 
 # ==================== 0. 頁面與字型設定 ====================
