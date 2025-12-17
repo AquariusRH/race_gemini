@@ -6,3 +6,4 @@ matplotlib
 plotly
 python-dateutil
 scikit-learn
+bs4
