@@ -10,7 +10,7 @@ import matplotlib.font_manager as fm
 import plotly.graph_objects as go
 import os
 from warnings import simplefilter
-
+from bs4 import BeautifulSoup
 simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
 
 # ==================== 0. 頁面與字型設定 ====================
