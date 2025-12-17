@@ -1118,7 +1118,7 @@ if not monitoring_on: # 只有當實時監控關閉時，才提供靜態預測
     if not static_prediction_df.empty:
         # 整理顯示格式
         display_df = static_prediction_df.copy()
-        display_df = display_df[['FormScore', 'DrawScore', 'RatingDiffScore', 'TotalScore']]
+        display_df = display_df[['馬名','FormScore', 'DrawScore', 'RatingDiffScore', 'TotalScore']]
         display_df.columns = ['馬名','近績狀態分', '檔位優勢分', '評分負擔分', '🏆 靜態預測分']
         
         # 格式化
