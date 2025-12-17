@@ -958,7 +958,7 @@ def calculate_jockey_score(jockey_name, ranking_df):
     根據騎師的排名數據計算其專業分數。
     分數基於當前賽季的勝率，並使用對數平滑化來減少極端值影響。
     """
-   if ranking_df is None or ranking_df.empty:
+    if ranking_df is None or ranking_df.empty:
         return 50.0
 
     jockey_row = ranking_df[ranking_df['騎師'] == str(jockey_name).strip()]
