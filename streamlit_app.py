@@ -662,7 +662,7 @@ def print_bar_chart(time_now):
           for bar, odds in zip(bars_1st, sorted_odds_list_1st):
               yval = bar.get_height()
               ax1.text(bar.get_x() + bar.get_width() / 2, yval, odds, ha='center', va='bottom')
-      namelist_raw = st.session_state.numbered_list_dict.get(race_no)  
+      namelist_raw = st.session_state.race_dataframes[race_no]['馬號馬名']  
       namelist_sort =  [namelist_raw[i - 1] for i in X]
       #formatted_namelist = [label.split('.')[0] + '.' + '\n'.join(label.split('.')[1]) for label in namelist_sort]
       
@@ -1061,14 +1061,13 @@ def fetch_race_card(date_str, venue):
                         # 將馬號轉換為數字並排序，確保順序正確
                         df['馬號_int'] = pd.to_numeric(df['馬號'], errors='coerce')
                         df['馬號馬名'] = df['馬號'].astype(str) + ". " + df['馬名']
-                        numbered_list = df['馬號馬名'].tolist()
                         df = df.sort_values("馬號_int").drop(columns=['馬號_int']).set_index("馬號")
                     
                     # Post Time
                     pt_str = race.get("postTime")
                     pt = datetime.fromisoformat(pt_str) if pt_str else None
                     
-                    race_info[r_no] = {"df": df, "post_time": pt,"numbered_list": numbered_list}
+                    race_info[r_no] = {"df": df, "post_time": pt}
             return race_info
     except Exception as e:
         print(e)
@@ -1402,8 +1401,6 @@ if not st.session_state.api_called:
         if race_card_data:
             st.session_state.race_dataframes = {k: v['df'] for k,v in race_card_data.items()}
             st.session_state.post_time_dict = {k: v['post_time'] for k,v in race_card_data.items()}
-            st.session_state.numbered_list_dict = {k: v['numbered_list'] for k,v in race_card_data.items()}
-            st.write({k: v['numbered_list'] for k,v in race_card_data.items()})
             st.session_state.api_called = True
 
 # --- 顯示賽事資訊 ---
