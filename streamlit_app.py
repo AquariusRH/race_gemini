@@ -249,7 +249,22 @@ def get_odds_data():
 
   else:
       print(f"Error: {response.status_code}")
-
+def get_jockey_ranking():
+    url = "https://racing.hkjc.com/racing/information/Chinese/Jockey/JockeyRanking.aspx"
+    
+    # Define a standard browser User-Agent
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+    
+    try:
+        response = requests.get(url, headers=headers) # Pass the headers here
+        if response.status_code == 200:
+            return response.text
+        # ... (error handling)
+    except requests.exceptions.RequestException:
+        return None
+    
 def save_odds_data(time_now,odds):
   for method in methodlist:
       if method in ['WIN', 'PLA']:
@@ -1114,7 +1129,8 @@ if not monitoring_on: # 只有當實時監控關閉時，才提供靜態預測
     
     # 執行靜態預測
     static_prediction_df = calculate_smart_score_static(race_no)
-    
+    jockey_ranking = get_jockey_ranking()
+    st.write(jockey_ranking)
     if not static_prediction_df.empty:
         # 整理顯示格式
         display_df = static_prediction_df.copy()
