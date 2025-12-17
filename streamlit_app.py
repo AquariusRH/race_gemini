@@ -595,7 +595,7 @@ def print_bubble(race_no, print_list):
                 mode='markers+text',
                 text=df['horse'],
                 textposition="middle center",
-                textfont=dict(color="white", size=14, weight="bold"),
+                textfont=dict(color="white", size=22, weight="bold"),
                 marker=dict(
                     size=bubble_size,
                     sizemode='area',
@@ -617,7 +617,8 @@ def print_bubble(race_no, print_list):
                 xaxis_title=method_name[0],
                 yaxis_title=method_name[1],
                 height=500,
-                margin=dict(l=20, r=20, t=40, b=20)
+                margin=dict(l=20, r=20, t=40, b=20),
+                dragmode=False
             )
             st.plotly_chart(fig, use_container_width=True)
             
