@@ -977,7 +977,7 @@ def calculate_smart_score_static(race_no):
                        (df['RatingDiffScore'] * 0.1)
                        
     # 清理並輸出
-    df = df[['FormScore', 'DrawScore','RatingDiffScore','TotalScore']] # 這裡的 MoneyFlow 和賠率將是 NaN
+    df = df[['馬名','FormScore', 'DrawScore','RatingDiffScore','TotalScore']] # 這裡的 MoneyFlow 和賠率將是 NaN
     df = df.sort_values('TotalScore', ascending=False)
     
     return df
@@ -1119,7 +1119,7 @@ if not monitoring_on: # 只有當實時監控關閉時，才提供靜態預測
         # 整理顯示格式
         display_df = static_prediction_df.copy()
         display_df = display_df[['FormScore', 'DrawScore', 'RatingDiffScore', 'TotalScore']]
-        display_df.columns = ['近績狀態分', '檔位優勢分', '評分負擔分', '🏆 靜態預測分']
+        display_df.columns = ['馬名','近績狀態分', '檔位優勢分', '評分負擔分', '🏆 靜態預測分']
         
         # 格式化
         display_df['近績狀態分'] = display_df['近績狀態分'].astype(int)
