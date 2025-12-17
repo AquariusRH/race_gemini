@@ -59,7 +59,7 @@ def init_session_state():
         'diff_dict': {},
         'race_dict': {},
         'post_time_dict': {},
-        'numbered_dict': {},
+        'numbered_list_dict': {},
         'race_dataframes': {},
         'ucb_dict': {},
         'api_called': False,
@@ -663,7 +663,7 @@ def print_bar_chart(time_now):
               yval = bar.get_height()
               ax1.text(bar.get_x() + bar.get_width() / 2, yval, odds, ha='center', va='bottom')
     
-      namelist_sort =  [st.session_state.race_dataframes[race_no]['馬名'][i - 1] for i in X]
+      namelist_sort =  [st.session_state.numbered_list_dict[race_no][i - 1] for i in X]
       #formatted_namelist = [label.split('.')[0] + '.' + '\n'.join(label.split('.')[1]) for label in namelist_sort]
       
       plt.xticks(X_axis, namelist_sort, fontsize=12)
@@ -1060,13 +1060,15 @@ def fetch_race_card(date_str, venue):
                     if not df.empty:
                         # 將馬號轉換為數字並排序，確保順序正確
                         df['馬號_int'] = pd.to_numeric(df['馬號'], errors='coerce')
+                        df['馬號馬名'] = df['馬號'].astype(str) + ". " + df['馬名']
+                        numbered_list = df['馬號馬名'].tolist()
                         df = df.sort_values("馬號_int").drop(columns=['馬號_int']).set_index("馬號")
                     
                     # Post Time
                     pt_str = race.get("postTime")
                     pt = datetime.fromisoformat(pt_str) if pt_str else None
                     
-                    race_info[r_no] = {"df": df, "post_time": pt}
+                    race_info[r_no] = {"df": df, "post_time": pt,"numbered_list": numbered_list}
             return race_info
     except Exception as e:
         print(e)
@@ -1400,6 +1402,7 @@ if not st.session_state.api_called:
         if race_card_data:
             st.session_state.race_dataframes = {k: v['df'] for k,v in race_card_data.items()}
             st.session_state.post_time_dict = {k: v['post_time'] for k,v in race_card_data.items()}
+            st.session_state.numbered_list_dict = {k: v['numbered_list'] for k,v in race_card_data.items()}
             st.session_state.api_called = True
 
 # --- 顯示賽事資訊 ---
