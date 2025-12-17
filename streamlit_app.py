@@ -950,6 +950,62 @@ def parse_form_score(last6run_str):
         
     except Exception:
         return 50
+
+def calculate_jockey_score(jockey_name, ranking_df):
+    """
+    根據騎師的排名數據計算其專業分數。
+    分數基於當前賽季的勝率，並使用對數平滑化來減少極端值影響。
+    """
+    if ranking_df.empty:
+        return 50 # 無數據給予平均分
+
+    jockey_row = ranking_df[ranking_df['騎師'] == jockey_name]
+    
+    if jockey_row.empty:
+        return 50 # 找不到該騎師，給予平均分
+
+    wins = jockey_row['冠'].iloc[0]
+    runs = jockey_row['總出賽次數'].iloc[0]
+    
+    if runs == 0:
+        return 50 # 未出賽，給予平均分
+    
+    win_rate = wins / runs
+    
+    # 標準化和加權：將勝率 (0-1) 轉換為 1-100 分。
+    # 使用 log 函數對勝場數進行平滑處理，避免極少數出賽次數對勝率分數的誇大。
+    # log(wins + 1) * win_rate
+    score = (win_rate * 100) * (log(wins + 1) / log(ranking_df['冠'].max() + 1))
+    
+    # 確保分數在合理範圍內，例如最高 100
+    return min(score, 100)
+
+
+def calculate_trainer_score(trainer_name, ranking_df):
+    """
+    根據練馬師的排名數據計算其專業分數。
+    邏輯與騎師分數相似，但針對練馬師欄位。
+    """
+    if ranking_df.empty:
+        return 50
+
+    trainer_row = ranking_df[ranking_df['練馬師'] == trainer_name]
+    
+    if trainer_row.empty:
+        return 50
+
+    wins = trainer_row['冠'].iloc[0]
+    runs = trainer_row['總出賽次數'].iloc[0]
+    
+    if runs == 0:
+        return 50
+    
+    win_rate = wins / runs
+    
+    # 標準化和加權
+    score = (win_rate * 100) * (log(wins + 1) / log(ranking_df['冠'].max() + 1))
+    
+    return min(score, 100)
 def calculate_smart_score(race_no):
     """
     計算單場賽事的綜合評分，並將所有中間結果整合到單一 df。
@@ -1097,14 +1153,21 @@ def calculate_smart_score_static(race_no):
     # 使用原有的 parse_form_score
     static_df['FormScore'] = static_df['近績'].apply(parse_form_score)
     
-    # 2. 配搭/專業分數 (Synergy Score) - 權重 30%
-    # 這裡需要一個更複雜的歷史數據庫，但簡單處理為騎練合作次數和勝率 (假設您有這些外部數據)
-    # 由於我們沒有歷史數據庫，這裡先使用一個佔位符，但您可以在此處集成：
-    # - 騎師/練馬師在該場地/距離的平均勝率
-    # - 騎師與馬匹合作的勝率
-    
-    # 佔位：假設所有馬匹的騎練配搭分數平均
-    static_df['SynergyScore'] = 70 
+    # 2. 騎師分數 (Jockey Score) - 權重 15% (取代部分 Synergy)
+    if '騎師' in static_df.columns:
+        static_df['JockeyScore'] = static_df['騎師'].apply(
+            lambda x: calculate_jockey_score(x, jockey_df)
+        )
+    else:
+        static_df['JockeyScore'] = 50.0
+        
+    # 3. 練馬師分數 (Trainer Score) - 權重 15% (取代部分 Synergy)
+    if '練馬師' in static_df.columns:
+        static_df['TrainerScore'] = static_df['練馬師'].apply(
+            lambda x: calculate_trainer_score(x, trainer_df)
+        )
+    else:
+        static_df['TrainerScore'] = 50.0
     
     # 3. 適應性分數 (Adaptability Score) - 權重 20%
     # 排位（檔位）：在該場地/距離下，外檔或內檔表現如何？
@@ -1125,14 +1188,20 @@ def calculate_smart_score_static(race_no):
     # --- 最終加權公式 (完全基於靜態數據) ---
     df = static_df.copy()
     
-    df['TotalScore'] = (df['FormScore'] * 0.4) + \
-                       (df['SynergyScore'] * 0.3) + \
-                       (df['DrawScore'] * 0.2) + \
-                       (df['RatingDiffScore'] * 0.1)
+    df['TotalScore'] = (df['FormScore'] * 0.40) + \
+                       (df['JockeyScore'] * 0.15) + \
+                       (df['TrainerScore'] * 0.15) + \
+                       (df['DrawScore'] * 0.20) + \
+                       (df['RatingDiffScore'] * 0.10)
                        
     # 清理並輸出
-    df = df[['馬名','FormScore', 'DrawScore','RatingDiffScore','TotalScore']] # 這裡的 MoneyFlow 和賠率將是 NaN
-    df = df.sort_values('TotalScore', ascending=False)
+    output_cols = ['馬名', 'FormScore', 'JockeyScore', 'TrainerScore', 
+                   'DrawScore', 'RatingDiffScore', 'TotalScore']
+    
+    # 只選取存在的欄位
+    final_cols = [col for col in output_cols if col in df.columns]
+
+    df = df[final_cols].sort_values('TotalScore', ascending=False)
     
     return df
 # 嘗試加載 Race Card
