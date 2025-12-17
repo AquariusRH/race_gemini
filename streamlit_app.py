@@ -1447,10 +1447,6 @@ for method in methodlist:
 # 確保 overall 鍵存在於整體投注量和差異字典中
 st.session_state.overall_investment_dict.setdefault('overall', pd.DataFrame())
 st.session_state.diff_dict.setdefault('overall', pd.DataFrame())
-import streamlit as st
-import pandas as pd
-from datetime import datetime
-import time
 
 # ==================== 5. 監控與顯示邏輯 (使用 Fragment 避免閃爍) ====================
 
