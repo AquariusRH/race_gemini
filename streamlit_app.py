@@ -1062,6 +1062,7 @@ def fetch_race_card(date_str, venue):
                         df['馬號_int'] = pd.to_numeric(df['馬號'], errors='coerce')
                         df['馬號馬名'] = df['馬號'].astype(str) + ". " + df['馬名']
                         numbered_list = df['馬號馬名'].tolist()
+                        st.write(numbered_list)
                         df = df.sort_values("馬號_int").drop(columns=['馬號_int']).set_index("馬號")
                     
                     # Post Time
