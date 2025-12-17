@@ -884,7 +884,7 @@ def calculate_smart_score(race_no):
     # ----------------------------------------------------
     
     # 只取出計算好的分數欄位
-    static_scores = static_df[['TotalFormScore', 'FormScore', 'SynergyScore', 'DrawScore', 'RatingDiffScore']]
+    static_scores = static_df[['馬名','TotalFormScore', 'FormScore', 'SynergyScore', 'DrawScore', 'RatingDiffScore']]
     
     # 使用 join 進行合併：左連接，以 df 的馬號為準。
     # 由於索引已統一為字串，join 將正確地按馬號匹配。
