@@ -11,6 +11,7 @@ import plotly.graph_objects as go
 import os
 from warnings import simplefilter
 from bs4 import BeautifulSoup
+import re
 simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
 
 # ==================== 0. 頁面與字型設定 ====================
