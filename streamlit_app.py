@@ -1050,6 +1050,7 @@ def fetch_race_card(date_str, venue):
                             "騎師": r['jockey']['name_ch'] if r['jockey'] else '',
                             "練馬師": r['trainer']['name_ch'] if r['trainer'] else '',
                             "近績": r.get('last6run', ''),
+                            '馬號馬名':r['no'] + '.' + r['name_ch']
                             
                             # 使用轉換後的數值
                             "評分": rating_val,
@@ -1061,7 +1062,6 @@ def fetch_race_card(date_str, venue):
                     if not df.empty:
                         # 將馬號轉換為數字並排序，確保順序正確
                         df['馬號_int'] = pd.to_numeric(df['馬號'], errors='coerce')
-                        df['馬號馬名'] = df['馬號'].astype(str) + ". " + df['馬名']
                         df = df.sort_values("馬號_int").drop(columns=['馬號_int']).set_index("馬號")
                     
                     # Post Time
