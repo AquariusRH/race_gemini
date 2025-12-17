@@ -1163,6 +1163,7 @@ def calculate_smart_score_static(race_no):
 
     j_df = st.session_state['jockey_ranking_df']
     t_df = st.session_state['trainer_ranking_df']
+    st.write(j_df)
     static_df['JockeyScore'] = static_df['騎師'].apply(
         lambda x: calculate_jockey_score(str(x).strip(), j_df)
     )
