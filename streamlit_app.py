@@ -63,7 +63,8 @@ def init_session_state():
         'ucb_dict': {},
         'api_called': False,
         'last_update': None,
-        'jockey_data': []
+        'jockey_data': [],
+        'trainer_data': []
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -1155,7 +1156,9 @@ def calculate_smart_score_static(race_no):
     
     # 2. 騎師分數 (Jockey Score) - 權重 15% (取代部分 Synergy)
     jockey_df = st.session_state.get('jockey_ranking_df', pd.DataFrame())
+    st.write(jockey_df)
     trainer_df = st.session_state.get('trainer_ranking_df', pd.DataFrame())
+    st.write(trainer_df)
     if '騎師' in static_df.columns:
         static_df['JockeyScore'] = static_df['騎師'].apply(
             lambda x: calculate_jockey_score(x, jockey_df)
