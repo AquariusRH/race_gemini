@@ -663,6 +663,7 @@ def print_bar_chart(time_now):
               yval = bar.get_height()
               ax1.text(bar.get_x() + bar.get_width() / 2, yval, odds, ha='center', va='bottom')
       namelist_raw = st.session_state.numbered_list_dict.get(race_no)  
+      st.write(namelist_raw)
       namelist_sort =  [namelist_raw[i - 1] for i in X]
       #formatted_namelist = [label.split('.')[0] + '.' + '\n'.join(label.split('.')[1]) for label in namelist_sort]
       
@@ -1062,7 +1063,6 @@ def fetch_race_card(date_str, venue):
                         df['馬號_int'] = pd.to_numeric(df['馬號'], errors='coerce')
                         df['馬號馬名'] = df['馬號'].astype(str) + ". " + df['馬名']
                         numbered_list = df['馬號馬名'].tolist()
-                        st.write(numbered_list)
                         df = df.sort_values("馬號_int").drop(columns=['馬號_int']).set_index("馬號")
                     
                     # Post Time
