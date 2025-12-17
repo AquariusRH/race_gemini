@@ -957,18 +957,18 @@ def calculate_jockey_score(jockey_name, ranking_df):
     分數基於當前賽季的勝率，並使用對數平滑化來減少極端值影響。
     """
     if ranking_df.empty:
-        return 50 # 無數據給予平均分
-
+        return 10 # 無數據給予平均分
+    ranking_df['騎師'] = ranking_df['騎師'].str.strip()
     jockey_row = ranking_df[ranking_df['騎師'] == jockey_name]
     
     if jockey_row.empty:
-        return 50 # 找不到該騎師，給予平均分
+        return 20 # 找不到該騎師，給予平均分
 
     wins = jockey_row['冠'].iloc[0]
     runs = jockey_row['總出賽次數'].iloc[0]
     
     if runs == 0:
-        return 50 # 未出賽，給予平均分
+        return 30 # 未出賽，給予平均分
     
     win_rate = wins / runs
     
@@ -987,18 +987,18 @@ def calculate_trainer_score(trainer_name, ranking_df):
     邏輯與騎師分數相似，但針對練馬師欄位。
     """
     if ranking_df.empty:
-        return 50
-
+        return 10
+    trainer_name = str(trainer_name).strip()
     trainer_row = ranking_df[ranking_df['練馬師'] == trainer_name]
     
     if trainer_row.empty:
-        return 50
+        return 20
 
     wins = trainer_row['冠'].iloc[0]
     runs = trainer_row['總出賽次數'].iloc[0]
     
     if runs == 0:
-        return 50
+        return 30
     
     win_rate = wins / runs
     
