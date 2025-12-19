@@ -939,7 +939,7 @@ def top(method_odds_df, method_investment_df, method):
       }).map(highlight_change, subset=['最初排名', '上一次排名']).bar(subset=['投注變化', '一分鐘投注','三分鐘投注'], color='rgba(173, 216, 230, 0.5)').hide(axis='index')
       styled_rows_with_plus = rows_with_plus.style.format({'賠率': '{:.1f}'}).map(highlight_change, subset=['最初排名', '上一次排名']).hide(axis='index')
       # Display the styled DataFrame
-      st.write(styled_df.to_html(), unsafe_allow_html=True)
+      #st.write(styled_df.to_html(), unsafe_allow_html=True)
 
       if method in ["QIN","QPL","FCT","TRI","FF"]:
         if method in ["QIN"]:
