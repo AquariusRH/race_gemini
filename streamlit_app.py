@@ -1726,8 +1726,9 @@ if monitoring_on:
                     df_1 = pd.DataFrame({'馬名': list(counts_1.keys()), '次數': list(counts_1.values())})
                     fig1 = px.pie(df_1, values='次數', names='馬名', hole=0.4, color_discrete_sequence=px.colors.qualitative.Set3)
                     fig1.update_traces(
-                        textposition='outside', 
-                        textinfo='label+percent'
+                        textposition='auto',  # 自動判斷放裡面或外面
+                        textinfo='label+percent',
+                        insidetextorientation='horizontal' # 確保裡面的文字是水平的，比較好讀
                     )
                     st.plotly_chart(fig1, width='stretch', key=f"top1_{time_now.strftime('%H%M%S')}")
             
@@ -1739,8 +1740,9 @@ if monitoring_on:
                     df_4 = df_4.sort_values(by='出現次數', ascending=False)
                     fig4 = px.pie(df_4, values='出現次數', names='馬名', hole=0.4, color_discrete_sequence=px.colors.qualitative.Pastel)
                     fig4.update_traces(
-                        textposition='outside', 
-                        textinfo='label+percent'
+                        textposition='auto',
+                        textinfo='label+percent',
+                        insidetextorientation='horizontal'
                     )
                     st.plotly_chart(fig4, width='stretch', key=f"top4_{time_now.strftime('&H%M%S')}")
 
