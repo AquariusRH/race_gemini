@@ -1712,7 +1712,7 @@ if monitoring_on:
     
     
                 # 應用高亮函數
-                st.dataframe(display_df.style.apply(highlight_top_realtime, axis=1), width='stretch')
+                st.dataframe(display_df.style.apply(highlight_top_realtime, axis=1), width='stretch',column_config={col: st.column_config.Column(disabled=True) for col in display_df.columns})
                 if len(st.session_state.top_rank_history) > 20:
                     st.session_state.top_rank_history.pop(0)
                 if len(st.session_state.top_4_history) > 80:
