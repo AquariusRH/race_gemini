@@ -1378,10 +1378,21 @@ def calculate_smart_score(race_no):
     latest_odds.columns = ['Odds']
     
     # 2. 獲取資金流向 (MoneyFlow)
-    if 'WIN' in st.session_state.diff_dict and not st.session_state.diff_dict['WIN'].empty:
-        money_flow = st.session_state.diff_dict['WIN'].tail(10).sum().to_frame(name='MoneyFlow')
-    else:
-        money_flow = pd.DataFrame(0, index=latest_odds.index, columns=['MoneyFlow'])
+    # 建立一個基礎的 DataFrame，索引與 latest_odds 一致，初始值為 0
+    total_money_flow = pd.DataFrame(0, index=latest_odds.index, columns=['MoneyFlow'])
+    
+    for method in methodlist:
+        # 檢查該種類是否存在於 session_state 且不為空
+        if method in st.session_state.diff_dict and not st.session_state.diff_dict[method].empty:
+            # 提取最近 10 筆數據並加總
+            # .sum() 會根據欄位加總，確保索引對齊
+            current_method_sum = st.session_state.diff_dict[method].tail(10).sum()
+            
+            # 將加總後的數據加到總表中 (使用 add 函數可以自動處理索引不匹配的情況)
+            total_money_flow['MoneyFlow'] = total_money_flow['MoneyFlow'].add(current_method_sum, fill_value=0)
+    
+    # 最後得到的 money_flow 就是四個種類加總後的結果
+    money_flow = total_money_flow
         
     # 3. 建立基礎 df (包含動態數據)
     df = pd.concat([latest_odds, money_flow], axis=1)
