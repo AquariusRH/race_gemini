@@ -1651,7 +1651,7 @@ if monitoring_on:
             # A. 氣泡圖 (資金流向視覺化)
             #print_bubble(race_no, print_list)
             print_bar_chart(time_now)
-            print_top()
+            
             # B. 實時預測排名
             st.markdown("### 🤖 實時資金流綜合預測排名")
             prediction_df = calculate_smart_score(race_no)
@@ -1708,7 +1708,7 @@ if monitoring_on:
     
                 # 應用高亮函數
                 st.dataframe(display_df.style.apply(highlight_top_realtime, axis=1), use_container_width=True)
-                
+            print_top()
            
             time.sleep(15)
         
