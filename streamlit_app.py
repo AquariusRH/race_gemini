@@ -1591,6 +1591,7 @@ else:
 
 methodlist = ['WIN', 'PLA', 'QIN', 'QPL'] # 簡化預設
 print_list = ['WIN&QIN', 'PLA&QPL']
+top_list = ['QIN']
 for method in methodlist:
     # 確保 odds_dict, investment_dict, overall_investment_dict, diff_dict 都有 WIN/PLA/QIN/QPL 鍵
     st.session_state.odds_dict.setdefault(method, pd.DataFrame())
