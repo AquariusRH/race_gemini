@@ -1115,10 +1115,10 @@ def parse_form_score(last6run_str):
             return 50
             
         # 取最近 4 場
-        recent_runs = runs[-4:] 
+        recent_runs = runs[:4] 
         
         # 計算平均名次 (加權：越近期的比賽權重越重)
-        weights = [1, 1.2, 1.5, 2.0] # 權重
+        weights = [2.0,1.5,1.2,1] # 權重
         weighted_sum = 0
         total_weight = 0
         
