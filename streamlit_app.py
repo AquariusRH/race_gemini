@@ -65,7 +65,8 @@ def init_session_state():
         'api_called': False,
         'last_update': None,
         'jockey_ranking_df': pd.DataFrame(),
-        'trainer_ranking_df': pd.DataFrame()
+        'trainer_ranking_df': pd.DataFrame(),
+        'top_rank_history': []
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -1657,6 +1658,8 @@ if monitoring_on:
             prediction_df = calculate_smart_score(race_no)
     
             if not prediction_df.empty:
+                current_winner = prediction_df.iloc[0]['馬名']
+                st.session_state.top_rank_history.append(current_winner)
                 display_df = prediction_df.copy()
                 display_df = display_df[['馬名','Odds', 'MoneyFlow', 'TotalFormScore', 'TotalScore']]
                 display_df.columns = ['馬名','當前賠率', '近期資金流(K)', '近績評分', '🔥綜合推薦分']
@@ -1664,6 +1667,30 @@ if monitoring_on:
                 display_df['近期資金流(K)'] = display_df['近期資金流(K)'].apply(lambda x: f"{x:.1f}")
                 display_df['近績評分'] = display_df['近績評分'].astype(float).round(0).astype('Int64')
                 display_df['🔥綜合推薦分'] = display_df['🔥綜合推薦分'].astype(float).round(0).astype('Int64')
+
+                if st.session_state.top_rank_history:
+                    st.markdown("### 🏆 實時第一名佔有率 (歷史累計)")
+                    
+                    # 統計每匹馬獲得第一名的次數
+                    from collections import Counter
+                    counts = Counter(st.session_state.top_rank_history)
+                    
+                    pie_data = pd.DataFrame({
+                        '馬名': list(counts.keys()),
+                        '次數': list(counts.values())
+                    })
+            
+                    # 使用 Plotly 繪製更美觀的圓餅圖
+                    import plotly.express as px
+                    fig = px.pie(
+                        pie_data, 
+                        values='次數', 
+                        names='馬名', 
+                        hole=0.4, # 甜甜圈圖樣式
+                        color_discrete_sequence=px.colors.qualitative.Pastel
+                    )
+                    fig.update_traces(textposition='inside', textinfo='percent+label')
+                    st.plotly_chart(fig, use_container_width=True)
     
     
                 def highlight_top_realtime(row):
