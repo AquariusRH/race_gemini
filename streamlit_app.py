@@ -528,37 +528,17 @@ def weird_data(time_now, investments, odds, methodlist):
             pass
 
 def weird_data(investments):
-    for method in methodlist:
-        if st.session_state.investment_dict[method].empty:
-            continue
-            
-        # 修正 1: 使用 .iloc 取值，避免 FutureWarning
-        latest_investment = st.session_state.investment_dict[method].iloc[-1].values 
-        
-        # 修正 2: 確保取出的賠率是數值型態 (Series.iloc[0])
-        last_time_odds = st.session_state.odds_dict[method].iloc[-2:-1] # 取倒數第二筆
-        
-        # 修正 3: investments[method] 如果是 Series 或 List，改用 .iloc[0]
-        # 假設 investments 是字典套字典或 Series
-        method_invest = investments[method]
-        current_invest_val = method_invest.iloc[0] if isinstance(method_invest, pd.Series) else method_invest[0]
-        
-        # 計算期望投資 (確保最後是一個 Series 以便進行減法)
-        expected_investment = current_invest_val / 1000 / last_time_odds.iloc[0]
-        
-        # 計算差異
-        diff = (latest_investment - expected_investment).round(0)
-        
-        if method in ['WIN','PLA']:
-            # 修正 4: _append 是私有方法，建議改用 pd.concat 或直接賦值
-            # 這裡為了維持你的邏輯，先改用 concat
-            new_row = pd.DataFrame(diff).T
-            st.session_state.diff_dict[method] = pd.concat([st.session_state.diff_dict[method], new_row], ignore_index=True)
-            
-        elif method in ['QIN','QPL']:
-            # 同理處理組合投資
-            combined_diff = investment_combined(time_now, method, diff)
-            st.session_state.diff_dict[method] = pd.concat([st.session_state.diff_dict[method], combined_diff], ignore_index=True)
+  for method in methodlist:
+    if st.session_state.investment_dict[method].empty:
+      continue
+    latest_investment = st.session_state.investment_dict[method].tail(1).values
+    last_time_odds = st.session_state.odds_dict[method].tail(2).head(1)
+    expected_investment = investments[method][0] / 1000 / last_time_odds
+    diff = round(latest_investment - expected_investment,0)
+    if method in ['WIN','PLA']:
+        st.session_state.diff_dict[method] = st.session_state.diff_dict[method]._append(diff)
+    elif method in ['QIN','QPL']:
+        st.session_state.diff_dict[method] = st.session_state.diff_dict[method]._append(investment_combined(time_now,method,diff))
     
 def change_overall(time_now):
   total_investment = 0
