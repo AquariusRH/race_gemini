@@ -809,7 +809,161 @@ def print_bubble(race_no, print_list):
             
         except Exception as e:
             st.error(f"Bubble Chart Error: {e}")
+def top(method_odds_df, method_investment_df, method):
+    # Extract the first row from odds DataFrame
+    first_row_odds = method_odds_df.iloc[0]
+    first_row_odds_df = first_row_odds.to_frame(name='Odds').reset_index()
+    first_row_odds_df.columns = ['Combination', 'Odds']
 
+    # Extract the last row from odds DataFrame
+    last_row_odds = method_odds_df.iloc[-1]
+    last_row_odds_df = last_row_odds.to_frame(name='Odds').reset_index()
+    last_row_odds_df.columns = ['Combination', 'Odds']
+    third_last_row_index = max(-len(method_odds_df), -11)
+    third_last_row_odds = method_odds_df.iloc[third_last_row_index]
+    third_last_row_odds_df = third_last_row_odds.to_frame(name='Odds').reset_index()
+    third_last_row_odds_df.columns = ['Combination', 'Odds']
+    # Extract the second last row from odds DataFrame (or the closest available row)
+    second_last_row_index = max(-len(method_odds_df), -3)
+    second_last_row_odds = method_odds_df.iloc[second_last_row_index]
+    second_last_row_odds_df = second_last_row_odds.to_frame(name='Odds').reset_index()
+    second_last_row_odds_df.columns = ['Combination', 'Odds']
+
+    # Calculate the initial rank and initial odds
+    first_row_odds_df['Initial_Rank'] = first_row_odds_df['Odds'].rank(method='min').astype(int)
+    first_row_odds_df['Initial_Odds'] = first_row_odds_df['Odds']
+
+    # Calculate the current rank and current odds
+    last_row_odds_df['Current_Rank'] = last_row_odds_df['Odds'].rank(method='min').astype(int)
+    last_row_odds_df['Initial_Rank'] = first_row_odds_df['Initial_Rank'].values
+    last_row_odds_df['Initial_Odds'] = first_row_odds_df['Initial_Odds'].values
+
+    # Calculate the previous rank using the second last row
+    second_last_row_odds_df['Previous_Rank'] = second_last_row_odds_df['Odds'].rank(method='min').astype(int)
+    last_row_odds_df['Previous_Rank'] = second_last_row_odds_df['Previous_Rank'].values
+
+    # Calculate the change of rank
+    last_row_odds_df['Change_of_Rank'] = last_row_odds_df['Initial_Rank'] - last_row_odds_df['Current_Rank']
+    last_row_odds_df['Change_of_Rank'] = last_row_odds_df['Change_of_Rank'].apply(lambda x: f'+{x}' if x > 0 else (str(x) if x < 0 else '0'))
+
+    # Combine the initial rank and change of rank into the same column format like 10 (+1)
+    last_row_odds_df['Initial_Rank'] = last_row_odds_df.apply(lambda row: f"{row['Initial_Rank']}" f"({row['Change_of_Rank']})", axis=1)
+
+    # Calculate the difference between the current rank and previous rank and add this difference to the previous rank in the format 10 (+1)
+    last_row_odds_df['Change_of_Previous_Rank'] = last_row_odds_df['Previous_Rank'] - last_row_odds_df['Current_Rank']
+    last_row_odds_df['Change_of_Previous_Rank'] = last_row_odds_df['Change_of_Previous_Rank'].apply(lambda x: f'+{x}' if x > 0 else (str(x) if x < 0 else '0'))
+    last_row_odds_df['Previous_Rank'] = last_row_odds_df.apply(lambda row: f"{row['Previous_Rank']}" f"({row['Change_of_Previous_Rank']})", axis=1)
+
+    # Rearrange the columns as requested
+    final_df = last_row_odds_df[['Combination', 'Odds', 'Initial_Odds', 'Current_Rank', 'Initial_Rank', 'Previous_Rank']]
+
+    # Format the odds to one decimal place using .loc to avoid SettingWithCopyWarning
+    final_df.loc[:, 'Odds'] = final_df['Odds'].round(1)
+    final_df.loc[:, 'Initial_Odds'] = final_df['Initial_Odds'].round(1)
+
+    # Extract the first row from investment DataFrame
+    first_row_investment = method_investment_df.iloc[0]
+    first_row_investment_df = first_row_investment.to_frame(name='Investment').reset_index()
+    first_row_investment_df.columns = ['Combination', 'Investment']
+
+    # Extract the last row from investment DataFrame
+    last_row_investment = method_investment_df.iloc[-1]
+    last_row_investment_df = last_row_investment.to_frame(name='Investment').reset_index()
+    last_row_investment_df.columns = ['Combination', 'Investment']
+
+    # Extract the second last row from investment DataFrame (or the closest available row)
+    second_last_row_index = max(-len(method_investment_df), -3)
+    second_last_row_investment = method_investment_df.iloc[second_last_row_index]
+    second_last_row_investment_df = second_last_row_investment.to_frame(name='Investment').reset_index()
+    second_last_row_investment_df.columns = ['Combination', 'Investment']
+    third_last_row_index = max(-len(method_investment_df), -7)
+    third_last_row_investment = method_investment_df.iloc[third_last_row_index]
+    third_last_row_investment_df = third_last_row_investment.to_frame(name='Investment').reset_index()
+    third_last_row_investment_df.columns = ['Combination', 'Investment']
+    # Calculate the difference in investment before sorting
+    last_row_investment_df['Investment_Change'] = last_row_investment_df['Investment'] - first_row_investment_df['Investment'].values
+    last_row_investment_df['Investment_Change'] = last_row_investment_df['Investment_Change'].apply(lambda x: x if x > 0 else 0)
+    second_last_row_investment_df['Previous_Investment_Change'] = last_row_investment_df['Investment'] - second_last_row_investment_df['Investment'].values
+    second_last_row_investment_df['Previous_Investment_Change'] = second_last_row_investment_df['Previous_Investment_Change'].apply(lambda x: x if x > 0 else 0)
+    third_last_row_investment_df['Previous_Investment_Change'] = last_row_investment_df['Investment'] - third_last_row_investment_df['Investment'].values
+    third_last_row_investment_df['Previous_Investment_Change'] = third_last_row_investment_df['Previous_Investment_Change'].apply(lambda x: x if x > 0 else 0)
+
+    # Sort the final DataFrame by odds value
+    final_df = final_df.sort_values(by='Odds')
+
+    # Combine the investment data with the final DataFrame based on the combination
+    final_df = final_df.merge(last_row_investment_df[['Combination', 'Investment_Change', 'Investment']], on='Combination', how='left')
+    final_df = final_df.merge(second_last_row_investment_df[['Combination', 'Previous_Investment_Change']], on='Combination', how='left')
+    final_df = final_df.merge(third_last_row_investment_df[['Combination', 'Previous_Investment_Change']], on='Combination', how='left')
+
+    if method in ['WIN','PLA']:
+      final_df.columns = ['馬匹', '賠率', '最初賠率', '排名', '最初排名', '上一次排名', '投注變化', '投注', '一分鐘投注','三分鐘投注']
+      target_df = final_df
+      rows_with_plus = target_df[
+          target_df['最初排名'].astype(str).str.contains('\+') |
+          target_df['上一次排名'].astype(str).str.contains('\+')
+      ][['馬匹', '賠率', '最初排名', '上一次排名']]
+      # Apply the conditional formatting to the 初始排名 and 前一排名 columns and add a bar to the 投資變化 column
+      styled_df = final_df.style.format({
+        '賠率': '{:.1f}',
+        '最初賠率': '{:.1f}',
+        '投注變化': '{:.2f}k',
+        '投注': '{:.2f}k',
+        '一分鐘投注': '{:.2f}k',
+        '三分鐘投注': '{:.2f}k'
+      }).map(highlight_change, subset=['最初排名', '上一次排名']).bar(subset=['投注變化', '一分鐘投注','三分鐘投注'], color='rgba(173, 216, 230, 0.5)').hide(axis='index')
+      styled_rows_with_plus = rows_with_plus.style.format({'賠率': '{:.1f}'}).map(highlight_change, subset=['最初排名', '上一次排名']).hide(axis='index')
+      # Display the styled DataFrame
+      st.write(styled_df.to_html(), unsafe_allow_html=True)
+      st.write(styled_rows_with_plus.to_html(), unsafe_allow_html=True)
+
+
+    else:
+      final_df.columns = ['組合', '賠率', '最初賠率', '排名', '最初排名', '上一次排名', '投注變化', '投注', '一分鐘投注','三分鐘投注']
+      target_df = final_df.head(15)
+      target_special_df = final_df.head(30)
+      rows_with_plus = target_special_df[
+          target_special_df['最初排名'].astype(str).str.contains('\+') |
+          target_special_df['上一次排名'].astype(str).str.contains('\+')
+      ][['組合', '賠率', '最初排名', '上一次排名']]
+    
+
+      # Apply the conditional formatting to the 初始排名 and 前一排名 columns and add a bar to the 投資變化 column
+      styled_df = target_df.style.format({
+        '賠率': '{:.1f}',
+        '最初賠率': '{:.1f}',
+        '投注變化': '{:.2f}k',
+        '投注': '{:.2f}k',
+        '一分鐘投注': '{:.2f}k',
+        '三分鐘投注': '{:.2f}k'
+      }).map(highlight_change, subset=['最初排名', '上一次排名']).bar(subset=['投注變化', '一分鐘投注','三分鐘投注'], color='rgba(173, 216, 230, 0.5)').hide(axis='index')
+      styled_rows_with_plus = rows_with_plus.style.format({'賠率': '{:.1f}'}).map(highlight_change, subset=['最初排名', '上一次排名']).hide(axis='index')
+      # Display the styled DataFrame
+      st.write(styled_df.to_html(), unsafe_allow_html=True)
+
+      if method in ["QIN","QPL","FCT","TRI","FF"]:
+        if method in ["QIN"]:
+          notice_df = final_df[(final_df['一分鐘投注'] >= 100) | (final_df['三分鐘投注'] >= 300)][['組合', '賠率', '一分鐘投注', '三分鐘投注']]
+        elif method in ["QPL"]:
+          notice_df = final_df[(final_df['一分鐘投注'] >= 200) | (final_df['三分鐘投注'] >= 600)][['組合', '賠率', '一分鐘投注', '三分鐘投注']]
+        elif method in ["FCT"]:
+          notice_df = final_df[(final_df['一分鐘投注'] >= 10) | (final_df['三分鐘投注'] >= 30)][['組合', '賠率', '一分鐘投注', '三分鐘投注']]
+        else:
+          notice_df = final_df[(final_df['一分鐘投注'] >= 5) | (final_df['三分鐘投注'] >= 15)][['組合', '賠率', '一分鐘投注', '三分鐘投注']]
+        styled_notice_df = notice_df.style.format({'賠率': '{:.1f}','一分鐘投注': '{:.2f}k','三分鐘投注': '{:.2f}k'}).bar(subset=['一分鐘投注','三分鐘投注'], color='rgba(173, 216, 230, 0.5)').hide(axis='index')
+        
+
+      col1, col2 = st.columns(2)
+      with col1:
+        st.write(styled_rows_with_plus.to_html(), unsafe_allow_html=True)
+      with col2:
+        st.write(styled_notice_df.to_html(), unsafe_allow_html=True)
+
+def print_top():
+  for method in top_list:
+        if odds[method]:
+          methodCHlist[methodlist.index(method)]
+          top(st.session_state.odds_dict[method], st.session_state.investment_dict[method], method)
 # ==================== 4. 主介面邏輯 ====================
 
 # --- 輸入區 ---
@@ -1482,7 +1636,7 @@ if monitoring_on:
             # A. 氣泡圖 (資金流向視覺化)
             #print_bubble(race_no, print_list)
             print_bar_chart(time_now)
-    
+            print_top()
             # B. 實時預測排名
             st.markdown("### 🤖 實時資金流綜合預測排名")
             prediction_df = calculate_smart_score(race_no)
