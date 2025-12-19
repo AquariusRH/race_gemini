@@ -961,8 +961,6 @@ def top(method_odds_df, method_investment_df, method):
 
 def print_top():
   for method in top_list:
-        if odds[method]:
-          methodCHlist[methodlist.index(method)]
           top(st.session_state.odds_dict[method], st.session_state.investment_dict[method], method)
 # ==================== 4. 主介面邏輯 ====================
 
