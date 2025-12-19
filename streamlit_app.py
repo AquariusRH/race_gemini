@@ -1453,7 +1453,7 @@ placeholder = st.empty()
 if monitoring_on:
     while monitoring_on:
         # --- 實時監控模式 (比賽當日) ---
-        st.markdown("### 🟢 實時監控與資金流預測中...")
+        #st.markdown("### 🟢 實時監控與資金流預測中...")
         time_now = datetime.now()
         time_str = (time_now + timedelta(hours=8)).strftime('%H:%M:%S')
     
