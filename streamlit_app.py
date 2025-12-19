@@ -1539,7 +1539,7 @@ if monitoring_on:
     
                 # 應用高亮函數
                 st.dataframe(display_df.style.apply(highlight_top_realtime, axis=1), use_container_width=True)
-                st.info(f"💡 AI 實時建議：目前綜合數據最強的是 **{display_df.index[0]}號馬** (基於資金流、賠率和近績)。")
+                
            
             time.sleep(15)
         
@@ -1585,5 +1585,3 @@ else:
 
         st.dataframe(display_df.style.apply(highlight_top_static, axis=1), use_container_width=True)
 
-        top_horse_static = display_df.index[0]
-        st.success(f"🏅 賽前靜態預測：**{top_horse_static}號馬** 具有最佳的**近績與排位**組合優勢。")
