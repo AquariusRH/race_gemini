@@ -13,6 +13,8 @@ from warnings import simplefilter
 from bs4 import BeautifulSoup
 import re
 from math import log
+from collections import Counter
+import plotly.express as px
 simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
 
 # ==================== 0. 頁面與字型設定 ====================
@@ -66,7 +68,8 @@ def init_session_state():
         'last_update': None,
         'jockey_ranking_df': pd.DataFrame(),
         'trainer_ranking_df': pd.DataFrame(),
-        'top_rank_history': []
+        'top_rank_history': [],
+        'top_4_history': []
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -1660,6 +1663,8 @@ if monitoring_on:
             if not prediction_df.empty:
                 current_winner = prediction_df.iloc[0]['馬名']
                 st.session_state.top_rank_history.append(current_winner)
+                current_top_4 = prediction_df.head(4)['馬名'].tolist()
+                st.session_state.top_4_history.extend(current_top_4)
                 display_df = prediction_df.copy()
                 display_df = display_df[['馬名','Odds', 'MoneyFlow', 'TotalFormScore', 'TotalScore']]
                 display_df.columns = ['馬名','當前賠率', '近期資金流(K)', '近績評分', '🔥綜合推薦分']
@@ -1668,29 +1673,23 @@ if monitoring_on:
                 display_df['近績評分'] = display_df['近績評分'].astype(float).round(0).astype('Int64')
                 display_df['🔥綜合推薦分'] = display_df['🔥綜合推薦分'].astype(float).round(0).astype('Int64')
 
-                if st.session_state.top_rank_history:
-                    st.markdown("### 🏆 實時第一名佔有率 (歷史累計)")
-                    
-                    # 統計每匹馬獲得第一名的次數
-                    from collections import Counter
-                    counts = Counter(st.session_state.top_rank_history)
-                    
-                    pie_data = pd.DataFrame({
-                        '馬名': list(counts.keys()),
-                        '次數': list(counts.values())
-                    })
+                col1, col2 = st.columns(2) # 使用左右兩欄顯示兩個圖
             
-                    # 使用 Plotly 繪製更美觀的圓餅圖
-                    import plotly.express as px
-                    fig = px.pie(
-                        pie_data, 
-                        values='次數', 
-                        names='馬名', 
-                        hole=0.4, # 甜甜圈圖樣式
-                        color_discrete_sequence=px.colors.qualitative.Pastel
-                    )
-                    fig.update_traces(textposition='inside', textinfo='percent+label')
-                    st.plotly_chart(fig, use_container_width=True)
+                with col1:
+                    st.markdown("### 🏆 第一名佔有率")
+                    counts_1 = Counter(st.session_state.top_rank_history)
+                    df_1 = pd.DataFrame({'馬名': list(counts_1.keys()), '次數': list(counts_1.values())})
+                    fig1 = px.pie(df_1, values='次數', names='馬名', hole=0.4, color_discrete_sequence=px.colors.qualitative.Set3)
+                    st.plotly_chart(fig1, use_container_width=True)
+            
+                with col2:
+                    st.markdown("### 🐎 頭 4 名出現頻率")
+                    counts_4 = Counter(st.session_state.top_4_history)
+                    df_4 = pd.DataFrame({'馬名': list(counts_4.keys()), '出現次數': list(counts_4.values())})
+                    # 排序讓圖表更好看
+                    df_4 = df_4.sort_values(by='出現次數', ascending=False)
+                    fig4 = px.pie(df_4, values='出現次數', names='馬名', hole=0.4, color_discrete_sequence=px.colors.qualitative.Pastel)
+                    st.plotly_chart(fig4, use_container_width=True)
     
     
                 def highlight_top_realtime(row):
