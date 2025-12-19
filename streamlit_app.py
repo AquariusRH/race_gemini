@@ -962,6 +962,10 @@ def top(method_odds_df, method_investment_df, method):
 def print_top():
   for method in top_list:
           top(st.session_state.odds_dict[method], st.session_state.investment_dict[method], method)
+      
+def highlight_change(val):
+    color = 'limegreen' if '+' in val else 'crimson' if '-' in val else ''
+    return f'color: {color}'
 # ==================== 4. 主介面邏輯 ====================
 
 # --- 輸入區 ---
