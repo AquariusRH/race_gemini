@@ -809,7 +809,7 @@ def print_bubble(race_no, print_list):
                 margin=dict(l=20, r=20, t=40, b=20),
                 dragmode=False
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
             
         except Exception as e:
             st.error(f"Bubble Chart Error: {e}")
@@ -1600,7 +1600,7 @@ if race_no in st.session_state.race_dataframes:
     pt_str = pt.strftime("%H:%M") if pt else "--:--"
     st.info(f"📍 {place} 第 {race_no} 場 | 🕒 開跑: {pt_str}")
     with st.expander("查看排位表", expanded=False):
-        st.dataframe(st.session_state.race_dataframes[race_no], use_container_width=True)
+        st.dataframe(st.session_state.race_dataframes[race_no], width='stretch')
 else:
     st.warning("找不到此場次資料，請確認日期與場地。")
 
@@ -1713,7 +1713,7 @@ if monitoring_on:
     
     
                 # 應用高亮函數
-                st.dataframe(display_df.style.apply(highlight_top_realtime, axis=1), use_container_width=True)
+                st.dataframe(display_df.style.apply(highlight_top_realtime, axis=1), width='stretch')
                 if len(st.session_state.top_rank_history) > 20:
                     st.session_state.top_rank_history.pop(0)
                 if len(st.session_state.top_4_history) > 80:
@@ -1726,7 +1726,7 @@ if monitoring_on:
                     counts_1 = Counter(st.session_state.top_rank_history)
                     df_1 = pd.DataFrame({'馬名': list(counts_1.keys()), '次數': list(counts_1.values())})
                     fig1 = px.pie(df_1, values='次數', names='馬名', hole=0.4, color_discrete_sequence=px.colors.qualitative.Set3)
-                    st.plotly_chart(fig1, use_container_width=True, key=f"top1_{time_now.strftime('%H%M%S')}")
+                    st.plotly_chart(fig1, width='stretch', key=f"top1_{time_now.strftime('%H%M%S')}")
             
                 with col2:
                     st.markdown("### 🐎 頭 4 名出現頻率")
@@ -1735,7 +1735,7 @@ if monitoring_on:
                     # 排序讓圖表更好看
                     df_4 = df_4.sort_values(by='出現次數', ascending=False)
                     fig4 = px.pie(df_4, values='出現次數', names='馬名', hole=0.4, color_discrete_sequence=px.colors.qualitative.Pastel)
-                    st.plotly_chart(fig4, use_container_width=True, key=f"top4_{time_now.strftime('&H%M%S')}")
+                    st.plotly_chart(fig4, width='stretch', key=f"top4_{time_now.strftime('&H%M%S')}")
 
             print_top()
            
@@ -1781,5 +1781,5 @@ else:
 
 
 
-        st.dataframe(display_df.style.apply(highlight_top_static, axis=1), use_container_width=True)
+        st.dataframe(display_df.style.apply(highlight_top_static, axis=1), width='stretch')
 
