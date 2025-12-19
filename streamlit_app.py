@@ -1672,30 +1672,6 @@ if monitoring_on:
                 display_df['近期資金流(K)'] = display_df['近期資金流(K)'].apply(lambda x: f"{x:.1f}")
                 display_df['近績評分'] = display_df['近績評分'].astype(float).round(0).astype('Int64')
                 display_df['🔥綜合推薦分'] = display_df['🔥綜合推薦分'].astype(float).round(0).astype('Int64')
-                if len(st.session_state.top_rank_history) > 20:
-                    st.session_state.top_rank_history.pop(0)
-                if len(st.session_state.top_4_history) > 80:
-                    st.session_state.top_4_history = st.session_state.top_4_history[4:]
-
-                col1, col2 = st.columns(2) # 使用左右兩欄顯示兩個圖
-            
-                with col1:
-                    st.markdown("### 🏆 第一名佔有率")
-                    counts_1 = Counter(st.session_state.top_rank_history)
-                    df_1 = pd.DataFrame({'馬名': list(counts_1.keys()), '次數': list(counts_1.values())})
-                    fig1 = px.pie(df_1, values='次數', names='馬名', hole=0.4, color_discrete_sequence=px.colors.qualitative.Set3)
-                    st.plotly_chart(fig1, use_container_width=True)
-            
-                with col2:
-                    st.markdown("### 🐎 頭 4 名出現頻率")
-                    counts_4 = Counter(st.session_state.top_4_history)
-                    df_4 = pd.DataFrame({'馬名': list(counts_4.keys()), '出現次數': list(counts_4.values())})
-                    # 排序讓圖表更好看
-                    df_4 = df_4.sort_values(by='出現次數', ascending=False)
-                    fig4 = px.pie(df_4, values='出現次數', names='馬名', hole=0.4, color_discrete_sequence=px.colors.qualitative.Pastel)
-                    st.plotly_chart(fig4, use_container_width=True)
-    
-    
                 def highlight_top_realtime(row):
                     # 【關鍵修正：檢查 NaN】
                     # 如果 '🔥綜合推薦分' 是 NaN (空值)，則不進行高亮，返回空字串列表
@@ -1738,6 +1714,29 @@ if monitoring_on:
     
                 # 應用高亮函數
                 st.dataframe(display_df.style.apply(highlight_top_realtime, axis=1), use_container_width=True)
+                if len(st.session_state.top_rank_history) > 20:
+                    st.session_state.top_rank_history.pop(0)
+                if len(st.session_state.top_4_history) > 80:
+                    st.session_state.top_4_history = st.session_state.top_4_history[4:]
+
+                col1, col2 = st.columns(2) # 使用左右兩欄顯示兩個圖
+            
+                with col1:
+                    st.markdown("### 🏆 第一名佔有率")
+                    counts_1 = Counter(st.session_state.top_rank_history)
+                    df_1 = pd.DataFrame({'馬名': list(counts_1.keys()), '次數': list(counts_1.values())})
+                    fig1 = px.pie(df_1, values='次數', names='馬名', hole=0.4, color_discrete_sequence=px.colors.qualitative.Set3)
+                    st.plotly_chart(fig1, use_container_width=True)
+            
+                with col2:
+                    st.markdown("### 🐎 頭 4 名出現頻率")
+                    counts_4 = Counter(st.session_state.top_4_history)
+                    df_4 = pd.DataFrame({'馬名': list(counts_4.keys()), '出現次數': list(counts_4.values())})
+                    # 排序讓圖表更好看
+                    df_4 = df_4.sort_values(by='出現次數', ascending=False)
+                    fig4 = px.pie(df_4, values='出現次數', names='馬名', hole=0.4, color_discrete_sequence=px.colors.qualitative.Pastel)
+                    st.plotly_chart(fig4, use_container_width=True)
+
             print_top()
            
             time.sleep(15)
