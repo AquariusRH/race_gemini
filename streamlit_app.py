@@ -1726,7 +1726,7 @@ if monitoring_on:
                     counts_1 = Counter(st.session_state.top_rank_history)
                     df_1 = pd.DataFrame({'馬名': list(counts_1.keys()), '次數': list(counts_1.values())})
                     fig1 = px.pie(df_1, values='次數', names='馬名', hole=0.4, color_discrete_sequence=px.colors.qualitative.Set3)
-                    st.plotly_chart(fig1, use_container_width=True)
+                    st.plotly_chart(fig1, use_container_width=True, key="pie_chart_top1")
             
                 with col2:
                     st.markdown("### 🐎 頭 4 名出現頻率")
@@ -1735,7 +1735,7 @@ if monitoring_on:
                     # 排序讓圖表更好看
                     df_4 = df_4.sort_values(by='出現次數', ascending=False)
                     fig4 = px.pie(df_4, values='出現次數', names='馬名', hole=0.4, color_discrete_sequence=px.colors.qualitative.Pastel)
-                    st.plotly_chart(fig4, use_container_width=True)
+                    st.plotly_chart(fig4, use_container_width=True, key="pie_chart_top4")
 
             print_top()
            
