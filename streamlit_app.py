@@ -1710,9 +1710,24 @@ if monitoring_on:
                     else:
                         return [''] * len(row)
     
-    
+                st.markdown("""
+                    <style>
+                    /* 強制所有表格的數據內容 (td) 不准換行 */
+                    .stTable td {
+                        white-space: nowrap !important;
+                        vertical-align: middle;
+                    }
+                    /* 允許標題 (th) 換行，並縮小字體以騰出空間 */
+                    .stTable th {
+                        white-space: normal !important;
+                        min-width: 60px; /* 給標題一個最小寬度，迫使它太擠時自動換行 */
+                        font-size: 14px !important;
+                        line-height: 1.1;
+                    }
+                    </style>
+                    """, unsafe_allow_html=True)
                 # 應用高亮函數
-                st.table(display_df.style.apply(highlight_top_realtime, axis=1))                
+                st.table(display_df.style.apply(highlight_top_realtime, axis=1).hide(axis='index'))                
                 if len(st.session_state.top_rank_history) > 20:
                     st.session_state.top_rank_history.pop(0)
                 if len(st.session_state.top_4_history) > 80:
