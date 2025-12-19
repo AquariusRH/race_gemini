@@ -669,7 +669,7 @@ def print_bar_chart(time_now):
       namelist_sort = [str(i) + '. ' + str(namelist_raw.iloc[i - 1]) for i in X]
       formatted_namelist = [label.split('.')[0] + '.' + '\n'.join(label.split('.')[1]) for label in namelist_sort]
       
-      plt.xticks(X_axis, formatted_namelist, fontsize=12)
+      plt.xticks(X_axis, formatted_namelist, fontsize=16)
       ax1.grid(color='lightgrey', axis='y', linestyle='--')
       ax1.set_ylabel('投注額',fontsize=15)
       ax1.tick_params(axis='y')
