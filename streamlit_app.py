@@ -549,8 +549,8 @@ def change_overall(time_now):
 # ==================== 3. 繪圖函數 (簡化版) ====================
 def print_bar_chart(time_now):
   post_time = st.session_state.post_time_dict[race_no]
-  time_25_minutes_before = np.datetime64((post_time - timedelta(minutes=25)).replace(tzinfo=None) )
-  time_5_minutes_before = np.datetime64((post_time - timedelta(minutes=5)).replace(tzinfo=None))
+  time_25_minutes_before = np.datetime64((post_time - timedelta(minutes=25)+timedelta(hour=8)).replace(tzinfo=None) )
+  time_5_minutes_before = np.datetime64((post_time - timedelta(minutes=5)+timedelta(hour=8)).replace(tzinfo=None))
   
   for method in print_list:
       odds_list = pd.DataFrame()
