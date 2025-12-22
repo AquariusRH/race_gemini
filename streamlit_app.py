@@ -1651,7 +1651,7 @@ if monitoring_on:
     
         # 3. 顯示結果
         with placeholder.container():
-            st.metric("最後更新", (st.session_state.last_update + timedelta(hours=8)).strftime('%H:%M:%S') if st.session_state.last_update else "N/A")
+            st.metric("最後更新", st.session_state.last_update.strftime('%H:%M:%S') if st.session_state.last_update else "N/A")
             
             # A. 氣泡圖 (資金流向視覺化)
             #print_bubble(race_no, print_list)
