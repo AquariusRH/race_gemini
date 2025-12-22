@@ -1735,8 +1735,8 @@ if monitoring_on:
                 if len(st.session_state.top_4_history) > 80:
                     st.session_state.top_4_history = st.session_state.top_4_history[4:]
 
-                col1, col2 = st.columns(2) # 使用左右兩欄顯示兩個圖
-            
+                #col1, col2 = st.columns(2) # 使用左右兩欄顯示兩個圖
+                col1 = st.columns(1)
                 with col1:
                     st.markdown("### 🏆 第一名佔有率")
                     counts_1 = Counter(st.session_state.top_rank_history)
@@ -1749,19 +1749,19 @@ if monitoring_on:
                     )
                     st.plotly_chart(fig1, width='stretch', key=f"top1_{time_now.strftime('%H%M%S')}")
             
-                with col2:
-                    st.markdown("### 🐎 頭 4 名出現頻率")
-                    counts_4 = Counter(st.session_state.top_4_history)
-                    df_4 = pd.DataFrame({'馬名': list(counts_4.keys()), '出現次數': list(counts_4.values())})
+                #with col2:
+                    #st.markdown("### 🐎 頭 4 名出現頻率")
+                    #counts_4 = Counter(st.session_state.top_4_history)
+                    #df_4 = pd.DataFrame({'馬名': list(counts_4.keys()), '出現次數': list(counts_4.values())})
                     # 排序讓圖表更好看
-                    df_4 = df_4.sort_values(by='出現次數', ascending=False)
-                    fig4 = px.pie(df_4, values='出現次數', names='馬名', hole=0.4, color_discrete_sequence=px.colors.qualitative.Pastel)
-                    fig4.update_traces(
-                        textposition='auto',
-                        textinfo='label+percent',
-                        insidetextorientation='horizontal'
-                    )
-                    st.plotly_chart(fig4, width='stretch', key=f"top4_{time_now.strftime('&H%M%S')}")
+                    #df_4 = df_4.sort_values(by='出現次數', ascending=False)
+                    #fig4 = px.pie(df_4, values='出現次數', names='馬名', hole=0.4, color_discrete_sequence=px.colors.qualitative.Pastel)
+                    #fig4.update_traces(
+                        #textposition='auto',
+                        #textinfo='label+percent',
+                        #insidetextorientation='horizontal'
+                    #)
+                    #st.plotly_chart(fig4, width='stretch', key=f"top4_{time_now.strftime('&H%M%S')}")
 
             print_top()
            
