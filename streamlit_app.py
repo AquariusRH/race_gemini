@@ -549,8 +549,8 @@ def change_overall(time_now):
 # ==================== 3. 繪圖函數 (簡化版) ====================
 def print_bar_chart(time_now):
   post_time = st.session_state.post_time_dict[race_no]
-  st.write(post_time)
-  st.write(time_now)  
+  #st.write(post_time)
+  #st.write(time_now)  
   time_25_minutes_before = np.datetime64((post_time - timedelta(minutes=25)).replace(tzinfo=None) )
   time_5_minutes_before = np.datetime64((post_time - timedelta(minutes=5)).replace(tzinfo=None))
   
@@ -1629,7 +1629,7 @@ if monitoring_on:
         # --- 實時監控模式 (比賽當日) ---
         #st.markdown("### 🟢 實時監控與資金流預測中...")
         time_now = datetime.now()+timedelta(hours=8)
-        time_str = (time_now + timedelta(hours=8)).strftime('%H:%M:%S')
+        time_str = time_now.strftime('%H:%M:%S')
     
         # 1. 抓取數據 (這裡需要您的實際抓取邏輯)
     
