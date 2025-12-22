@@ -1736,15 +1736,15 @@ if monitoring_on:
                     st.session_state.top_4_history = st.session_state.top_4_history[4:]
 
                 st.markdown("### 🏆 第一名佔有率")
-                    counts_1 = Counter(st.session_state.top_rank_history)
-                    df_1 = pd.DataFrame({'馬名': list(counts_1.keys()), '次數': list(counts_1.values())})
-                    fig1 = px.pie(df_1, values='次數', names='馬名', hole=0.4, color_discrete_sequence=px.colors.qualitative.Set3)
-                    fig1.update_traces(
+                counts_1 = Counter(st.session_state.top_rank_history)
+                df_1 = pd.DataFrame({'馬名': list(counts_1.keys()), '次數': list(counts_1.values())})
+                fig1 = px.pie(df_1, values='次數', names='馬名', hole=0.4, color_discrete_sequence=px.colors.qualitative.Set3)
+                fig1.update_traces(
                         textposition='auto',  # 自動判斷放裡面或外面
                         textinfo='label+percent',
                         insidetextorientation='horizontal' # 確保裡面的文字是水平的，比較好讀
-                    )
-                    st.plotly_chart(fig1, width='stretch', key=f"top1_{time_now.strftime('%H%M%S')}")
+                )
+                st.plotly_chart(fig1, width='stretch', key=f"top1_{time_now.strftime('%H%M%S')}")
 
                 #col1, col2 = st.columns(2) # 使用左右兩欄顯示兩個圖
                 
