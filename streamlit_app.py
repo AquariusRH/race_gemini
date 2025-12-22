@@ -1735,10 +1735,7 @@ if monitoring_on:
                 if len(st.session_state.top_4_history) > 80:
                     st.session_state.top_4_history = st.session_state.top_4_history[4:]
 
-                #col1, col2 = st.columns(2) # 使用左右兩欄顯示兩個圖
-                col1 = st.columns(1)
-                with col1:
-                    st.markdown("### 🏆 第一名佔有率")
+                st.markdown("### 🏆 第一名佔有率")
                     counts_1 = Counter(st.session_state.top_rank_history)
                     df_1 = pd.DataFrame({'馬名': list(counts_1.keys()), '次數': list(counts_1.values())})
                     fig1 = px.pie(df_1, values='次數', names='馬名', hole=0.4, color_discrete_sequence=px.colors.qualitative.Set3)
@@ -1748,6 +1745,10 @@ if monitoring_on:
                         insidetextorientation='horizontal' # 確保裡面的文字是水平的，比較好讀
                     )
                     st.plotly_chart(fig1, width='stretch', key=f"top1_{time_now.strftime('%H%M%S')}")
+
+                #col1, col2 = st.columns(2) # 使用左右兩欄顯示兩個圖
+                
+                    
             
                 #with col2:
                     #st.markdown("### 🐎 頭 4 名出現頻率")
