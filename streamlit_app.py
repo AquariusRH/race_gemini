@@ -1508,7 +1508,7 @@ def calculate_smart_score(race_no):
     df['TotalScore'] = (df['TotalFormScore'] * 0.3) + \
                        (df['MoneyScore'] * 0.5) + \
                        (df['ValueScore'] * 0.2)
-                            
+    df.loc[np.isinf(df['Odds']), 'TotalScore'] = 0                        
     return df.sort_values('TotalScore', ascending=False)
     
 def calculate_smart_score_static(race_no):
