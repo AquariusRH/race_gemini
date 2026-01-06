@@ -930,7 +930,7 @@ def top(method_odds_df, method_investment_df, method):
       rows_with_plus = target_special_df[
           target_special_df['最初排名'].astype(str).str.contains('\+') |
           target_special_df['上一次排名'].astype(str).str.contains('\+')
-      ][['組合', '賠率', '最初排名', '上一次排名']]
+      ][['組合', '賠率', '最初排名', '上一次排名', '一分鐘投注','三分鐘投注']]
     
 
       # Apply the conditional formatting to the 初始排名 and 前一排名 columns and add a bar to the 投資變化 column
