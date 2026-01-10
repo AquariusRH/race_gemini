@@ -925,8 +925,8 @@ def top(method_odds_df, method_investment_df, method):
 
     else:
       final_df.columns = ['組合', '賠率', '最初賠率', '排名', '最初排名', '上一次排名', '投注變化', '投注', '一分鐘投注','三分鐘投注']
-      target_df = final_df.head(15)
-      target_special_df = final_df.head(30)
+      target_df = final_df.head(25)
+      target_special_df = final_df.head(50)
       rows_with_plus = target_special_df[
           target_special_df['最初排名'].astype(str).str.contains('\+') |
           target_special_df['上一次排名'].astype(str).str.contains('\+')
@@ -948,7 +948,7 @@ def top(method_odds_df, method_investment_df, method):
         '三分鐘投注': '{:.2f}k'
         }).bar(subset=['一分鐘投注', '三分鐘投注'], color='rgba(173, 216, 230, 0.5)').map(highlight_change, subset=['最初排名', '上一次排名']).hide(axis='index')
       # Display the styled DataFrame
-      #st.write(styled_df.to_html(), unsafe_allow_html=True)
+      st.write(styled_df.to_html(), unsafe_allow_html=True)
 
       if method in ["QIN","QPL","FCT","TRI","FF"]:
         if method in ["QIN"]:
