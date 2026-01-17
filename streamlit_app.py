@@ -1127,9 +1127,6 @@ def fetch_race_card(date_str, venue):
               horse {
                 id
                 code
-                details {
-                  age
-                }
               }
               color
               barrierDrawNumber
