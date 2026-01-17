@@ -263,7 +263,6 @@ def extract_jockey_data(html_content):
     """
     soup = BeautifulSoup(html_content, 'html.parser')
     ranking_table = soup.select_one('table.table_bd')
-    print(soup.select_one('table.table_bd'))
     if not ranking_table:
         return pd.DataFrame() # Return empty DF if table not found
 
@@ -316,7 +315,7 @@ def get_jockey_ranking():
     try:
         response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
-        print(len(response.text))
+        print(response.text)
         # This now returns a DataFrame instead of a list
         df = extract_jockey_data(response.text)
         
