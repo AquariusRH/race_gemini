@@ -1250,6 +1250,7 @@ def fetch_race_card(date_str, venue):
                             weight_val = 0
                         h_no = r['no']
                         horse_age = get_age_from_web(web_date, venue, r_no, h_no)
+                        st.write(horse_age)
                         data_list.append({
                             "馬號": r['no'],
                             "馬名": r['name_ch'],
