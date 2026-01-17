@@ -1206,7 +1206,9 @@ def fetch_race_card(date_str, venue):
                     
                     # 關鍵修改：過濾後備馬匹 (standbyNo 為空字串或 None)
                     filtered_runners = [r for r in runners if not r.get('standbyNo')]
-
+                    if filtered_runners:
+                        # 這會把第一匹馬所有的 API 鍵值（Keys）印在 Streamlit 畫面上
+                        st.write(f"第 {r_no} 場可用欄位清單：", filtered_runners[0].keys())
                     data_list = []
                     for r in filtered_runners:
                         
