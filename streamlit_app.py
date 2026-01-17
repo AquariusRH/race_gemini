@@ -997,26 +997,6 @@ with st.sidebar:
 
 # --- 賽事資料加載 ---
 @st.cache_data(ttl=3600)
-def get_age_from_web(date_str, venue, race_no, horse_no):
-    """
-    date_str 格式: 2024/05/22
-    venue 格式: ST 或 HV
-    """
-    web_url = f'https://racing.hkjc.com/racing/information/Chinese/Racing/RaceCard.aspx?RaceDate={date_str}&Racecourse={venue}&RaceNo={race_no}'
-    try:
-        # 這裡用簡單的 requests 抓取單頁
-        r = requests.get(web_url, timeout=5)
-        if r.status_code == 200:
-            soup = BeautifulSoup(r.text, 'html.parser')
-            table_rows = soup.find_all('tr', class_='f_tac f_fs13')
-            for row in table_rows:
-                tds = row.find_all('td')
-                # tds[0] 是馬號，tds[16] 是馬齡
-                if tds and tds[0].text.strip() == str(horse_no):
-                    return tds[16].text.strip()
-    except:
-        pass
-    return "N/A"
 def fetch_race_card(date_str, venue):
     # 這是一個簡化的 RaceCard 抓取，只抓基本資料以顯示
     # 完整邏輯較長，這裡保留核心概念：抓取馬名與基本資料
@@ -1254,7 +1234,6 @@ def fetch_race_card(date_str, venue):
                         data_list.append({
                             "馬號": r['no'],
                             "馬名": r['name_ch'],
-                            "馬齡": horse_age,
                             "騎師": r['jockey']['name_ch'] if r['jockey'] else '',
                             "練馬師": r['trainer']['name_ch'] if r['trainer'] else '',
                             "近績": r.get('last6run', ''),
