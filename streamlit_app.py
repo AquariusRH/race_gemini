@@ -1193,7 +1193,6 @@ def fetch_race_card(date_str, venue):
       }
       """
   }
-    web_date = date_str.replace('-', '/')
     try:
         response = requests.post(url, headers=headers, json=payload, timeout=10)
         if response.status_code == 200:
@@ -1228,9 +1227,6 @@ def fetch_race_card(date_str, venue):
                             weight_val = int(r.get('handicapWeight', '0'))
                         except (ValueError, TypeError):
                             weight_val = 0
-                        h_no = r['no']
-                        horse_age = get_age_from_web(web_date, venue, r_no, h_no)
-                        st.write(horse_age)
                         data_list.append({
                             "馬號": r['no'],
                             "馬名": r['name_ch'],
