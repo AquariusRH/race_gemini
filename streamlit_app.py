@@ -326,12 +326,12 @@ def get_jockey_ranking():
         return pd.DataFrame() # Return empty DF on error
 
 # --- Example of running the function ---
-ranking = get_jockey_ranking()
-if ranking:
+#ranking = get_jockey_ranking()
+#if ranking:
      # Print the top 3 jockeys in a readable format
-     print(json.dumps(ranking[:3], indent=2, ensure_ascii=False))
-else:
-     print("Failed to retrieve or parse ranking data.")
+     #print(json.dumps(ranking[:3], indent=2, ensure_ascii=False))
+#else:
+     #print("Failed to retrieve or parse ranking data.")
 def extract_trainer_data(html_content):
     """
     從香港賽馬會練馬師排名 HTML 內容中提取數據，並返回一個 Pandas DataFrame。
