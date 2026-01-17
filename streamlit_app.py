@@ -316,7 +316,7 @@ def get_jockey_ranking():
     try:
         response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
-        st.write(response)
+        st.write(response.text)
         # This now returns a DataFrame instead of a list
         df = extract_jockey_data(response.text)
         
