@@ -1228,7 +1228,7 @@ def fetch_race_card(date_str, venue):
                         except (ValueError, TypeError):
                             weight_val = 0
                         
-                        st.write(filtered_runners)
+                        st.write(r)
                         data_list.append({
                             "馬號": r['no'],
                             "馬名": r['name_ch'],
