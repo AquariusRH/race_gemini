@@ -466,20 +466,6 @@ def get_trainer_ranking():
         st.error(f"Request Error: {e}")
         return pd.DataFrame() # 請求失敗時返回空的 DataFrame
 
-太棒了，你提供了完整的 Network Header 資訊，這對於在 Streamlit.io 上成功模擬請求至關重要。特別是 sec-ch-ua 和 referer 這些欄位，是避開馬會防火牆檢測的關鍵。
-
-根據你提供的 Header 和之前的 Query，我為你重新整合了一個最完整的騎師數據抓取函數。
-
-🚀 最終修正版：Jockey GraphQL Request
-請將這段代碼放到你的 Streamlit 專案中，它會精確模擬你提供的瀏覽器環境：
-
-Python
-
-import streamlit as st
-import requests
-import pandas as pd
-
-@st.cache_data(ttl=3600)  # 快取1小時，避免被封IP
 def get_jockey_data_v3():
     url = "https://info.cld.hkjc.com/graphql/base/"
     
