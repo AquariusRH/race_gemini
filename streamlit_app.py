@@ -554,9 +554,9 @@ def fetch_hkjc_graphql_jockey_ranking():
 
 df_ranking = fetch_hkjc_graphql_jockey_ranking()
 if not df_ranking.empty:
-        print(df_ranking.head())
+        st.write(df_ranking.head())
 else:
-        print("無法獲取數據")
+        st.write("無法獲取數據")
 
 
 def save_odds_data(time_now,odds):
@@ -1924,13 +1924,7 @@ else:
     # 4. 賽前預測模式 (靜態)
     st.markdown("### 🔍 賽前靜態預測分析")
     st.info("由於缺乏實時賠率和資金流數據，本分析完全基於馬匹、騎師和場地等靜態資訊。")
-    # --- 測試執行 ---
 
-    df_ranking = fetch_hkjc_graphql_jockey_ranking()
-    if not df_ranking.empty:
-            print('kb')
-    else:
-            print("無法獲取數據")
     # 執行靜態預測
     static_prediction_df = calculate_smart_score_static(race_no)
     if not static_prediction_df.empty:
