@@ -531,6 +531,7 @@ def fetch_hkjc_jockey_ranking():
             return None, f"API 回傳錯誤列表: {error_msg}"
         
         # 確保 result 是字典後再使用 .get
+        st.write(result)
         data_section = result.get("data")
         if not data_section:
             error_info = result.get("errors", [{}])[0].get("message", "無數據回傳")
@@ -572,7 +573,6 @@ def fetch_hkjc_jockey_ranking():
         return None, f"抓取異常: {str(e)}"
 
 # --- Streamlit 顯示部分 ---
-st.title("🏇 香港賽馬會騎師榜")
 
 df, error = fetch_hkjc_jockey_ranking()
 
