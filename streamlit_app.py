@@ -258,80 +258,92 @@ def get_odds_data():
   else:
       print(f"Error: {response.status_code}")
 def extract_jockey_data(html_content):
-    """
-    Extracts jockey ranking data from HKJC HTML and returns a Pandas DataFrame.
-    """
     soup = BeautifulSoup(html_content, 'html.parser')
-    ranking_table = soup.select_one('table.table_bd')
+    
+    # 1. 尋找表格：新版馬會頁面通常仍使用 table_bd 或 table_ranking
+    # 改用更保險的方式：尋找包含「騎師」文字的表格
+    ranking_table = None
+    for table in soup.find_all('table'):
+        if '騎師' in table.get_text():
+            ranking_table = table
+            break
+            
     if not ranking_table:
-        return pd.DataFrame() # Return empty DF if table not found
+        print("錯誤：找不到排名表格")
+        return pd.DataFrame()
 
     jockey_data = []
-    headers_chinese = ["騎師", "冠", "亞", "季", "殿", "第五", "總出賽次數", "所贏獎金"]
+    # 根據截圖，確定的 8 個欄位名稱
+    headers = ["騎師", "冠", "亞", "季", "殿", "第五", "總出賽次數", "所贏獎金"]
 
-    # Locate the specific data-containing tbodies
-    data_sections = ranking_table.find_all('tbody', class_='f_tac f_fs12')
+    # 2. 遍歷所有行，不限定 tbody 的 class
+    rows = ranking_table.find_all('tr')
     
-    for tbody in data_sections:
-        for row in tbody.find_all('tr'):
-            td_elements = row.find_all('td')
+    for row in rows:
+        tds = row.find_all('td')
+        
+        # 根據截圖，數據行應該有 8 個單元格 (td)
+        # 如果是分類列（如「在港現役騎師」），td 數量會少於 8
+        if len(tds) < 8:
+            continue
             
-            if len(td_elements) != len(headers_chinese):
+        # 3. 提取數據
+        try:
+            # 騎師名稱通常在第 1 個 td
+            name_cell = tds[0]
+            # 優先找連結裡的文字，若無則取 td 文字
+            name = name_cell.find('a').get_text(strip=True) if name_cell.find('a') else name_cell.get_text(strip=True)
+            
+            # 過濾掉表頭（如果抓到「騎師」這兩個字就跳過）
+            if name == "騎師" or not name:
                 continue
 
-            row_data = {}
+            # 提取數值列 (索引 1 到 7)
+            # 冠(1), 亞(2), 季(3), 殿(4), 第五(5), 總次數(6), 獎金(7)
+            row_dict = {"騎師": name}
             
-            # 1. Extract Jockey Name
-            jockey_cell = td_elements[0].find('a')
-            row_data["騎師"] = jockey_cell.get_text(strip=True) if jockey_cell else td_elements[0].get_text(strip=True)
+            # 處理 冠、亞、季... 到 總出賽次數
+            row_dict["冠"] = int(re.sub(r'\D', '', tds[1].get_text(strip=True)) or 0)
+            row_dict["總出賽次數"] = int(re.sub(r'\D', '', tds[6].get_text(strip=True)) or 0)
             
-            # 2. Extract Numbers
-            for i in range(1, len(headers_chinese)):
-                header = headers_chinese[i]
-                raw_value = td_elements[i].get_text(strip=True)
-                
-                # Clean currency and commas
-                clean_value = re.sub(r'[$,]', '', raw_value)
-                try:
-                    row_data[header] = int(clean_value)
-                except ValueError:
-                    row_data[header] = 0
+            # 如果你需要完整資料，可以把 2~5 亞季殿五也補上
+            # row_dict["亞"] = int(re.sub(r'\D', '', tds[2].get_text(strip=True)) or 0)
             
-            jockey_data.append(row_data)
+            jockey_data.append(row_dict)
+        except Exception as e:
+            continue
 
-    # Convert the list of dictionaries to a DataFrame immediately
-    return pd.DataFrame(jockey_data)
+    df = pd.DataFrame(jockey_data)
+    return df
 
 
 def get_jockey_ranking():
-    """
-    Fetches the HKJC page and returns the jockey rankings as a DataFrame.
-    """
-    url = "https://racing.hkjc.com/racing/information/Chinese/Jockey/JockeyRanking.aspx"
+    # 使用你提供的最新網址
+    url = "https://racing.hkjc.com/zh-hk/local/info/jockey-ranking?season=Current&view=Numbers&racecourse=ALL"
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+        'Accept-Language': 'zh-HK,zh-TW;q=0.9,zh;q=0.8,en;q=0.7'
     }
     
     try:
-        response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status()
-        
-        # This now returns a DataFrame instead of a list
-        df = extract_jockey_data(response.text)
-        
-        return df
+        response = requests.get(url, headers=headers, timeout=15)
+        response.encoding = 'utf-8' # 強制指定編碼，避免中文亂碼
+        if response.status_code != 200:
+            return pd.DataFrame()
+            
+        return extract_jockey_data(response.text)
+    except:
+        return pd.DataFrame()
 
-    except requests.exceptions.RequestException as e:
-        print(f"Request Error: {e}")
-        return pd.DataFrame() # Return empty DF on error
-
-# --- Example of running the function ---
-#ranking = get_jockey_ranking()
-#if ranking:
-     # Print the top 3 jockeys in a readable format
-     #print(json.dumps(ranking[:3], indent=2, ensure_ascii=False))
-#else:
-     #print("Failed to retrieve or parse ranking data.")
+# --- 測試執行 ---
+df = get_jockey_ranking()
+if not df.empty:
+    print(df.head())
+    # 測試計算潘頓的分數
+    score = calculate_jockey_score("潘頓", df)
+    print(f"潘頓的分數: {score}")
+else:
+    print("目前仍然抓不到資料，請檢查網路或馬會是否阻擋 Bot")
 def extract_trainer_data(html_content):
     """
     從香港賽馬會練馬師排名 HTML 內容中提取數據，並返回一個 Pandas DataFrame。
