@@ -1672,7 +1672,7 @@ def calculate_smart_score(race_no):
     static_df['FormScore'] = static_df['近績'].apply(parse_form_score)
     if 'jockey_ranking_df' not in st.session_state or st.session_state.jockey_ranking_df is None:
     # 這裡呼叫你之前寫好的 fetch 函數
-    df_new, err = fetch_hkjc_jockey_ranking()
+        df_new, err = fetch_hkjc_jockey_ranking()
     if err is None:
         st.session_state.jockey_ranking_df = df_new
     else:
