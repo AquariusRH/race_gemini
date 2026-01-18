@@ -318,32 +318,92 @@ def extract_jockey_data(html_content):
 
 
 def get_jockey_ranking():
-    # 使用你提供的最新網址
+    # 使用您提供的最新網址
     url = "https://racing.hkjc.com/zh-hk/local/info/jockey-ranking?season=Current&view=Numbers&racecourse=ALL"
+    
+    # 設定更完整的 Headers，模擬真實瀏覽器
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
-        'Accept-Language': 'zh-HK,zh-TW;q=0.9,zh;q=0.8,en;q=0.7'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'zh-HK,zh-TW;q=0.9,zh;q=0.8,en;q=0.7',
     }
     
     try:
+        print(f"正在請求網址: {url}")
         response = requests.get(url, headers=headers, timeout=15)
-        response.encoding = 'utf-8' # 強制指定編碼，避免中文亂碼
+        
+        # 1. 檢查 HTTP 狀態碼
+        print(f"HTTP 狀態碼: {response.status_code}")
         if response.status_code != 200:
+            print("❌ 請求失敗，可能被馬會防火牆擋住了（常見為 403 錯誤）。")
             return pd.DataFrame()
+
+        # 2. 處理編碼，馬會網頁有時需強制轉碼
+        response.encoding = response.apparent_encoding 
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        # 3. 尋找表格 - 新版馬會頁面結構可能較複雜
+        # 我們直接尋找包含「騎師」二字的表格
+        ranking_table = None
+        for table in soup.find_all('table'):
+            if "騎師" in table.get_text():
+                ranking_table = table
+                break
+        
+        if not ranking_table:
+            print("❌ 找不到符合條件的表格。")
+            # 偵錯用：印出前 500 個字元看抓到了什麼
+            print("網頁內容片段:", response.text[:500])
+            return pd.DataFrame()
+
+        # 4. 提取數據
+        jockey_data = []
+        rows = ranking_table.find_all('tr')
+        print(f"找到 {len(rows)} 列資料，開始解析...")
+
+        for row in rows:
+            tds = row.find_all('td')
+            # 根據截圖，數據列通常有 8 個欄位
+            if len(tds) < 8:
+                continue
             
-        return extract_jockey_data(response.text)
-    except:
+            # 提取騎師名稱 (通常在第一個 td)
+            name_cell = tds[0]
+            name = name_cell.get_text(strip=True)
+            
+            # 過濾標題行或空白行
+            if "騎師" in name or not name:
+                continue
+                
+            try:
+                # 使用正則表達式只保留數字
+                wins = int(re.sub(r'\D', '', tds[1].get_text(strip=True)) or 0)
+                runs = int(re.sub(r'\D', '', tds[6].get_text(strip=True)) or 0)
+                
+                jockey_data.append({
+                    "騎師": name,
+                    "冠": wins,
+                    "總出賽次數": runs
+                })
+            except Exception as e:
+                continue
+
+        df = pd.DataFrame(jockey_data)
+        print(f"✅ 解析完成，共抓取到 {len(df)} 位騎師。")
+        return df
+
+    except Exception as e:
+        print(f"❌ 發生錯誤: {e}")
         return pd.DataFrame()
 
-# --- 測試執行 ---
-df = get_jockey_ranking()
-if not df.empty:
-    print(df.head())
-    # 測試計算潘頓的分數
-    score = calculate_jockey_score("潘頓", df)
-    print(f"潘頓的分數: {score}")
+# 執行測試
+df_result = get_jockey_ranking()
+if not df_result.empty:
+    print("\n--- 抓取結果前五名 ---")
+    print(df_result.head())
 else:
-    print("目前仍然抓不到資料，請檢查網路或馬會是否阻擋 Bot")
+    print("\n--- 最終結果為空 ---")
+    
 def extract_trainer_data(html_content):
     """
     從香港賽馬會練馬師排名 HTML 內容中提取數據，並返回一個 Pandas DataFrame。
