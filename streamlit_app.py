@@ -1774,11 +1774,12 @@ def calculate_smart_score_static(race_no):
     # 1. 狀態分數 (Form Score) - 權重 40%
     # 使用原有的 parse_form_score
     static_df['FormScore'] = static_df['近績'].apply(parse_form_score)
-    
+    j_df, err = fetch_hkjc_jockey_ranking()
+    st.dataframe(j_df) 
     # 2. 騎師分數 (Jockey Score) - 權重 15% (取代部分 Synergy)
-    st.session_state.jockey_ranking_df=get_jockey_ranking()
+    #st.session_state.jockey_ranking_df=get_jockey_ranking()
     st.session_state.trainer_ranking_df=get_trainer_ranking()
-    j_df = st.session_state.jockey_ranking_df
+    #j_df = st.session_state.jockey_ranking_df
     t_df = st.session_state.trainer_ranking_df
     static_df['JockeyScore'] = static_df['騎師'].apply(
         lambda x: calculate_jockey_score(str(x).strip(), j_df)
