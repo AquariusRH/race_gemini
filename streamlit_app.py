@@ -318,65 +318,58 @@ def extract_jockey_data(html_content):
 
 
 def get_jockey_ranking():
-    # 使用您提供的最新網址
+    """
+    從馬會獲取最新騎師排名 (已修正編碼與表格定位)
+    """
     url = "https://racing.hkjc.com/zh-hk/local/info/jockey-ranking?season=Current&view=Numbers&racecourse=ALL"
     
-    # 設定更完整的 Headers，模擬真實瀏覽器
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         'Accept-Language': 'zh-HK,zh-TW;q=0.9,zh;q=0.8,en;q=0.7',
+        'Referer': 'https://racing.hkjc.com/'
     }
     
     try:
-        print(f"正在請求網址: {url}")
+        # 使用 st.spinner 讓 Streamlit 使用者知道正在抓取
         response = requests.get(url, headers=headers, timeout=15)
         
-        # 1. 檢查 HTTP 狀態碼
-        print(f"HTTP 狀態碼: {response.status_code}")
+        # 強制指定編碼，解決馬會網頁亂碼導致抓不到「騎師」二字的問題
+        response.encoding = 'utf-8' 
+        
         if response.status_code != 200:
-            print("❌ 請求失敗，可能被馬會防火牆擋住了（常見為 403 錯誤）。")
+            st.error(f"❌ 無法連接馬會 (HTTP {response.status_code})")
             return pd.DataFrame()
 
-        # 2. 處理編碼，馬會網頁有時需強制轉碼
-        response.encoding = response.apparent_encoding 
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        # 3. 尋找表格 - 新版馬會頁面結構可能較複雜
-        # 我們直接尋找包含「騎師」二字的表格
-        ranking_table = None
+        # 搜尋包含特定文字的表格，增加匹配關鍵字以提高準確度
+        target_table = None
         for table in soup.find_all('table'):
-            if "騎師" in table.get_text():
-                ranking_table = table
+            text_content = table.get_text()
+            if "騎師" in text_content and "總出賽次數" in text_content:
+                target_table = table
                 break
         
-        if not ranking_table:
-            print("❌ 找不到符合條件的表格。")
-            # 偵錯用：印出前 500 個字元看抓到了什麼
-            print("網頁內容片段:", response.text[:500])
+        if not target_table:
+            st.warning("⚠️ 找不到數據表格，可能是馬會頁面結構變更")
             return pd.DataFrame()
 
-        # 4. 提取數據
         jockey_data = []
-        rows = ranking_table.find_all('tr')
-        print(f"找到 {len(rows)} 列資料，開始解析...")
+        rows = target_table.find_all('tr')
 
         for row in rows:
             tds = row.find_all('td')
-            # 根據截圖，數據列通常有 8 個欄位
-            if len(tds) < 8:
-                continue
+            if len(tds) < 8: continue # 略過非數據行
             
-            # 提取騎師名稱 (通常在第一個 td)
+            # 提取騎師姓名：處理 <a> 標籤或直接文本
             name_cell = tds[0]
             name = name_cell.get_text(strip=True)
             
-            # 過濾標題行或空白行
-            if "騎師" in name or not name:
-                continue
+            # 過濾標題列
+            if "騎師" in name or not name: continue
                 
             try:
-                # 使用正則表達式只保留數字
+                # 冠: tds[1], 總出賽次數: tds[6]
                 wins = int(re.sub(r'\D', '', tds[1].get_text(strip=True)) or 0)
                 runs = int(re.sub(r'\D', '', tds[6].get_text(strip=True)) or 0)
                 
@@ -385,25 +378,16 @@ def get_jockey_ranking():
                     "冠": wins,
                     "總出賽次數": runs
                 })
-            except Exception as e:
+            except:
                 continue
 
         df = pd.DataFrame(jockey_data)
-        print(f"✅ 解析完成，共抓取到 {len(df)} 位騎師。")
         return df
 
     except Exception as e:
-        print(f"❌ 發生錯誤: {e}")
+        st.error(f"❌ 數據抓取錯誤: {e}")
         return pd.DataFrame()
 
-# 執行測試
-df_result = get_jockey_ranking()
-if not df_result.empty:
-    print("\n--- 抓取結果前五名 ---")
-    print(df_result.head())
-else:
-    print("\n--- 最終結果為空 ---")
-    
 def extract_trainer_data(html_content):
     """
     從香港賽馬會練馬師排名 HTML 內容中提取數據，並返回一個 Pandas DataFrame。
@@ -1376,39 +1360,39 @@ def parse_form_score(last6run_str):
 
 def calculate_jockey_score(jockey_name, ranking_df):
     """
-    根據騎師的排名數據計算其專業分數。
-    分數基於當前賽季的勝率，並使用對數平滑化來減少極端值影響。
+    計算騎師評分
     """
+    # 錯誤代碼 51: DataFrame 為空
     if ranking_df is None or ranking_df.empty:
-        return 51.0
+        return 54.0
 
-    jockey_row = ranking_df[ranking_df['騎師'] == str(jockey_name).strip()]
+    # 處理輸入名稱，並在 DataFrame 中進行模糊搜尋
+    target_name = str(jockey_name).strip()
+    # 使用 str.contains 解決 "潘頓 " (帶空白) 比對失敗的問題
+    jockey_row = ranking_df[ranking_df['騎師'].str.contains(target_name, na=False)]
+    
+    # 錯誤代碼 52: 找不到該騎師
     if jockey_row.empty:
         return 52.0
 
     wins = jockey_row['冠'].iloc[0]
     runs = jockey_row['總出賽次數'].iloc[0]
     
+    # 錯誤代碼 53: 出賽數為 0
     if runs == 0:
         return 53.0
     
-    # 1. 計算該騎師的個人勝率
-    personal_win_rate = wins / runs
+    # 計算勝率
+    win_rate = wins / runs
     
-    # 2. 獲取全港排名表中的最高勝率作為基準 (避免分母為0)
-    # 我們只計算出賽超過 10 次的騎師，避免極端數據
-    ranking_df['win_rate'] = ranking_df['冠'] / ranking_df['總出賽次數']
-    max_win_rate = ranking_df[ranking_df['總出賽次數'] > 10]['win_rate'].max()
+    # 取得全港最高勝率作為基準 (篩選出賽超過10次的騎師以防極端值)
+    bench_df = ranking_df[ranking_df['總出賽次數'] > 10].copy()
+    bench_df['wr'] = bench_df['冠'] / bench_df['總出賽次數']
+    max_rate = bench_df['wr'].max() if not bench_df.empty else 0.20
     
-    if pd.isna(max_win_rate) or max_win_rate == 0:
-        max_win_rate = 0.2 # 預設基準 (通常頂級騎師勝率約 20%)
-
-    # 3. 線性得分：將個人勝率對標最高勝率，拉回 0-100 區間
-    # 假設最高勝率者得 100 分
-    score = (personal_win_rate / max_win_rate) * 100
-    
-    # 限制在 10 到 100 分之間，不要出現個位數
-    return min(max(score, 10), 100)
+    # 計算分數 (0-100)
+    score = (win_rate / max_rate) * 100
+    return round(min(max(score, 15), 100), 1)
 
 
 def calculate_trainer_score(trainer_name, ranking_df):
