@@ -470,8 +470,7 @@ def fetch_hkjc_jockey_ranking():
     # 25/26 賽季
     season = "25/26"
 
-    # 注意：這裡的 query 字串必須與官方前端發送的一模一樣（包含空格與結構）
-    # 如果白名單檢查嚴格，甚至連換行位置都有影響
+    # 精確還原官方 GraphQL 查詢字串
     query = """query rw_GetJockeyRanking($season: String) {
   jockeyStat(season: $season) {
     code
@@ -492,22 +491,11 @@ def fetch_hkjc_jockey_ranking():
       trk
       ven
     }
-    dhStat {
-      numFirst
-      numSecond
-      numThird
-      numFourth
-      numFifth
-      numStarts
-      stakeWon
-      trk
-      ven
-    }
   }
 }"""
 
     payload = {
-        "operationName": "rw_GetJockeyRanking", # 必須明確指定 operationName
+        "operationName": "rw_GetJockeyRanking",
         "variables": {"season": season},
         "query": query
     }
@@ -520,57 +508,74 @@ def fetch_hkjc_jockey_ranking():
     }
 
     try:
-        url = "https://info.cld.hkjc.com/graphql/base/"
-        resp = requests.post(url, json=payload, headers=headers, timeout=15)
+        # 發送請求
+        resp = requests.post("https://info.cld.hkjc.com/graphql/base/", json=payload, headers=headers, timeout=12)
+        resp.raise_for_status()
         result = resp.json()
 
-        # --- 新增：強健的格式檢查 ---
+        # 1. 檢查回傳是否為列表 (GraphQL 報錯時常回傳 List)
         if isinstance(result, list):
-            # 如果回傳是列表，通常代表發生了錯誤（例如：[{"message": "...", "extensions": ...}]）
-            error_msg = result[0].get("message") if result else "未知錯誤"
-            return None, f"API 回傳錯誤列表: {error_msg}"
-        
-        # 確保 result 是字典後再使用 .get
-        st.write(result)
-        data_section = result.get("data")
-        if not data_section:
-            error_info = result.get("errors", [{}])[0].get("message", "無數據回傳")
-            return None, f"GraphQL 錯誤: {error_info}"
+            return None, f"API 錯誤: {result[0].get('message', '未知錯誤')}"
 
-        jockeys = data_section.get("jockeyStat", [])
-        # ------------------------
+        # 2. 獲取數據主體
+        data_content = result.get("data")
+        if not data_content:
+            return None, "無法取得 data 欄位"
 
+        jockeys = data_content.get("jockeyStat", [])
         if not jockeys:
-            return None, "目前無資料，請檢查賽季格式"
+            return None, f"找不到賽季 {season} 的資料"
 
         rows = []
         for j in jockeys:
-            s = j.get("ssnStat") or {}
+            # 關鍵修正：ssnStat 是個列表 [{}, {}, ...]
+            ssn_list = j.get("ssnStat", [])
+            
+            # 初始化目標統計數據
+            target_stat = {}
+            
+            if isinstance(ssn_list, list):
+                # 遍歷列表，尋找 trk="ALL" 且 ven="ALL" 的項目 (這通常是賽季總計)
+                for stat in ssn_list:
+                    if stat.get("trk") == "ALL" and stat.get("ven") == "ALL":
+                        target_stat = stat
+                        break
+                
+                # 如果找不到 ALL，則保底取最後一項 (通常馬會 API 的 ALL 會放在最後或 index 1)
+                if not target_stat and ssn_list:
+                    target_stat = ssn_list[-1]
+
+            # 提取數據
             rows.append({
-                "排名": 0, # 後續排序再給值
+                "編號": j.get("code"),
                 "騎師": j.get("name_ch"),
-                "勝": s.get("numFirst", 0),
-                "亞": s.get("numSecond", 0),
-                "季": s.get("numThird", 0),
-                "出賽": s.get("numStarts", 0),
-                "勝率 (%)": 0.0,
-                "獎金": s.get("stakeWon", 0)
+                "勝": target_stat.get("numFirst", 0),
+                "亞": target_stat.get("numSecond", 0),
+                "季": target_stat.get("numThird", 0),
+                "出賽": target_stat.get("numStarts", 0),
+                "獎金": target_stat.get("stakeWon", 0),
             })
 
+        # 3. 建立 DataFrame 並進行資料清洗
         df = pd.DataFrame(rows)
-        if not df.empty:
-            # 數值轉換與排序
-            for col in ["勝", "亞", "季", "出賽", "獎金"]:
-                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
-            
-            df = df.sort_values(by=["勝", "亞", "季"], ascending=False).reset_index(drop=True)
-            df["排名"] = df.index + 1
-            df["勝率 (%)"] = (df["勝"] / df["出賽"].replace(0, 1) * 100).round(1)
+        
+        # 強制轉換數值型態 (獎金有時是字串)
+        cols_to_fix = ["勝", "亞", "季", "出賽", "獎金"]
+        df[cols_to_fix] = df[cols_to_fix].apply(pd.to_numeric, errors='coerce').fillna(0)
+
+        # 計算勝率
+        df["勝率 (%)"] = (df["勝"] / df["出賽"].replace(0, 1) * 100).round(1)
+        
+        # 排序：勝場 -> 亞軍 -> 季軍
+        df = df.sort_values(by=["勝", "亞", "季"], ascending=False).reset_index(drop=True)
+        
+        # 加上排名欄位
+        df.insert(0, "排名", df.index + 1)
 
         return df, None
 
     except Exception as e:
-        return None, f"抓取異常: {str(e)}"
+        return None, f"程式執行異常: {str(e)}"
 
 # --- Streamlit 顯示部分 ---
 
@@ -578,10 +583,21 @@ df, error = fetch_hkjc_jockey_ranking()
 
 if error:
     st.error(error)
-    st.info("提示：這通常是因為 HKJC 更新了 API 白名單。請檢查瀏覽器 F12 Network 分頁中的 graphql 請求內容。")
+    if "whitelisted" in error:
+        st.warning("提示：馬會更新了 API 白名單，請手動更新 Query 或 SHA256 Hash。")
 else:
-    st.write(f"數據更新時間: 2026 賽季")
-    st.dataframe(df, hide_index=True)
+    st.success(f"成功抓取 {len(df)} 位騎師數據")
+    
+    # 使用 st.dataframe 顯示，並對獎金欄位進行格式化
+    st.dataframe(
+        df, 
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "獎金": st.column_config.NumberColumn("獎金 (HKD)", format="$%d"),
+            "勝率 (%)": st.column_config.NumberColumn("勝率", format="%.1f%%")
+        }
+    )
 
 def save_odds_data(time_now,odds):
   for method in methodlist:
