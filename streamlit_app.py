@@ -472,13 +472,43 @@ def fetch_hkjc_jockey_ranking():
     query = """
     query rw_GetJockeyRanking($season: String) {
       jockeyStat(season: $season) {
-        code name_ch name_en status id isCurSsn season
-        ssnStat { numFirst numSecond numThird numFourth numFifth numStarts stakeWon }
+        code
+        name_ch
+        name_en
+        status
+        id
+        isCurSsn
+        season
+        ssnStat {
+          numFirst
+          numSecond
+          numThird
+          numFourth
+          numFifth
+          numStarts
+          stakeWon
+          trk
+          ven
+        }
+        dhStat {
+          numFirst
+          numSecond
+          numThird
+          numFourth
+          numFifth
+          numStarts
+          stakeWon
+          trk
+          ven
+        }
       }
     }
     """
 
-    payload = {"query": query, "variables": {"season": season}}
+    payload = {
+        "query": query,
+        "variables": {"season": season}
+    }
 
     headers = {
         "Content-Type": "application/json",
