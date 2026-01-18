@@ -465,7 +465,100 @@ def get_trainer_ranking():
     except requests.exceptions.RequestException as e:
         print(f"Request Error: {e}")
         return pd.DataFrame() # 請求失敗時返回空的 DataFrame
+
+def fetch_hkjc_graphql_jockey_ranking():
+    """
+    透過 GraphQL 直接從馬會 API 獲取騎師排名數據
+    """
+    url = "https://info.cld.hkjc.com/graphql/base/"
+    
+    # 這是從網頁抓取到的 GraphQL 查詢語句 (Query)
+    # 它可以精準抓取：騎師名、冠、亞、季、殿、五、出賽次數、獎金
+    query = """
+    query jockeyRanking($season: String, $view: String, $racecourse: String, $brand: String, $lang: String) {
+      jockeyRanking(season: $season, view: $view, racecourse: $racecourse, brand: $brand, lang: $lang) {
+        tableData {
+          jockey {
+            nameCH
+            nameEN
+            code
+          }
+          win
+          sec
+          third
+          fourth
+          fifth
+          totalRun
+          stakes
+        }
+      }
+    }
+    """
+    
+    # 設定參數 (當前賽季, 全部馬場, 中文)
+    variables = {
+        "season": "Current",
+        "view": "Numbers",
+        "racecourse": "ALL",
+        "brand": "racing",
+        "lang": "zh_HK"
+    }
+    
+    payload = {
+        "operationName": "jockeyRanking",
+        "variables": variables,
+        "query": query
+    }
+    
+    headers = {
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Referer": "https://racing.hkjc.com/"
+    }
+
+    try:
+        response = requests.post(url, json=payload, headers=headers, timeout=15)
+        response.raise_for_status()
         
+        result = response.json()
+        
+        # 提取資料路徑：data -> jockeyRanking -> tableData
+        table_data = result.get('data', {}).get('jockeyRanking', {}).get('tableData', [])
+        
+        if not table_data:
+            print("⚠️ 成功連接但未找到數據")
+            return pd.DataFrame()
+            
+        # 整理成 DataFrame
+        jockey_list = []
+        for item in table_data:
+            jockey_list.append({
+                "騎師": item['jockey']['nameCH'],
+                "英文名": item['jockey']['nameEN'],
+                "冠": item['win'],
+                "亞": item['sec'],
+                "季": item['third'],
+                "總出賽次數": item['totalRun'],
+                "獎金": item['stakes']
+            })
+            
+        df = pd.DataFrame(jockey_list)
+        print(f"✅ 成功獲取 {len(df)} 位騎師數據")
+        return df
+
+    except Exception as e:
+        print(f"❌ GraphQL 請求失敗: {e}")
+        return pd.DataFrame()
+
+# --- 測試執行 ---
+if __name__ == "__main__":
+    df_ranking = fetch_hkjc_graphql_jockey_ranking()
+    if not df_ranking.empty:
+        print(df_ranking.head())
+    else:
+        print("無法獲取數據")
+
+
 def save_odds_data(time_now,odds):
   for method in methodlist:
       if method in ['WIN', 'PLA']:
