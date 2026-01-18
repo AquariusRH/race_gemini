@@ -1928,7 +1928,7 @@ else:
 
     df_ranking = fetch_hkjc_graphql_jockey_ranking()
     if not df_ranking.empty:
-            print(df_ranking.head())
+            print('kb')
     else:
             print("無法獲取數據")
     # 執行靜態預測
