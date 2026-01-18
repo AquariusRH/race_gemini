@@ -551,11 +551,11 @@ def fetch_hkjc_graphql_jockey_ranking():
         return pd.DataFrame()
 
 # --- 測試執行 ---
-if __name__ == "__main__":
-    df_ranking = fetch_hkjc_graphql_jockey_ranking()
-    if not df_ranking.empty:
+
+df_ranking = fetch_hkjc_graphql_jockey_ranking()
+if not df_ranking.empty:
         print(df_ranking.head())
-    else:
+else:
         print("無法獲取數據")
 
 
