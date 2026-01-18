@@ -467,7 +467,7 @@ def get_trainer_ranking():
         return pd.DataFrame() # 請求失敗時返回空的 DataFrame
 
 def fetch_hkjc_jockey_ranking():
-    season = "2025/2026"   # 官方網站目前顯示的賽季格式
+    season = "25/26"   # 官方網站目前顯示的賽季格式
 
     query = """
     query rw_GetJockeyRanking($season: String) {
@@ -525,9 +525,6 @@ def fetch_hkjc_jockey_ranking():
 # ────────────────────────────────────────────────
 # Streamlit App 主體 – 直接顯示
 # ────────────────────────────────────────────────
-st.set_page_config(page_title="HKJC 騎師排名", layout="wide")
-st.title("香港賽馬會 當前賽季騎師排名")
-st.caption(f"更新時間：{datetime.now().strftime('%Y-%m-%d %H:%M')} | 賽季：2025/2026")
 
 df, error = fetch_hkjc_jockey_ranking()
 
