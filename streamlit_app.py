@@ -1671,15 +1671,7 @@ def calculate_smart_score(race_no):
     # 1. 狀態分數 (Form Score) - 權重 40%
     static_df['FormScore'] = static_df['近績'].apply(parse_form_score)
     
-    # 這裡呼叫你之前寫好的 fetch 函數
-    df_new, err = fetch_hkjc_jockey_ranking()
-    st.write(df_new)
-    if err is None:
-        st.session_state.jockey_ranking_df = df_new
-    else:
-        st.session_state.jockey_ranking_df = pd.DataFrame() # 避免 NoneType 報錯
-
-    j_df = st.session_state.jockey_ranking_df
+    j_df, err = fetch_hkjc_jockey_ranking()
     
     # 計算騎師分數
     static_df['JockeyScore'] = static_df['騎師'].apply(
