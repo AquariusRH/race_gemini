@@ -466,86 +466,103 @@ def get_trainer_ranking():
         st.error(f"Request Error: {e}")
         return pd.DataFrame() # 請求失敗時返回空的 DataFrame
 
-def get_jockey_ranking_graphql():
-    """
-    透過馬會 GraphQL API 獲取最新騎師排名數據
-    """
+太棒了，你提供了完整的 Network Header 資訊，這對於在 Streamlit.io 上成功模擬請求至關重要。特別是 sec-ch-ua 和 referer 這些欄位，是避開馬會防火牆檢測的關鍵。
+
+根據你提供的 Header 和之前的 Query，我為你重新整合了一個最完整的騎師數據抓取函數。
+
+🚀 最終修正版：Jockey GraphQL Request
+請將這段代碼放到你的 Streamlit 專案中，它會精確模擬你提供的瀏覽器環境：
+
+Python
+
+import streamlit as st
+import requests
+import pandas as pd
+
+@st.cache_data(ttl=3600)  # 快取1小時，避免被封IP
+def get_jockey_data_v3():
     url = "https://info.cld.hkjc.com/graphql/base/"
     
-    # 這是從馬會官方網頁分析出來的 GraphQL 查詢語句
-    query = """
-    query jockeyRanking($season: String, $view: String, $racecourse: String, $brand: String, $lang: String) {
-      jockeyRanking(season: $season, view: $view, racecourse: $racecourse, brand: $brand, lang: $lang) {
-        tableData {
-          jockey {
-            nameCH
-            code
-          }
-          win
-          totalRun
-        }
+    # 你提供的特定 Query
+    query_string = """
+    query rw_GetJockeyRanking($season: String) {
+      jockeyStat(season: $season) {
+        code
+        name_ch
+        ssnStat { 
+          numFirst
+          numStarts
+        } 
       }
     }
     """
     
-    variables = {
-        "season": "Current",
-        "view": "Numbers",
-        "racecourse": "ALL",
-        "brand": "racing",
-        "lang": "zh_HK"
-    }
-    
     payload = {
-        "operationName": "jockeyRanking",
-        "variables": variables,
-        "query": query
+        "operationName": "rw_GetJockeyRanking",
+        "variables": {"season": "Current"},
+        "query": query_string
     }
     
+    # 根據你提供的 Network Header 進行精確模擬
     headers = {
-        "Content-Type": "application/json",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Referer": "https://racing.hkjc.com/"
+        "authority": "info.cld.hkjc.com",
+        "accept": "*/*",
+        "accept-language": "en-us,en;q=0.9",
+        "content-type": "application/json",
+        "origin": "https://racing.hkjc.com",
+        "referer": "https://racing.hkjc.com/",
+        "sec-ch-ua": '"Google Chrome";v="143", "Chromium";v="143", "Not A(Brand";v="24"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": '"Windows"',
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-site",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
     }
 
     try:
         response = requests.post(url, json=payload, headers=headers, timeout=10)
-        response.raise_for_status()
-        json_data = response.json()
         
-        # 解析路徑: data -> jockeyRanking -> tableData
-        items = json_data.get('data', {}).get('jockeyRanking', {}).get('tableData', [])
-        
-        if not items:
+        if response.status_code != 200:
+            st.error(f"API 請求失敗，狀態碼: {response.status_code}")
             return pd.DataFrame()
             
-        # 整理成 DataFrame
-        jockey_list = []
-        for item in items:
-            jockey_list.append({
-                "騎師": item['jockey']['nameCH'],
-                "冠": int(item['win']),
-                "總出賽次數": int(item['totalRun'])
-            })
+        data = response.json()
+        jockeys = data.get('data', {}).get('jockeyStat', [])
+        
+        results = []
+        for j in jockeys:
+            name = j.get('name_ch', '')
+            stats = j.get('ssnStat', [])
             
-        return pd.DataFrame(jockey_list)
+            # 馬會 API 會按場地分開存儲，需要加總
+            total_wins = sum(int(s.get('numFirst', 0)) for s in stats)
+            total_runs = sum(int(s.get('numStarts', 0)) for s in stats)
+            
+            if total_runs > 0:
+                results.append({
+                    "騎師": name,
+                    "冠": total_wins,
+                    "總出賽次數": total_runs
+                })
+        
+        return pd.DataFrame(results)
 
     except Exception as e:
-        st.error(f"無法從 API 獲取騎師數據: {e}")
+        st.error(f"連線異常: {e}")
         return pd.DataFrame()
 
-# --- 測試執行 ---
+# --- Streamlit 顯示測試 ---
+if st.button('從馬會同步數據'):
+    df = get_jockey_data_v3()
+    if not df.empty:
+        st.session_state['jockey_ranking_df'] = df
+        st.success(f"成功同步 {len(df)} 名騎師數據")
+    else:
+        st.error("同步失敗，請檢查 API 參數")
 
-if 'jockey_ranking_df' not in st.session_state:
-    with st.spinner("正在連線馬會 API 獲取最新騎師榜..."):
-        st.session_state.jockey_ranking_df = get_jockey_ranking_graphql()
-
-# 顯示結果
-if not st.session_state.jockey_ranking_df.empty:
-    st.success(f"成功載入 {len(st.session_state.jockey_ranking_df)} 位騎師數據")
-    st.dataframe(st.session_state.jockey_ranking_df, use_container_width=True)
-else:
-    st.error("數據獲取失敗，請檢查網路或 API 是否變更。")
+if 'jockey_ranking_df' in st.session_state:
+    st.dataframe(st.session_state['jockey_ranking_df'], use_container_width=True)
 
 
 def save_odds_data(time_now,odds):
