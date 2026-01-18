@@ -1672,7 +1672,7 @@ def calculate_smart_score(race_no):
     static_df['FormScore'] = static_df['近績'].apply(parse_form_score)
     
     j_df, err = fetch_hkjc_jockey_ranking()
-    
+    st.dataframe(j_df) 
     # 計算騎師分數
     static_df['JockeyScore'] = static_df['騎師'].apply(
         lambda x: calculate_jockey_score(x, j_df)
