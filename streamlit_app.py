@@ -466,90 +466,92 @@ def get_trainer_ranking():
         st.error(f"Request Error: {e}")
         return pd.DataFrame() # 請求失敗時返回空的 DataFrame
 
-def get_jockey_data_v3():
-    url = "https://info.cld.hkjc.com/graphql/base/"
-    
-    # 你提供的特定 Query
-    query_string = """
+def fetch_hkjc_jockey_ranking():
+    season = "2025/2026"   # 官方網站目前顯示的賽季格式
+
+    query = """
     query rw_GetJockeyRanking($season: String) {
       jockeyStat(season: $season) {
-        code
-        name_ch
-        ssnStat { 
-          numFirst
-          numStarts
-        } 
+        code name_ch name_en status id isCurSsn season
+        ssnStat { numFirst numSecond numThird numFourth numFifth numStarts stakeWon }
       }
     }
     """
-    
-    payload = {
-        "operationName": "rw_GetJockeyRanking",
-        "variables": {"season": "Current"},
-        "query": query_string
-    }
-    
-    # 根據你提供的 Network Header 進行精確模擬
+
+    payload = {"query": query, "variables": {"season": season}}
+
     headers = {
-        "authority": "info.cld.hkjc.com",
-        "accept": "*/*",
-        "accept-language": "en-us,en;q=0.9",
-        "content-type": "application/json",
-        "origin": "https://racing.hkjc.com",
-        "referer": "https://racing.hkjc.com/",
-        "sec-ch-ua": '"Google Chrome";v="143", "Chromium";v="143", "Not A(Brand";v="24"',
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": '"Windows"',
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-site",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0.0.0",
+        "Referer": "https://racing.hkjc.com/",
+        "Origin": "https://racing.hkjc.com",
     }
 
     try:
-        response = requests.post(url, json=payload, headers=headers, timeout=10)
-        
-        if response.status_code != 200:
-            st.error(f"API 請求失敗，狀態碼: {response.status_code}")
-            return pd.DataFrame()
-            
-        data = response.json()
-        jockeys = data.get('data', {}).get('jockeyStat', [])
-        
-        results = []
+        resp = requests.post("https://info.cld.hkjc.com/graphql/base/", json=payload, headers=headers, timeout=12)
+        resp.raise_for_status()
+        data = resp.json()
+
+        jockeys = data.get("data", {}).get("jockeyStat", [])
+        if not jockeys:
+            return None, f"無資料（賽季 {season} 可能尚未開始或格式錯誤）"
+
+        rows = []
         for j in jockeys:
-            name = j.get('name_ch', '')
-            stats = j.get('ssnStat', [])
-            
-            # 馬會 API 會按場地分開存儲，需要加總
-            total_wins = sum(int(s.get('numFirst', 0)) for s in stats)
-            total_runs = sum(int(s.get('numStarts', 0)) for s in stats)
-            
-            if total_runs > 0:
-                results.append({
-                    "騎師": name,
-                    "冠": total_wins,
-                    "總出賽次數": total_runs
-                })
-        
-        return pd.DataFrame(results)
+            s = j.get("ssnStat", {})
+            rows.append({
+                "騎師編號": j.get("code"),
+                "中文名": j.get("name_ch"),
+                "英文名": j.get("name_en"),
+                "勝": s.get("numFirst", 0),
+                "亞": s.get("numSecond", 0),
+                "季": s.get("numThird", 0),
+                "出賽": s.get("numStarts", 0),
+                "獎金": s.get("stakeWon", 0),
+            })
+
+        df = pd.DataFrame(rows)
+        if df.empty:
+            return None, "資料為空"
+
+        df["勝率 (%)"] = (df["勝"] / df["出賽"].replace(0, 1) * 100).round(2)
+        df = df.sort_values("勝", ascending=False).reset_index(drop=True)
+        return df, None
 
     except Exception as e:
-        st.error(f"連線異常: {e}")
-        return pd.DataFrame()
+        return None, str(e)
 
-# --- Streamlit 顯示測試 ---
-if st.button('從馬會同步數據'):
-    df = get_jockey_data_v3()
-    if not df.empty:
-        st.session_state['jockey_ranking_df'] = df
-        st.success(f"成功同步 {len(df)} 名騎師數據")
-    else:
-        st.error("同步失敗，請檢查 API 參數")
 
-if 'jockey_ranking_df' in st.session_state:
-    st.dataframe(st.session_state['jockey_ranking_df'], use_container_width=True)
+# ────────────────────────────────────────────────
+# Streamlit App 主體 – 直接顯示
+# ────────────────────────────────────────────────
+st.set_page_config(page_title="HKJC 騎師排名", layout="wide")
+st.title("香港賽馬會 當前賽季騎師排名")
+st.caption(f"更新時間：{datetime.now().strftime('%Y-%m-%d %H:%M')} | 賽季：2025/2026")
 
+df, error = fetch_hkjc_jockey_ranking()
+
+if error:
+    st.error(f"抓取失敗：{error}")
+    st.info("提示：如果持續失敗，可嘗試把 season 改成 \"25/26\" 再重跑。")
+else:
+    st.success(f"已取得 {len(df)} 位騎師資料")
+    
+    # 直接用 st.write 顯示（最簡單）
+    st.write(df)
+
+    # （可選）更好看的表格顯示方式，如果你之後想換
+    # st.dataframe(
+    #     df.style.format({
+    #         "獎金": "{:,.0f}",
+    #         "勝率 (%)": "{:.2f}"
+    #     }),
+    #     use_container_width=True
+    # )
+
+
+st.markdown("---")
+st.caption("資料來源：香港賽馬會 GraphQL API（非官方公開，僅供參考）")
 
 def save_odds_data(time_now,odds):
   for method in methodlist:
