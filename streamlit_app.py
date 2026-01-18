@@ -257,136 +257,6 @@ def get_odds_data():
 
   else:
       st.error(f"Error: {response.status_code}")
-def extract_jockey_data(html_content):
-    soup = BeautifulSoup(html_content, 'html.parser')
-    
-    # 1. 尋找表格：新版馬會頁面通常仍使用 table_bd 或 table_ranking
-    # 改用更保險的方式：尋找包含「騎師」文字的表格
-    ranking_table = None
-    for table in soup.find_all('table'):
-        if '騎師' in table.get_text():
-            ranking_table = table
-            break
-            
-    if not ranking_table:
-        st.error("錯誤：找不到排名表格")
-        return pd.DataFrame()
-
-    jockey_data = []
-    # 根據截圖，確定的 8 個欄位名稱
-    headers = ["騎師", "冠", "亞", "季", "殿", "第五", "總出賽次數", "所贏獎金"]
-
-    # 2. 遍歷所有行，不限定 tbody 的 class
-    rows = ranking_table.find_all('tr')
-    
-    for row in rows:
-        tds = row.find_all('td')
-        
-        # 根據截圖，數據行應該有 8 個單元格 (td)
-        # 如果是分類列（如「在港現役騎師」），td 數量會少於 8
-        if len(tds) < 8:
-            continue
-            
-        # 3. 提取數據
-        try:
-            # 騎師名稱通常在第 1 個 td
-            name_cell = tds[0]
-            # 優先找連結裡的文字，若無則取 td 文字
-            name = name_cell.find('a').get_text(strip=True) if name_cell.find('a') else name_cell.get_text(strip=True)
-            
-            # 過濾掉表頭（如果抓到「騎師」這兩個字就跳過）
-            if name == "騎師" or not name:
-                continue
-
-            # 提取數值列 (索引 1 到 7)
-            # 冠(1), 亞(2), 季(3), 殿(4), 第五(5), 總次數(6), 獎金(7)
-            row_dict = {"騎師": name}
-            
-            # 處理 冠、亞、季... 到 總出賽次數
-            row_dict["冠"] = int(re.sub(r'\D', '', tds[1].get_text(strip=True)) or 0)
-            row_dict["總出賽次數"] = int(re.sub(r'\D', '', tds[6].get_text(strip=True)) or 0)
-            
-            # 如果你需要完整資料，可以把 2~5 亞季殿五也補上
-            # row_dict["亞"] = int(re.sub(r'\D', '', tds[2].get_text(strip=True)) or 0)
-            
-            jockey_data.append(row_dict)
-        except Exception as e:
-            continue
-
-    df = pd.DataFrame(jockey_data)
-    return df
-
-
-def get_jockey_ranking():
-    """
-    從馬會獲取最新騎師排名 (已修正編碼與表格定位)
-    """
-    url = "https://racing.hkjc.com/zh-hk/local/info/jockey-ranking?season=Current&view=Numbers&racecourse=ALL"
-    
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Accept-Language': 'zh-HK,zh-TW;q=0.9,zh;q=0.8,en;q=0.7',
-        'Referer': 'https://racing.hkjc.com/'
-    }
-    
-    try:
-        # 使用 st.spinner 讓 Streamlit 使用者知道正在抓取
-        response = requests.get(url, headers=headers, timeout=15)
-        
-        # 強制指定編碼，解決馬會網頁亂碼導致抓不到「騎師」二字的問題
-        response.encoding = 'utf-8' 
-        
-        if response.status_code != 200:
-            st.error(f"❌ 無法連接馬會 (HTTP {response.status_code})")
-            return pd.DataFrame()
-
-        soup = BeautifulSoup(response.text, 'html.parser')
-
-        # 搜尋包含特定文字的表格，增加匹配關鍵字以提高準確度
-        target_table = None
-        for table in soup.find_all('table'):
-            text_content = table.get_text()
-            if "騎師" in text_content and "總出賽次數" in text_content:
-                target_table = table
-                break
-        
-        if not target_table:
-            st.warning("⚠️ 找不到數據表格，可能是馬會頁面結構變更")
-            return pd.DataFrame()
-
-        jockey_data = []
-        rows = target_table.find_all('tr')
-
-        for row in rows:
-            tds = row.find_all('td')
-            if len(tds) < 8: continue # 略過非數據行
-            
-            # 提取騎師姓名：處理 <a> 標籤或直接文本
-            name_cell = tds[0]
-            name = name_cell.get_text(strip=True)
-            
-            # 過濾標題列
-            if "騎師" in name or not name: continue
-                
-            try:
-                # 冠: tds[1], 總出賽次數: tds[6]
-                wins = int(re.sub(r'\D', '', tds[1].get_text(strip=True)) or 0)
-                runs = int(re.sub(r'\D', '', tds[6].get_text(strip=True)) or 0)
-                
-                jockey_data.append({
-                    "騎師": name,
-                    "冠": wins,
-                    "總出賽次數": runs
-                })
-            except:
-                continue
-
-        df = pd.DataFrame(jockey_data)
-        return df
-
-    except Exception as e:
-        st.error(f"❌ 數據抓取錯誤: {e}")
-        return pd.DataFrame()
 
 def extract_trainer_data(html_content):
     """
@@ -608,27 +478,228 @@ def fetch_hkjc_jockey_ranking():
     except Exception as e:
         return None, f"系統抓取異常: {str(e)}"
 
-# --- Streamlit 顯示部分 ---
+def fetch_hkjc_jockey_ranking():
+    # 目前 2026 年 1 月正處於 2025/26 賽季中期
+    season = "25/26" 
 
-df, error = fetch_hkjc_jockey_ranking()
+    # 1. 完整的 Query Payload (與官方 F12 抓取內容完全一致，不進行任何簡化)
+    query = """query rw_GetJockeyRanking($season: String) {
+  jockeyStat(season: $season) {
+    code
+    name_ch
+    name_en
+    status
+    id
+    isCurSsn
+    season
+    ssnStat {
+      numFirst
+      numSecond
+      numThird
+      numFourth
+      numFifth
+      numStarts
+      stakeWon
+      trk
+      ven
+    }
+    dhStat {
+      numFirst
+      numSecond
+      numThird
+      numFourth
+      numFifth
+      numStarts
+      stakeWon
+      trk
+      ven
+    }
+  }
+}"""
 
-if error:
-    st.error(error)
-    if "whitelisted" in error:
-        st.warning("提示：馬會更新了 API 白名單，請手動更新 Query 或 SHA256 Hash。")
-else:
-    st.success(f"成功抓取 {len(df)} 位騎師數據")
+    # 官方請求通常包含 operationName
+    payload = {
+        "operationName": "rw_GetJockeyRanking",
+        "variables": {
+            "season": season
+        },
+        "query": query
+    }
+
+    # 2. 完整的 Headers (模擬瀏覽器真實環境，防止被攔截)
+    headers = {
+        "accept": "*/*",
+        "accept-language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+        "content-type": "application/json",
+        "priority": "u=1, i",
+        "sec-ch-ua": '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": '"Windows"',
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-site",
+        "Referer": "https://racing.hkjc.com/racing/information/Chinese/Jockey/JockeyRanking.aspx",
+        "Origin": "https://racing.hkjc.com",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+    }
+
+    try:
+        # 執行請求
+        response = requests.post(
+            "https://info.cld.hkjc.com/graphql/base/", 
+            json=payload, 
+            headers=headers, 
+            timeout=15
+        )
+        response.raise_for_status()
+        result = response.json()
+
+        # 錯誤處理邏輯
+        if isinstance(result, list):
+            return None, f"API 返回錯誤列表: {result[0].get('message')}"
+            
+        data = result.get("data")
+        if not data:
+            error_msg = result.get("errors", [{}])[0].get("message", "Unknown error")
+            return None, f"GraphQL 錯誤: {error_msg}"
+
+        jockeys = data.get("jockeyStat", [])
+        if not jockeys:
+            return None, f"找不到賽季 {season} 的資料 (請確認官方 API 是否變動)"
+
+        rows = []
+        for j in jockeys:
+            # 解析 ssnStat (這是一個 List)
+            ssn_stats = j.get("ssnStat", [])
+            
+            # 初始化數據容器
+            stat_all = {}
+            
+            # 遍歷列表尋找 trk="ALL" and ven="ALL" (總計數據)
+            if isinstance(ssn_stats, list):
+                for s in ssn_stats:
+                    if s.get("trk") == "ALL" and s.get("ven") == "ALL":
+                        stat_all = s
+                        break
+                
+                # 若找不到 ALL，則嘗試抓取第一筆
+                if not stat_all and len(ssn_stats) > 0:
+                    stat_all = ssn_stats[0]
+
+            rows.append({
+                "騎師編號": j.get("code"),
+                "騎師": j.get("name_ch"),
+                "英文名": j.get("name_en"),
+                "勝": stat_all.get("numFirst", 0),
+                "亞": stat_all.get("numSecond", 0),
+                "季": stat_all.get("numThird", 0),
+                "殿": stat_all.get("numFourth", 0),
+                "第五": stat_all.get("numFifth", 0),
+                "出賽": stat_all.get("numStarts", 0),
+                "獎金": stat_all.get("stakeWon", 0),
+                "賽季": j.get("season")
+            })
+
+        df = pd.DataFrame(rows)
+        
+        # 數據清理：轉換為數字以便排序
+        numeric_cols = ["勝", "亞", "季", "殿", "第五", "出賽", "獎金"]
+        df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce').fillna(0)
+
+        # 計算勝率
+        df["勝率 (%)"] = (df["勝"] / df["出賽"].replace(0, 1) * 100).round(1)
+        
+        # 按照馬會排名規則排序 (勝 > 亞 > 季)
+        df = df.sort_values(by=["勝", "亞", "季"], ascending=False).reset_index(drop=True)
+        
+        # 插入排名欄
+        df.insert(0, "排名", df.index + 1)
+
+        return df, None
+
+    except Exception as e:
+        return None, f"系統抓取異常: {str(e)}"
+
+def fetch_hkjc_trainer_ranking():
+    season = "25/26"
     
-    # 使用 st.dataframe 顯示，並對獎金欄位進行格式化
-    st.dataframe(
-        df, 
-        use_container_width=True,
-        hide_index=True,
-        column_config={
-            "獎金": st.column_config.NumberColumn("獎金 (HKD)", format="$%d"),
-            "勝率 (%)": st.column_config.NumberColumn("勝率", format="%.1f%%")
+    # 這是你提供的練馬師專用 Query
+    query = """
+    query rw_GetTrainerRanking($season: String) {
+      trainerStat(season: $season) {
+        code
+        name_ch
+        name_en
+        status 
+        id
+        isCurSsn
+        season
+        visitingIndex
+        ssnStat {
+          numFirst
+          numSecond
+          numThird
+          numFourth
+          numFifth
+          numStarts
+          stakeWon
+          trk
+          ven
         }
-    )
+      }
+    }
+    """
+
+    payload = {
+        "operationName": "rw_GetTrainerRanking",
+        "variables": {"season": season},
+        "query": query
+    }
+
+    headers = {
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0",
+        "Referer": "https://racing.hkjc.com/racing/information/Chinese/Trainers/TrainerRanking.aspx",
+        "Origin": "https://racing.hkjc.com",
+    }
+
+    try:
+        resp = requests.post("https://info.cld.hkjc.com/graphql/base/", json=payload, headers=headers, timeout=12)
+        resp.raise_for_status()
+        data = resp.json()
+
+        # 注意：這裡的 key 是 trainerStat
+        trainers = data.get("data", {}).get("trainerStat", [])
+        if not trainers:
+            return None, f"無資料 (Season: {season})"
+
+        rows = []
+        for t in trainers:
+            ssn_list = t.get("ssnStat", [])
+            stat_all = {}
+            
+            # 遍歷尋找 ALL/ALL 總計數據
+            if isinstance(ssn_list, list):
+                for s in ssn_list:
+                    if s.get("trk") == "ALL" and s.get("ven") == "ALL":
+                        stat_all = s
+                        break
+                if not stat_all and ssn_list:
+                    stat_all = ssn_list[0]
+
+            rows.append({
+                "練馬師": t.get("name_ch"), # 統一欄位名稱為「練馬師」
+                "勝": stat_all.get("numFirst", 0),
+                "出賽": stat_all.get("numStarts", 0),
+                "獎金": stat_all.get("stakeWon", 0)
+            })
+
+        df = pd.DataFrame(rows)
+        df[["勝", "出賽"]] = df[["勝", "出賽"]].apply(pd.to_numeric)
+        return df, None
+
+    except Exception as e:
+        return None, str(e)
 
 def save_odds_data(time_now,odds):
   for method in methodlist:
@@ -1570,35 +1641,43 @@ def calculate_jockey_score(jockey_name, ranking_df):
     return round(min(max(score, 15), 100), 1)
 
 
-def calculate_trainer_score(trainer_name, ranking_df):
+def calculate_trainer_score(trainer_name, trainer_df):
     """
-    根據練馬師的排名數據計算其專業分數。
-    邏輯與騎師分數相似，但針對練馬師欄位。
+    計算練馬師評分
     """
-    if ranking_df is None or ranking_df.empty:
-        return 51.0
+    # 51: 數據表為空
+    if trainer_df is None or trainer_df.empty:
+        return 54.0
 
-    trainer_row = ranking_df[ranking_df['練馬師'] == str(trainer_name).strip()]
-    if trainer_row.empty:
+    target_name = str(trainer_name).strip()
+    # 模糊匹配
+    row = trainer_df[trainer_df['練馬師'].str.contains(target_name, na=False, regex=False)]
+    
+    # 52: 找不到該人
+    if row.empty:
         return 52.0
 
-    wins = trainer_row['冠'].iloc[0]
-    runs = trainer_row['總出賽次數'].iloc[0]
+    wins = row['勝'].iloc[0]
+    runs = row['出賽'].iloc[0]
     
+    # 53: 出賽數為 0
     if runs == 0:
         return 53.0
-
-    personal_win_rate = wins / runs
     
-    ranking_df['win_rate'] = ranking_df['冠'] / ranking_df['總出賽次數']
-    max_win_rate = ranking_df[ranking_df['總出賽次數'] > 10]['win_rate'].max()
+    win_rate = wins / runs
     
-    if pd.isna(max_win_rate) or max_win_rate == 0:
-        max_win_rate = 0.15 # 練馬師最高勝率通常約 15%
-
-    score = (personal_win_rate / max_win_rate) * 100
+    # 基準勝率 (排除出賽太少的練馬師)
+    bench_df = trainer_df[trainer_df['出賽'] > 10].copy()
+    if not bench_df.empty:
+        bench_df['wr'] = bench_df['勝'] / bench_df['出賽']
+        max_rate = bench_df['wr'].max()
+    else:
+        max_rate = 0.15 # 練馬師勝率通常比頂尖騎師低一點，給個合理的預設
     
-    return min(max(score, 10), 100)
+    max_rate = max(max_rate, 0.01)
+    
+    score = (win_rate / max_rate) * 100
+    return round(min(max(score, 15), 100), 1)
 def calculate_smart_score(race_no):
     """
     計算單場賽事的綜合評分，並將所有中間結果整合到單一 df。
@@ -1774,13 +1853,14 @@ def calculate_smart_score_static(race_no):
     # 1. 狀態分數 (Form Score) - 權重 40%
     # 使用原有的 parse_form_score
     static_df['FormScore'] = static_df['近績'].apply(parse_form_score)
-    j_df, err = fetch_hkjc_jockey_ranking()
+    j_df, j_err = fetch_hkjc_jockey_ranking()
     st.dataframe(j_df) 
     # 2. 騎師分數 (Jockey Score) - 權重 15% (取代部分 Synergy)
     #st.session_state.jockey_ranking_df=get_jockey_ranking()
-    st.session_state.trainer_ranking_df=get_trainer_ranking()
+    #st.session_state.trainer_ranking_df=get_trainer_ranking()
     #j_df = st.session_state.jockey_ranking_df
-    t_df = st.session_state.trainer_ranking_df
+    t_df, t_err = fetch_hkjc_trainer_ranking()
+    st.dataframe(t_df)
     static_df['JockeyScore'] = static_df['騎師'].apply(
         lambda x: calculate_jockey_score(str(x).strip(), j_df)
     )
