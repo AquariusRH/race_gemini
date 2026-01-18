@@ -576,7 +576,7 @@ def fetch_hkjc_jockey_ranking():
 
             rows.append({
                 "騎師編號": j.get("code"),
-                "中文名": j.get("name_ch"),
+                "騎師": j.get("name_ch"),
                 "英文名": j.get("name_en"),
                 "勝": stat_all.get("numFirst", 0),
                 "亞": stat_all.get("numSecond", 0),
@@ -1526,35 +1526,46 @@ def calculate_jockey_score(jockey_name, ranking_df):
     """
     計算騎師評分
     """
-    # 錯誤代碼 51: DataFrame 為空
-    if ranking_df is None or ranking_df.empty:
+    # 錯誤代碼 51: DataFrame 為空或未定義
+    if ranking_df is None or not isinstance(ranking_df, pd.DataFrame) or ranking_df.empty:
         return 54.0
 
-    # 處理輸入名稱，並在 DataFrame 中進行模糊搜尋
+    # 處理輸入名稱
     target_name = str(jockey_name).strip()
-    # 使用 str.contains 解決 "潘頓 " (帶空白) 比對失敗的問題
-    jockey_row = ranking_df[ranking_df['騎師'].str.contains(target_name, na=False)]
+    
+    # 使用 str.contains 進行模糊搜尋，na=False 防止 NaN 導致崩潰
+    # 加入 regex=False 提高效能並防止名稱中含特殊字元
+    jockey_row = ranking_df[ranking_df['騎師'].str.contains(target_name, na=False, regex=False)]
     
     # 錯誤代碼 52: 找不到該騎師
     if jockey_row.empty:
         return 52.0
 
-    wins = jockey_row['冠'].iloc[0]
-    runs = jockey_row['總出賽次數'].iloc[0]
+    # 修正：使用對應的欄位名稱 '勝' 與 '出賽'
+    wins = jockey_row['勝'].iloc[0]
+    runs = jockey_row['出賽'].iloc[0]
     
     # 錯誤代碼 53: 出賽數為 0
     if runs == 0:
         return 53.0
     
-    # 計算勝率
+    # 計算該騎師勝率
     win_rate = wins / runs
     
-    # 取得全港最高勝率作為基準 (篩選出賽超過10次的騎師以防極端值)
-    bench_df = ranking_df[ranking_df['總出賽次數'] > 10].copy()
-    bench_df['wr'] = bench_df['冠'] / bench_df['總出賽次數']
-    max_rate = bench_df['wr'].max() if not bench_df.empty else 0.20
+    # 取得全港最高勝率作為基準 (篩選出賽超過 10 次的騎師，避免 1 戰 1 勝這種極端值)
+    bench_df = ranking_df[ranking_df['出賽'] > 10].copy()
     
-    # 計算分數 (0-100)
+    if not bench_df.empty:
+        # 計算基準勝率
+        bench_df['wr'] = bench_df['勝'] / bench_df['出賽']
+        max_rate = bench_df['wr'].max()
+    else:
+        max_rate = 0.20 # 預設基準
+    
+    # 確保 max_rate 不為 0
+    max_rate = max(max_rate, 0.01)
+    
+    # 計算分數 (0-100)，並限制最小分數為 15 分
     score = (win_rate / max_rate) * 100
     return round(min(max(score, 15), 100), 1)
 
@@ -1659,15 +1670,28 @@ def calculate_smart_score(race_no):
             
     # 1. 狀態分數 (Form Score) - 權重 40%
     static_df['FormScore'] = static_df['近績'].apply(parse_form_score)
-    
-    # 2. 騎師分數 (Jockey Score) - 權重 15% (取代部分 Synergy)
-    st.session_state.jockey_ranking_df=get_jockey_ranking()
-    st.session_state.trainer_ranking_df=get_trainer_ranking()
+    if 'jockey_ranking_df' not in st.session_state or st.session_state.jockey_ranking_df is None:
+    # 這裡呼叫你之前寫好的 fetch 函數
+    df_new, err = fetch_hkjc_jockey_ranking()
+    if err is None:
+        st.session_state.jockey_ranking_df = df_new
+    else:
+        st.session_state.jockey_ranking_df = pd.DataFrame() # 避免 NoneType 報錯
+
     j_df = st.session_state.jockey_ranking_df
-    t_df = st.session_state.trainer_ranking_df
+    
+    # 計算騎師分數
     static_df['JockeyScore'] = static_df['騎師'].apply(
-        lambda x: calculate_jockey_score(str(x).strip(), j_df)
+        lambda x: calculate_jockey_score(x, j_df)
     )
+    # 2. 騎師分數 (Jockey Score) - 權重 15% (取代部分 Synergy)
+    #st.session_state.jockey_ranking_df=get_jockey_ranking()
+    st.session_state.trainer_ranking_df=get_trainer_ranking()
+    #j_df = st.session_state.jockey_ranking_df
+    t_df = st.session_state.trainer_ranking_df
+    #static_df['JockeyScore'] = static_df['騎師'].apply(
+        #lambda x: calculate_jockey_score(str(x).strip(), j_df)
+   # )
     
     # 練馬師分數 (15%)
     static_df['TrainerScore'] = static_df['練馬師'].apply(
