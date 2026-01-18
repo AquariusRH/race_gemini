@@ -526,7 +526,7 @@ def fetch_hkjc_graphql_jockey_ranking():
         table_data = result.get('data', {}).get('jockeyRanking', {}).get('tableData', [])
         
         if not table_data:
-            print("⚠️ 成功連接但未找到數據")
+            st.write("⚠️ 成功連接但未找到數據")
             return pd.DataFrame()
             
         # 整理成 DataFrame
@@ -543,11 +543,11 @@ def fetch_hkjc_graphql_jockey_ranking():
             })
             
         df = pd.DataFrame(jockey_list)
-        print(f"✅ 成功獲取 {len(df)} 位騎師數據")
+        st.write(f"✅ 成功獲取 {len(df)} 位騎師數據")
         return df
 
     except Exception as e:
-        print(f"❌ GraphQL 請求失敗: {e}")
+        st.write(f"❌ GraphQL 請求失敗: {e}")
         return pd.DataFrame()
 
 # --- 測試執行 ---
