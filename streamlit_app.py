@@ -520,23 +520,27 @@ def fetch_hkjc_jockey_ranking():
     }
 
     try:
-        # 使用馬會常用的 GraphQL 端點
         url = "https://info.cld.hkjc.com/graphql/base/"
         resp = requests.post(url, json=payload, headers=headers, timeout=15)
-        
-        # 檢查 HTTP 狀態碼
-        if resp.status_code != 200:
-            return None, f"HTTP 錯誤: {resp.status_code}"
-
         result = resp.json()
 
-        # 檢查 GraphQL 返回的錯誤
-        if "errors" in result:
-            return None, f"GraphQL 報錯: {result['errors'][0].get('message')}"
+        # --- 新增：強健的格式檢查 ---
+        if isinstance(result, list):
+            # 如果回傳是列表，通常代表發生了錯誤（例如：[{"message": "...", "extensions": ...}]）
+            error_msg = result[0].get("message") if result else "未知錯誤"
+            return None, f"API 回傳錯誤列表: {error_msg}"
+        
+        # 確保 result 是字典後再使用 .get
+        data_section = result.get("data")
+        if not data_section:
+            error_info = result.get("errors", [{}])[0].get("message", "無數據回傳")
+            return None, f"GraphQL 錯誤: {error_info}"
 
-        jockeys = result.get("data", {}).get("jockeyStat", [])
+        jockeys = data_section.get("jockeyStat", [])
+        # ------------------------
+
         if not jockeys:
-            return None, "目前無資料，請確認賽季格式是否為 '25/26'"
+            return None, "目前無資料，請檢查賽季格式"
 
         rows = []
         for j in jockeys:
