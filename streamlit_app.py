@@ -467,92 +467,117 @@ def get_trainer_ranking():
         return pd.DataFrame() # 請求失敗時返回空的 DataFrame
 
 def fetch_hkjc_jockey_ranking():
-    # 注意：馬會 API 的賽季格式有時是 "2025/2026"，有時是 "25/26"
-    # 目前 2026 年建議先嘗試 "25/26"
+    # 25/26 賽季
     season = "25/26"
 
-    query = """
-    query rw_GetJockeyRanking($season: String) {
-      jockeyStat(season: $season) {
-        code
-        name_ch
-        name_en
-        ssnStat {
-          numFirst
-          numSecond
-          numThird
-          numStarts
-          stakeWon
-        }
-      }
+    # 注意：這裡的 query 字串必須與官方前端發送的一模一樣（包含空格與結構）
+    # 如果白名單檢查嚴格，甚至連換行位置都有影響
+    query = """query rw_GetJockeyRanking($season: String) {
+  jockeyStat(season: $season) {
+    code
+    name_ch
+    name_en
+    status
+    id
+    isCurSsn
+    season
+    ssnStat {
+      numFirst
+      numSecond
+      numThird
+      numFourth
+      numFifth
+      numStarts
+      stakeWon
+      trk
+      ven
     }
-    """
+    dhStat {
+      numFirst
+      numSecond
+      numThird
+      numFourth
+      numFifth
+      numStarts
+      stakeWon
+      trk
+      ven
+    }
+  }
+}"""
 
-    payload = {"query": query, "variables": {"season": season}}
+    payload = {
+        "operationName": "rw_GetJockeyRanking", # 必須明確指定 operationName
+        "variables": {"season": season},
+        "query": query
+    }
+
     headers = {
         "Content-Type": "application/json",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
         "Referer": "https://racing.hkjc.com/racing/information/Chinese/Jockey/JockeyRanking.aspx",
+        "Origin": "https://racing.hkjc.com",
     }
 
     try:
-        resp = requests.post("https://info.cld.hkjc.com/graphql/base/", json=payload, headers=headers, timeout=12)
-        resp.raise_for_status()
-        full_result = resp.json()
-
-        # 安全檢查：確保 data 存在
-        if "errors" in full_result:
-            return None, f"GraphQL 錯誤: {full_result['errors'][0].get('message')}"
+        # 使用馬會常用的 GraphQL 端點
+        url = "https://info.cld.hkjc.com/graphql/base/"
+        resp = requests.post(url, json=payload, headers=headers, timeout=15)
         
-        data_content = full_result.get("data")
-        if not data_content:
-            return None, "API 回傳空的 data 欄位"
+        # 檢查 HTTP 狀態碼
+        if resp.status_code != 200:
+            return None, f"HTTP 錯誤: {resp.status_code}"
 
-        jockeys = data_content.get("jockeyStat", [])
+        result = resp.json()
+
+        # 檢查 GraphQL 返回的錯誤
+        if "errors" in result:
+            return None, f"GraphQL 報錯: {result['errors'][0].get('message')}"
+
+        jockeys = result.get("data", {}).get("jockeyStat", [])
         if not jockeys:
-            return None, f"找不到賽季 {season} 的騎師資料"
+            return None, "目前無資料，請確認賽季格式是否為 '25/26'"
 
         rows = []
         for j in jockeys:
-            # 確保 j 是字典
-            if not isinstance(j, dict): continue
-            
-            # 獲取統計數據，如果沒有則給予空字典
             s = j.get("ssnStat") or {}
-            
             rows.append({
-                "編號": j.get("code"),
-                "姓名": j.get("name_ch"),
+                "排名": 0, # 後續排序再給值
+                "騎師": j.get("name_ch"),
                 "勝": s.get("numFirst", 0),
                 "亞": s.get("numSecond", 0),
                 "季": s.get("numThird", 0),
                 "出賽": s.get("numStarts", 0),
-                "獎金": s.get("stakeWon", 0),
+                "勝率 (%)": 0.0,
+                "獎金": s.get("stakeWon", 0)
             })
 
         df = pd.DataFrame(rows)
-        
-        # 轉換數值型態，避免運算出錯
-        numeric_cols = ["勝", "亞", "季", "出賽", "獎金"]
-        df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce').fillna(0)
+        if not df.empty:
+            # 數值轉換與排序
+            for col in ["勝", "亞", "季", "出賽", "獎金"]:
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+            
+            df = df.sort_values(by=["勝", "亞", "季"], ascending=False).reset_index(drop=True)
+            df["排名"] = df.index + 1
+            df["勝率 (%)"] = (df["勝"] / df["出賽"].replace(0, 1) * 100).round(1)
 
-        # 計算勝率
-        df["勝率 (%)"] = (df["勝"] / df["出賽"].replace(0, 1) * 100).round(1)
-        df = df.sort_values("勝", ascending=False).reset_index(drop=True)
-        
         return df, None
 
     except Exception as e:
-        return None, f"系統錯誤: {str(e)}"
+        return None, f"抓取異常: {str(e)}"
 
-# Streamlit 顯示
+# --- Streamlit 顯示部分 ---
+st.title("🏇 香港賽馬會騎師榜")
+
 df, error = fetch_hkjc_jockey_ranking()
 
 if error:
     st.error(error)
+    st.info("提示：這通常是因為 HKJC 更新了 API 白名單。請檢查瀏覽器 F12 Network 分頁中的 graphql 請求內容。")
 else:
-    st.subheader("🏇 25/26 賽季騎師排名")
-    st.dataframe(df, use_container_width=True)
+    st.write(f"數據更新時間: 2026 賽季")
+    st.dataframe(df, hide_index=True)
 
 def save_odds_data(time_now,odds):
   for method in methodlist:
