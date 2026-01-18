@@ -143,11 +143,11 @@ def get_investment_data():
 
           #print("Investments:", investments)
       else:
-          print("No race meetings found in the response.")
+          st.write("No race meetings found in the response.")
 
       return investments
   else:
-      print(f"Error: {response.status_code}")
+      st.error(f"Error: {response.status_code}")
 
 def get_odds_data():
   url = 'https://info.cld.hkjc.com/graphql/base/'
@@ -256,7 +256,7 @@ def get_odds_data():
       #print("QPL Odds Values (sorted by combString):", [value for _, value in odds_values["QPL"]])
 
   else:
-      print(f"Error: {response.status_code}")
+      st.error(f"Error: {response.status_code}")
 def extract_jockey_data(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
     
@@ -269,7 +269,7 @@ def extract_jockey_data(html_content):
             break
             
     if not ranking_table:
-        print("錯誤：找不到排名表格")
+        st.error("錯誤：找不到排名表格")
         return pd.DataFrame()
 
     jockey_data = []
@@ -463,7 +463,7 @@ def get_trainer_ranking():
         return df
 
     except requests.exceptions.RequestException as e:
-        print(f"Request Error: {e}")
+        st.error(f"Request Error: {e}")
         return pd.DataFrame() # 請求失敗時返回空的 DataFrame
 
 def fetch_hkjc_graphql_jockey_ranking():
@@ -1402,7 +1402,7 @@ def fetch_race_card(date_str, venue):
                     race_info[r_no] = {"df": df, "post_time": pt}
             return race_info
     except Exception as e:
-        print(e)
+        st.error(e)
     return {}
     
 def parse_form_score(last6run_str):
@@ -1573,7 +1573,7 @@ def calculate_smart_score(race_no):
         df.index = df.index.astype(str)
         static_df.index = static_df.index.astype(str)
     except Exception as e:
-        print(f"索引轉換錯誤: {e}")
+        st.error(f"索引轉換錯誤: {e}")
         return pd.DataFrame()
         
     # ----------------------------------------------------
