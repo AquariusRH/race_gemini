@@ -467,10 +467,10 @@ def get_trainer_ranking():
         return pd.DataFrame() # 請求失敗時返回空的 DataFrame
 
 def fetch_hkjc_jockey_ranking():
-    # 25/26 賽季
-    season = "25/26"
+    # 目前 2026 年 1 月正處於 2025/26 賽季中期
+    season = "25/26" 
 
-    # 精確還原官方 GraphQL 查詢字串
+    # 1. 完整的 Query Payload (與官方 F12 抓取內容完全一致，不進行任何簡化)
     query = """query rw_GetJockeyRanking($season: String) {
   jockeyStat(season: $season) {
     code
@@ -491,91 +491,122 @@ def fetch_hkjc_jockey_ranking():
       trk
       ven
     }
+    dhStat {
+      numFirst
+      numSecond
+      numThird
+      numFourth
+      numFifth
+      numStarts
+      stakeWon
+      trk
+      ven
+    }
   }
 }"""
 
+    # 官方請求通常包含 operationName
     payload = {
         "operationName": "rw_GetJockeyRanking",
-        "variables": {"season": season},
+        "variables": {
+            "season": season
+        },
         "query": query
     }
 
+    # 2. 完整的 Headers (模擬瀏覽器真實環境，防止被攔截)
     headers = {
-        "Content-Type": "application/json",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "accept": "*/*",
+        "accept-language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+        "content-type": "application/json",
+        "priority": "u=1, i",
+        "sec-ch-ua": '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": '"Windows"',
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-site",
         "Referer": "https://racing.hkjc.com/racing/information/Chinese/Jockey/JockeyRanking.aspx",
         "Origin": "https://racing.hkjc.com",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
     }
 
     try:
-        # 發送請求
-        resp = requests.post("https://info.cld.hkjc.com/graphql/base/", json=payload, headers=headers, timeout=12)
-        resp.raise_for_status()
-        result = resp.json()
+        # 執行請求
+        response = requests.post(
+            "https://info.cld.hkjc.com/graphql/base/", 
+            json=payload, 
+            headers=headers, 
+            timeout=15
+        )
+        response.raise_for_status()
+        result = response.json()
 
-        # 1. 檢查回傳是否為列表 (GraphQL 報錯時常回傳 List)
+        # 錯誤處理邏輯
         if isinstance(result, list):
-            return None, f"API 錯誤: {result[0].get('message', '未知錯誤')}"
+            return None, f"API 返回錯誤列表: {result[0].get('message')}"
+            
+        data = result.get("data")
+        if not data:
+            error_msg = result.get("errors", [{}])[0].get("message", "Unknown error")
+            return None, f"GraphQL 錯誤: {error_msg}"
 
-        # 2. 獲取數據主體
-        data_content = result.get("data")
-        if not data_content:
-            return None, "無法取得 data 欄位"
-
-        jockeys = data_content.get("jockeyStat", [])
+        jockeys = data.get("jockeyStat", [])
         if not jockeys:
-            return None, f"找不到賽季 {season} 的資料"
+            return None, f"找不到賽季 {season} 的資料 (請確認官方 API 是否變動)"
 
         rows = []
         for j in jockeys:
-            # 關鍵修正：ssnStat 是個列表 [{}, {}, ...]
-            ssn_list = j.get("ssnStat", [])
+            # 解析 ssnStat (這是一個 List)
+            ssn_stats = j.get("ssnStat", [])
             
-            # 初始化目標統計數據
-            target_stat = {}
+            # 初始化數據容器
+            stat_all = {}
             
-            if isinstance(ssn_list, list):
-                # 遍歷列表，尋找 trk="ALL" 且 ven="ALL" 的項目 (這通常是賽季總計)
-                for stat in ssn_list:
-                    if stat.get("trk") == "ALL" and stat.get("ven") == "ALL":
-                        target_stat = stat
+            # 遍歷列表尋找 trk="ALL" and ven="ALL" (總計數據)
+            if isinstance(ssn_stats, list):
+                for s in ssn_stats:
+                    if s.get("trk") == "ALL" and s.get("ven") == "ALL":
+                        stat_all = s
                         break
                 
-                # 如果找不到 ALL，則保底取最後一項 (通常馬會 API 的 ALL 會放在最後或 index 1)
-                if not target_stat and ssn_list:
-                    target_stat = ssn_list[-1]
+                # 若找不到 ALL，則嘗試抓取第一筆
+                if not stat_all and len(ssn_stats) > 0:
+                    stat_all = ssn_stats[0]
 
-            # 提取數據
             rows.append({
-                "編號": j.get("code"),
-                "騎師": j.get("name_ch"),
-                "勝": target_stat.get("numFirst", 0),
-                "亞": target_stat.get("numSecond", 0),
-                "季": target_stat.get("numThird", 0),
-                "出賽": target_stat.get("numStarts", 0),
-                "獎金": target_stat.get("stakeWon", 0),
+                "騎師編號": j.get("code"),
+                "中文名": j.get("name_ch"),
+                "英文名": j.get("name_en"),
+                "勝": stat_all.get("numFirst", 0),
+                "亞": stat_all.get("numSecond", 0),
+                "季": stat_all.get("numThird", 0),
+                "殿": stat_all.get("numFourth", 0),
+                "第五": stat_all.get("numFifth", 0),
+                "出賽": stat_all.get("numStarts", 0),
+                "獎金": stat_all.get("stakeWon", 0),
+                "賽季": j.get("season")
             })
 
-        # 3. 建立 DataFrame 並進行資料清洗
         df = pd.DataFrame(rows)
         
-        # 強制轉換數值型態 (獎金有時是字串)
-        cols_to_fix = ["勝", "亞", "季", "出賽", "獎金"]
-        df[cols_to_fix] = df[cols_to_fix].apply(pd.to_numeric, errors='coerce').fillna(0)
+        # 數據清理：轉換為數字以便排序
+        numeric_cols = ["勝", "亞", "季", "殿", "第五", "出賽", "獎金"]
+        df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce').fillna(0)
 
         # 計算勝率
         df["勝率 (%)"] = (df["勝"] / df["出賽"].replace(0, 1) * 100).round(1)
         
-        # 排序：勝場 -> 亞軍 -> 季軍
+        # 按照馬會排名規則排序 (勝 > 亞 > 季)
         df = df.sort_values(by=["勝", "亞", "季"], ascending=False).reset_index(drop=True)
         
-        # 加上排名欄位
+        # 插入排名欄
         df.insert(0, "排名", df.index + 1)
 
         return df, None
 
     except Exception as e:
-        return None, f"程式執行異常: {str(e)}"
+        return None, f"系統抓取異常: {str(e)}"
 
 # --- Streamlit 顯示部分 ---
 
