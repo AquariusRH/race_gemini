@@ -466,36 +466,28 @@ def get_trainer_ranking():
         st.error(f"Request Error: {e}")
         return pd.DataFrame() # 請求失敗時返回空的 DataFrame
 
-def fetch_hkjc_graphql_jockey_ranking():
+def get_jockey_ranking_graphql():
     """
-    透過 GraphQL 直接從馬會 API 獲取騎師排名數據
+    透過馬會 GraphQL API 獲取最新騎師排名數據
     """
     url = "https://info.cld.hkjc.com/graphql/base/"
     
-    # 這是從網頁抓取到的 GraphQL 查詢語句 (Query)
-    # 它可以精準抓取：騎師名、冠、亞、季、殿、五、出賽次數、獎金
+    # 這是從馬會官方網頁分析出來的 GraphQL 查詢語句
     query = """
     query jockeyRanking($season: String, $view: String, $racecourse: String, $brand: String, $lang: String) {
       jockeyRanking(season: $season, view: $view, racecourse: $racecourse, brand: $brand, lang: $lang) {
         tableData {
           jockey {
             nameCH
-            nameEN
             code
           }
           win
-          sec
-          third
-          fourth
-          fifth
           totalRun
-          stakes
         }
       }
     }
     """
     
-    # 設定參數 (當前賽季, 全部馬場, 中文)
     variables = {
         "season": "Current",
         "view": "Numbers",
@@ -517,46 +509,43 @@ def fetch_hkjc_graphql_jockey_ranking():
     }
 
     try:
-        response = requests.post(url, json=payload, headers=headers, timeout=15)
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
         response.raise_for_status()
+        json_data = response.json()
         
-        result = response.json()
+        # 解析路徑: data -> jockeyRanking -> tableData
+        items = json_data.get('data', {}).get('jockeyRanking', {}).get('tableData', [])
         
-        # 提取資料路徑：data -> jockeyRanking -> tableData
-        table_data = result.get('data', {}).get('jockeyRanking', {}).get('tableData', [])
-        
-        if not table_data:
-            st.write("⚠️ 成功連接但未找到數據")
+        if not items:
             return pd.DataFrame()
             
         # 整理成 DataFrame
         jockey_list = []
-        for item in table_data:
+        for item in items:
             jockey_list.append({
                 "騎師": item['jockey']['nameCH'],
-                "英文名": item['jockey']['nameEN'],
-                "冠": item['win'],
-                "亞": item['sec'],
-                "季": item['third'],
-                "總出賽次數": item['totalRun'],
-                "獎金": item['stakes']
+                "冠": int(item['win']),
+                "總出賽次數": int(item['totalRun'])
             })
             
-        df = pd.DataFrame(jockey_list)
-        st.write(f"✅ 成功獲取 {len(df)} 位騎師數據")
-        return df
+        return pd.DataFrame(jockey_list)
 
     except Exception as e:
-        st.write(f"❌ GraphQL 請求失敗: {e}")
+        st.error(f"無法從 API 獲取騎師數據: {e}")
         return pd.DataFrame()
 
 # --- 測試執行 ---
 
-df_ranking = fetch_hkjc_graphql_jockey_ranking()
-if not df_ranking.empty:
-        st.write(df_ranking.head())
+if 'jockey_ranking_df' not in st.session_state:
+    with st.spinner("正在連線馬會 API 獲取最新騎師榜..."):
+        st.session_state.jockey_ranking_df = get_jockey_ranking_graphql()
+
+# 顯示結果
+if not st.session_state.jockey_ranking_df.empty:
+    st.success(f"成功載入 {len(st.session_state.jockey_ranking_df)} 位騎師數據")
+    st.dataframe(st.session_state.jockey_ranking_df, use_container_width=True)
 else:
-        st.write("無法獲取數據")
+    st.error("數據獲取失敗，請檢查網路或 API 是否變更。")
 
 
 def save_odds_data(time_now,odds):
