@@ -467,7 +467,9 @@ def get_trainer_ranking():
         return pd.DataFrame() # 請求失敗時返回空的 DataFrame
 
 def fetch_hkjc_jockey_ranking():
-    season = "25/26"   # 官方網站目前顯示的賽季格式
+    # 注意：馬會 API 的賽季格式有時是 "2025/2026"，有時是 "25/26"
+    # 目前 2026 年建議先嘗試 "25/26"
+    season = "25/26"
 
     query = """
     query rw_GetJockeyRanking($season: String) {
@@ -475,64 +477,52 @@ def fetch_hkjc_jockey_ranking():
         code
         name_ch
         name_en
-        status
-        id
-        isCurSsn
-        season
         ssnStat {
           numFirst
           numSecond
           numThird
-          numFourth
-          numFifth
           numStarts
           stakeWon
-          trk
-          ven
-        }
-        dhStat {
-          numFirst
-          numSecond
-          numThird
-          numFourth
-          numFifth
-          numStarts
-          stakeWon
-          trk
-          ven
         }
       }
     }
     """
 
-    payload = {
-        "query": query,
-        "variables": {"season": season}
-    }
-
+    payload = {"query": query, "variables": {"season": season}}
     headers = {
         "Content-Type": "application/json",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0.0.0",
-        "Referer": "https://racing.hkjc.com/",
-        "Origin": "https://racing.hkjc.com",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Referer": "https://racing.hkjc.com/racing/information/Chinese/Jockey/JockeyRanking.aspx",
     }
 
     try:
         resp = requests.post("https://info.cld.hkjc.com/graphql/base/", json=payload, headers=headers, timeout=12)
         resp.raise_for_status()
-        data = resp.json()
+        full_result = resp.json()
 
-        jockeys = data.get("data", {}).get("jockeyStat", [])
+        # 安全檢查：確保 data 存在
+        if "errors" in full_result:
+            return None, f"GraphQL 錯誤: {full_result['errors'][0].get('message')}"
+        
+        data_content = full_result.get("data")
+        if not data_content:
+            return None, "API 回傳空的 data 欄位"
+
+        jockeys = data_content.get("jockeyStat", [])
         if not jockeys:
-            return None, f"無資料（賽季 {season} 可能尚未開始或格式錯誤）"
+            return None, f"找不到賽季 {season} 的騎師資料"
 
         rows = []
         for j in jockeys:
-            s = j.get("ssnStat", {})
+            # 確保 j 是字典
+            if not isinstance(j, dict): continue
+            
+            # 獲取統計數據，如果沒有則給予空字典
+            s = j.get("ssnStat") or {}
+            
             rows.append({
-                "騎師編號": j.get("code"),
-                "中文名": j.get("name_ch"),
-                "英文名": j.get("name_en"),
+                "編號": j.get("code"),
+                "姓名": j.get("name_ch"),
                 "勝": s.get("numFirst", 0),
                 "亞": s.get("numSecond", 0),
                 "季": s.get("numThird", 0),
@@ -541,44 +531,28 @@ def fetch_hkjc_jockey_ranking():
             })
 
         df = pd.DataFrame(rows)
-        if df.empty:
-            return None, "資料為空"
+        
+        # 轉換數值型態，避免運算出錯
+        numeric_cols = ["勝", "亞", "季", "出賽", "獎金"]
+        df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce').fillna(0)
 
-        df["勝率 (%)"] = (df["勝"] / df["出賽"].replace(0, 1) * 100).round(2)
+        # 計算勝率
+        df["勝率 (%)"] = (df["勝"] / df["出賽"].replace(0, 1) * 100).round(1)
         df = df.sort_values("勝", ascending=False).reset_index(drop=True)
+        
         return df, None
 
     except Exception as e:
-        return None, str(e)
+        return None, f"系統錯誤: {str(e)}"
 
-
-# ────────────────────────────────────────────────
-# Streamlit App 主體 – 直接顯示
-# ────────────────────────────────────────────────
-
+# Streamlit 顯示
 df, error = fetch_hkjc_jockey_ranking()
 
 if error:
-    st.error(f"抓取失敗：{error}")
-    st.info("提示：如果持續失敗，可嘗試把 season 改成 \"25/26\" 再重跑。")
+    st.error(error)
 else:
-    st.success(f"已取得 {len(df)} 位騎師資料")
-    
-    # 直接用 st.write 顯示（最簡單）
-    st.write(df)
-
-    # （可選）更好看的表格顯示方式，如果你之後想換
-    # st.dataframe(
-    #     df.style.format({
-    #         "獎金": "{:,.0f}",
-    #         "勝率 (%)": "{:.2f}"
-    #     }),
-    #     use_container_width=True
-    # )
-
-
-st.markdown("---")
-st.caption("資料來源：香港賽馬會 GraphQL API（非官方公開，僅供參考）")
+    st.subheader("🏇 25/26 賽季騎師排名")
+    st.dataframe(df, use_container_width=True)
 
 def save_odds_data(time_now,odds):
   for method in methodlist:
