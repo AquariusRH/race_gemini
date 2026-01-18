@@ -478,32 +478,21 @@ def fetch_hkjc_jockey_ranking():
     except Exception as e:
         return None, f"系統抓取異常: {str(e)}"
 
-def fetch_hkjc_jockey_ranking():
-    # 目前 2026 年 1 月正處於 2025/26 賽季中期
-    season = "25/26" 
-
-    # 1. 完整的 Query Payload (與官方 F12 抓取內容完全一致，不進行任何簡化)
-    query = """query rw_GetJockeyRanking($season: String) {
-  jockeyStat(season: $season) {
+def fetch_hkjc_trainer_ranking():
+    season = "25/26"
+    
+    # 這是你剛才提供的練馬師專用 Query 字串
+    query = """query rw_GetTrainerRanking($season: String) {
+  trainerStat(season: $season) {
     code
     name_ch
     name_en
-    status
+    status 
     id
     isCurSsn
     season
+    visitingIndex
     ssnStat {
-      numFirst
-      numSecond
-      numThird
-      numFourth
-      numFifth
-      numStarts
-      stakeWon
-      trk
-      ven
-    }
-    dhStat {
       numFirst
       numSecond
       numThird
@@ -516,139 +505,6 @@ def fetch_hkjc_jockey_ranking():
     }
   }
 }"""
-
-    # 官方請求通常包含 operationName
-    payload = {
-        "operationName": "rw_GetJockeyRanking",
-        "variables": {
-            "season": season
-        },
-        "query": query
-    }
-
-    # 2. 完整的 Headers (模擬瀏覽器真實環境，防止被攔截)
-    headers = {
-        "accept": "*/*",
-        "accept-language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
-        "content-type": "application/json",
-        "priority": "u=1, i",
-        "sec-ch-ua": '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": '"Windows"',
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-site",
-        "Referer": "https://racing.hkjc.com/racing/information/Chinese/Jockey/JockeyRanking.aspx",
-        "Origin": "https://racing.hkjc.com",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
-    }
-
-    try:
-        # 執行請求
-        response = requests.post(
-            "https://info.cld.hkjc.com/graphql/base/", 
-            json=payload, 
-            headers=headers, 
-            timeout=15
-        )
-        response.raise_for_status()
-        result = response.json()
-
-        # 錯誤處理邏輯
-        if isinstance(result, list):
-            return None, f"API 返回錯誤列表: {result[0].get('message')}"
-            
-        data = result.get("data")
-        if not data:
-            error_msg = result.get("errors", [{}])[0].get("message", "Unknown error")
-            return None, f"GraphQL 錯誤: {error_msg}"
-
-        jockeys = data.get("jockeyStat", [])
-        if not jockeys:
-            return None, f"找不到賽季 {season} 的資料 (請確認官方 API 是否變動)"
-
-        rows = []
-        for j in jockeys:
-            # 解析 ssnStat (這是一個 List)
-            ssn_stats = j.get("ssnStat", [])
-            
-            # 初始化數據容器
-            stat_all = {}
-            
-            # 遍歷列表尋找 trk="ALL" and ven="ALL" (總計數據)
-            if isinstance(ssn_stats, list):
-                for s in ssn_stats:
-                    if s.get("trk") == "ALL" and s.get("ven") == "ALL":
-                        stat_all = s
-                        break
-                
-                # 若找不到 ALL，則嘗試抓取第一筆
-                if not stat_all and len(ssn_stats) > 0:
-                    stat_all = ssn_stats[0]
-
-            rows.append({
-                "騎師編號": j.get("code"),
-                "騎師": j.get("name_ch"),
-                "英文名": j.get("name_en"),
-                "勝": stat_all.get("numFirst", 0),
-                "亞": stat_all.get("numSecond", 0),
-                "季": stat_all.get("numThird", 0),
-                "殿": stat_all.get("numFourth", 0),
-                "第五": stat_all.get("numFifth", 0),
-                "出賽": stat_all.get("numStarts", 0),
-                "獎金": stat_all.get("stakeWon", 0),
-                "賽季": j.get("season")
-            })
-
-        df = pd.DataFrame(rows)
-        
-        # 數據清理：轉換為數字以便排序
-        numeric_cols = ["勝", "亞", "季", "殿", "第五", "出賽", "獎金"]
-        df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce').fillna(0)
-
-        # 計算勝率
-        df["勝率 (%)"] = (df["勝"] / df["出賽"].replace(0, 1) * 100).round(1)
-        
-        # 按照馬會排名規則排序 (勝 > 亞 > 季)
-        df = df.sort_values(by=["勝", "亞", "季"], ascending=False).reset_index(drop=True)
-        
-        # 插入排名欄
-        df.insert(0, "排名", df.index + 1)
-
-        return df, None
-
-    except Exception as e:
-        return None, f"系統抓取異常: {str(e)}"
-
-def fetch_hkjc_trainer_ranking():
-    season = "25/26"
-    
-    # 這是你提供的練馬師專用 Query
-    query = """
-    query rw_GetTrainerRanking($season: String) {
-      trainerStat(season: $season) {
-        code
-        name_ch
-        name_en
-        status 
-        id
-        isCurSsn
-        season
-        visitingIndex
-        ssnStat {
-          numFirst
-          numSecond
-          numThird
-          numFourth
-          numFifth
-          numStarts
-          stakeWon
-          trk
-          ven
-        }
-      }
-    }
-    """
 
     payload = {
         "operationName": "rw_GetTrainerRanking",
@@ -668,13 +524,14 @@ def fetch_hkjc_trainer_ranking():
         resp.raise_for_status()
         data = resp.json()
 
-        # 注意：這裡的 key 是 trainerStat
-        trainers = data.get("data", {}).get("trainerStat", [])
-        if not trainers:
-            return None, f"無資料 (Season: {season})"
+        # 關鍵：這裡必須對應 trainerStat
+        trainers_list = data.get("data", {}).get("trainerStat", [])
+        
+        if not trainers_list:
+            return None, "API 回傳資料為空 (trainerStat empty)"
 
         rows = []
-        for t in trainers:
+        for t in trainers_list:
             ssn_list = t.get("ssnStat", [])
             stat_all = {}
             
@@ -688,18 +545,17 @@ def fetch_hkjc_trainer_ranking():
                     stat_all = ssn_list[0]
 
             rows.append({
-                "練馬師": t.get("name_ch"), # 統一欄位名稱為「練馬師」
-                "勝": stat_all.get("numFirst", 0),
-                "出賽": stat_all.get("numStarts", 0),
-                "獎金": stat_all.get("stakeWon", 0)
+                "練馬師": t.get("name_ch", "").strip(), 
+                "勝": pd.to_numeric(stat_all.get("numFirst", 0), errors='coerce'),
+                "出賽": pd.to_numeric(stat_all.get("numStarts", 0), errors='coerce'),
+                "獎金": pd.to_numeric(stat_all.get("stakeWon", 0), errors='coerce')
             })
 
-        df = pd.DataFrame(rows)
-        df[["勝", "出賽"]] = df[["勝", "出賽"]].apply(pd.to_numeric)
+        df = pd.DataFrame(rows).dropna(subset=['練馬師'])
         return df, None
 
     except Exception as e:
-        return None, str(e)
+        return None, f"抓取失敗: {str(e)}"
 
 def save_odds_data(time_now,odds):
   for method in methodlist:
