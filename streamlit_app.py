@@ -1391,7 +1391,8 @@ def fetch_race_card(date_str, venue):
                         # 將馬號轉換為數字並排序，確保順序正確
                         df['馬號_int'] = pd.to_numeric(df['馬號'], errors='coerce')
                         df = df.sort_values("馬號_int").drop(columns=['馬號_int']).set_index("馬號")
-                    df_age = fetch_horse_age_only(date_str, venue, r_no)    
+                    df_age = fetch_horse_age_only(date_str, venue, r_no)   
+                    st.table(df_age)
                     if df_age is not None and not df_age.empty:
                         # 使用馬號索引進行左連接 (Left Join)
                         # df_age 的索引需要是馬號，對應 df 的索引
