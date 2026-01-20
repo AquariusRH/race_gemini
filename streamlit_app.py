@@ -554,8 +554,7 @@ def fetch_horse_age_only(date_val, place_val, race_no):
     except Exception as e:
         st.error(f"獲取馬齡失敗: {e}")
         return None
-df_age = fetch_horse_age_only(str(Date), place, race_no)
-st.table(df_age)
+
 
 def save_odds_data(time_now,odds):
   for method in methodlist:
@@ -1141,7 +1140,8 @@ with st.sidebar:
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.rerun()
-
+df_age = fetch_horse_age_only(str(Date), place, race_no)
+st.table(df_age)
 # --- 賽事資料加載 ---
 @st.cache_data(ttl=3600)
 def fetch_race_card(date_str, venue):
