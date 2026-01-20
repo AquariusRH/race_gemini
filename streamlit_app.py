@@ -520,60 +520,42 @@ query rw_GetTrainerRanking($season: String) {
 
     except Exception as e:
         return None, f"抓取異常: {str(e)}"
-def fetch_horse_age_from_hkjc_web(race_no, race_date=None, race_course='ST'):
-    """
-    額外從馬會網頁版排位表抓取馬齡 (不影響原 GraphQL 邏輯)
-    :param race_no: 場次 (int)
-    :param race_date: 日期 字串 (格式: '2026/01/21')
-    :param race_course: 場地 ('ST' 或 'HV')
-    :return: dict { 馬號 (int): 馬齡 (int) }
-    """
-    # 如果沒傳入日期，預設抓取最新的排位表
-    if race_date:
-        url = f"https://racing.hkjc.com/zh-hk/local/information/racecard?racedate={race_date.replace('-', '/')}&Racecourse={race_course}&RaceNo={race_no}"
+def fetch_horse_age_only(date_val, place_val, race_no):
+    if place_dropdown.value in ['ST','HV']:
+      base_url = "https://racing.hkjc.com/racing/information/Chinese/racing/RaceCard.aspx?"
     else:
-        url = f"https://racing.hkjc.com/zh-hk/local/information/racecard?raceNo={race_no}"
-
-    # 使用你提供的 Header
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
-        "Accept-Language": "zh-HK,zh-TW;q=0.9,zh;q=0.8,en-US;q=0.7,en;q=0.6",
-        "Referer": "https://racing.hkjc.com/zh-hk/local/information/racecard"
-    }
-
-    age_dict = {}
+      base_url = "https://racing.hkjc.com/racing/overseas/Chinese/racecard.aspx?para="
+    """
+    專門獲取指定場次馬匹年齡的 Streamlit 函數
+    """
+    date_str = str(date_val).replace('-', '/')
+    url = f"{base_url}RaceDate={date_str}&Racecourse={place_val}&RaceNo={race_no}"
+    
     try:
-        # 加上 timeout 避免掛起
-        response = requests.get(url, headers=headers, timeout=10)
+        # 使用同步 requests 取得網頁
+        response = requests.get(url, timeout=10)
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
+            # 這是馬會排位表每行馬匹數據的 class
+            table_rows = soup.find_all('tr', class_='f_tac f_fs13')
             
-            # 找到排位表的主要表格
-            table = soup.find('table', {'class': 'table_bd'})
-            if table:
-                # 根據你提供的 HTML，每一行資料都有 class 'f_tac f_fs13'
-                rows = table.find_all('tr', class_='f_tac f_fs13')
-                for row in rows:
-                    cols = row.find_all('td')
-                    # 你提供的 HTML 中，馬號在第 1 個 td (index 0)
-                    # 馬齡在第 18 個 td (index 17)，標籤內包含 "5"
-                    if len(cols) >= 18:
-                        try:
-                            h_no_text = cols[0].get_text(strip=True)
-                            age_text = cols[17].get_text(strip=True) # 即你標註的 <td ...>5</td>
-                            
-                            if h_no_text.isdigit() and age_text.isdigit():
-                                age_dict[int(h_no_text)] = int(age_text)
-                        except (ValueError, IndexError):
-                            continue
-        return age_dict
+            age_data = []
+            for row in table_rows:
+                tds = row.find_all('td')
+                if len(tds) >= 17:  # 確保索引 16 (馬齡) 存在
+                    age_data.append({
+                        "編號": tds[0].text.strip(),
+                        "馬名": tds[3].text.strip(),
+                        "馬齡": tds[16].text.strip()
+                    })
+            
+            # 返回 DataFrame 並設定編號為索引
+            return pd.DataFrame(age_data).set_index("編號")
     except Exception as e:
-        print(f"抓取網頁馬齡失敗: {e}")
-        return {}
-
-horse_ages = fetch_horse_age_from_hkjc_web(2, '2016/01/21')
-st.write(horse_ages)
-
+        st.error(f"獲取馬齡失敗: {e}")
+        return None
+df_age = fetch_horse_age_only(date_picker.value, place_dropdown.value, race_no)
+st.table(df_age)
 
 def save_odds_data(time_now,odds):
   for method in methodlist:
