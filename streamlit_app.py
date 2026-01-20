@@ -1140,8 +1140,7 @@ with st.sidebar:
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.rerun()
-df_age = fetch_horse_age_only(str(Date), place, race_no)
-st.table(df_age)
+
 # --- 賽事資料加載 ---
 @st.cache_data(ttl=3600)
 def fetch_race_card(date_str, venue):
@@ -1392,7 +1391,14 @@ def fetch_race_card(date_str, venue):
                         # 將馬號轉換為數字並排序，確保順序正確
                         df['馬號_int'] = pd.to_numeric(df['馬號'], errors='coerce')
                         df = df.sort_values("馬號_int").drop(columns=['馬號_int']).set_index("馬號")
-                    
+                    df_age = fetch_horse_age_only(str(Date), place, race_no)    
+                    if df_age is not None and not df_age.empty:
+                        # 使用馬號索引進行左連接 (Left Join)
+                        # df_age 的索引需要是馬號，對應 df 的索引
+                        df = df.join(df_age[['馬齡']], how='left')
+                    else:
+                        # 如果抓不到馬齡，補上空值欄位避免後續計算報錯
+                        df['馬齡'] = ""
                     # Post Time
                     pt_str = race.get("postTime")
                     pt = datetime.fromisoformat(pt_str) if pt_str else None
