@@ -525,9 +525,7 @@ def fetch_horse_age_only(date_val, place_val, race_no):
       base_url = "https://racing.hkjc.com/racing/information/Chinese/racing/RaceCard.aspx?"
     else:
       base_url = "https://racing.hkjc.com/racing/overseas/Chinese/racecard.aspx?para="
-    """
-    專門獲取指定場次馬匹年齡的 Streamlit 函數
-    """
+
     date_str = str(date_val).replace('-', '/')
     url = f"{base_url}RaceDate={date_str}&Racecourse={place_val}&RaceNo={race_no}"
     
