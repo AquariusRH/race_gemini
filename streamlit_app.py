@@ -554,7 +554,7 @@ def fetch_horse_age_only(date_val, place_val, race_no):
     except Exception as e:
         st.error(f"獲取馬齡失敗: {e}")
         return None
-df_age = fetch_horse_age_only(date_picker.value, place_dropdown.value, race_no)
+df_age = fetch_horse_age_only(date_str, place, race_no)
 st.table(df_age)
 
 def save_odds_data(time_now,odds):
