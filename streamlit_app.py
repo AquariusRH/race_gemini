@@ -1790,7 +1790,10 @@ else:
 # ==================== 5. 監控循環邏輯 ====================
 
 methodlist = ['WIN', 'PLA', 'QIN', 'QPL'] # 簡化預設
-print_list = ['WIN&QIN', 'PLA&QPL']
+if len(st.session_state.race_dataframes[race_no]['馬號'])<7:
+    print_list = ['WIN&QIN','PLA']
+else:
+    print_list = ['WIN&QIN', 'PLA&QPL']
 top_list = ['QIN']
 methodCHlist = ['連贏']
 for method in methodlist:
