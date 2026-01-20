@@ -571,7 +571,7 @@ def fetch_horse_age_from_hkjc_web(race_no, race_date=None, race_course='ST'):
         print(f"抓取網頁馬齡失敗: {e}")
         return {}
 
-horse_ages = fetch_horse_age_from_hkjc_web(race_no, Date)
+horse_ages = fetch_horse_age_from_hkjc_web(2, '2016/01/21')
 st.write(horse_ages)
 
 
