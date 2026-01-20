@@ -520,6 +520,58 @@ query rw_GetTrainerRanking($season: String) {
 
     except Exception as e:
         return None, f"抓取異常: {str(e)}"
+def fetch_horse_age_from_hkjc(race_no, race_date=None, race_course='ST'):
+    """
+    從香港賽馬會網頁版排位表抓取馬匹年齡
+    :param race_no: 場次 (int)
+    :param race_date: 賽馬日期 (格式: 'YYYY/MM/DD')
+    :param race_course: 場地代碼 ('ST' 或 'HV')
+    :return: dict { 馬號 (int): 年齡 (int) }
+    """
+    # 建立 URL
+    if race_date:
+        # 處理日期格式以符合 URL 要求 (YYYY/MM/DD)
+        formatted_date = race_date.replace('-', '/')
+        url = f"https://racing.hkjc.com/zh-hk/local/information/racecard?racedate={formatted_date}&Racecourse={race_course}&RaceNo={race_no}"
+    else:
+        url = f"https://racing.hkjc.com/zh-hk/local/information/racecard?raceNo={race_no}"
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+        "Accept-Language": "zh-HK,zh-TW;q=0.9,zh;q=0.8,en-US;q=0.7,en;q=0.6"
+    }
+
+    age_dict = {}
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # 尋找排位表表格
+            table = soup.find('table', {'class': 'table_bd'})
+            if table:
+                rows = table.find_all('tr', class_='f_tac f_fs13') # 鎖定數據行
+                for row in rows:
+                    cols = row.find_all('td')
+                    # 根據提供的 HTML，馬號在第1個 td，年齡在第18個 td (索引 17)
+                    if len(cols) >= 18:
+                        try:
+                            horse_no = int(cols[0].get_text(strip=True))
+                            # 提取年齡數字
+                            age_text = cols[17].get_text(strip=True)
+                            age_match = re.search(r'\d+', age_text)
+                            if age_match:
+                                age_dict[horse_no] = int(age_match.group())
+                        except (ValueError, IndexError):
+                            continue
+        return age_dict
+    except Exception as e:
+        print(f"抓取馬齡發生錯誤: {e}")
+        return {}
+
+# 使用範例：
+ages = fetch_horse_age_from_hkjc(2, "2026/01/21", "ST")
+st.write(ages) # 輸出可能為 {1: 5, ...}
 
 def save_odds_data(time_now,odds):
   for method in methodlist:
