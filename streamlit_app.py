@@ -1649,7 +1649,7 @@ def calculate_smart_score(race_no):
     # ----------------------------------------------------
     
     # 只取出計算好的分數欄位
-    static_scores = static_df[['馬名','TotalFormScore', 'FormScore', 'JockeyScore','TrainerScore', 'DrawScore', 'RatingDiffScore']]
+    static_scores = static_df[['馬名','馬齡','TotalFormScore', 'FormScore', 'JockeyScore','TrainerScore', 'DrawScore', 'RatingDiffScore']]
     
     # 使用 join 進行合併：左連接，以 df 的馬號為準。
     # 由於索引已統一為字串，join 將正確地按馬號匹配。
@@ -1840,8 +1840,8 @@ if monitoring_on:
                 current_top_4 = prediction_df.head(4)['顯示名稱'].tolist()
                 st.session_state.top_4_history.extend(current_top_4)
                 display_df = prediction_df.copy()
-                display_df = display_df[['馬名','Odds', 'MoneyFlow', 'TotalFormScore', 'TotalScore']]
-                display_df.columns = ['馬名','當前賠率', '近期資金流(K)', '近績評分', '🔥綜合推薦分']
+                display_df = display_df[['馬名','馬齡','Odds', 'MoneyFlow', 'TotalFormScore', 'TotalScore']]
+                display_df.columns = ['馬名','馬齡','當前賠率', '近期資金流(K)', '近績評分', '🔥綜合推薦分']
                 display_df['當前賠率'] = display_df['當前賠率'].apply(lambda x: f"{x:.1f}")
                 display_df['近期資金流(K)'] = display_df['近期資金流(K)'].apply(lambda x: f"{x:.1f}")
                 display_df['近績評分'] = display_df['近績評分'].astype(float).round(0).astype('Int64')
