@@ -521,7 +521,7 @@ query rw_GetTrainerRanking($season: String) {
     except Exception as e:
         return None, f"抓取異常: {str(e)}"
 def fetch_horse_age_only(date_val, place_val, race_no):
-    if place_dropdown.value in ['ST','HV']:
+    if place_val in ['ST','HV']:
       base_url = "https://racing.hkjc.com/racing/information/Chinese/racing/RaceCard.aspx?"
     else:
       base_url = "https://racing.hkjc.com/racing/overseas/Chinese/racecard.aspx?para="
