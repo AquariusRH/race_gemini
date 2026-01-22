@@ -533,6 +533,7 @@ def fetch_horse_age_only(date_val, place_val, race_no):
     try:
         # 使用同步 requests 取得網頁
         response = requests.get(url, timeout=10)
+        st.write(response)
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
             # 這是馬會排位表每行馬匹數據的 class
