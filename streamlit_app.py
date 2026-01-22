@@ -541,6 +541,7 @@ def fetch_horse_age_only(date_val, place_val, race_no):
             age_data = []
             for row in table_rows:
                 tds = row.find_all('td')
+                st.write(tds)
                 if tds[16]:  # 確保索引 16 (馬齡) 存在
                     age_data.append({
                         "編號": tds[0].text.strip(),
