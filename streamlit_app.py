@@ -1937,7 +1937,7 @@ if monitoring_on:
                         #insidetextorientation='horizontal'
                     #)
                     #st.plotly_chart(fig4, width='stretch', key=f"top4_{time_now.strftime('&H%M%S')}")
-            st.markdown("### 連嬴賠率排名")
+            st.markdown("### 連贏賠率排名")
             print_top()
            
             time.sleep(15)
