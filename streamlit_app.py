@@ -1746,7 +1746,7 @@ def calculate_smart_score_static(race_no):
                        (df['RatingDiffScore'] * 0.10)
                        
     # 清理並輸出
-    output_cols = ['馬名', '馬齡','FormScore', 'JockeyScore', 'TrainerScore', 
+    output_cols = ['馬名','騎師', '馬齡','FormScore', 'JockeyScore', 'TrainerScore', 
                    'DrawScore', 'RatingDiffScore', 'TotalScore']
     
     # 只選取存在的欄位
@@ -1954,9 +1954,9 @@ else:
     if not static_prediction_df.empty:
         # 整理顯示格式
         display_df = static_prediction_df.copy()
-        display_df = display_df[['馬名','馬齡', 'FormScore', 'JockeyScore', 'TrainerScore', 
+        display_df = display_df[['馬名','騎師','馬齡', 'FormScore', 'JockeyScore', 'TrainerScore', 
                    'DrawScore', 'RatingDiffScore', 'TotalScore']]
-        display_df.columns = ['馬名','馬齡','近績狀態分','騎師分','練馬師分', '檔位優勢分', '評分負擔分', '🏆 靜態預測分']
+        display_df.columns = ['馬名','騎師','馬齡','近績狀態分','騎師分','練馬師分', '檔位優勢分', '評分負擔分', '🏆 靜態預測分']
 
         # 格式化
         display_df['近績狀態分'] = display_df['近績狀態分'].astype(int)
