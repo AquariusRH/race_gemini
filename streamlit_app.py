@@ -520,6 +520,7 @@ query rw_GetTrainerRanking($season: String) {
 
     except Exception as e:
         return None, f"抓取異常: {str(e)}"
+        
 def fetch_horse_age_only(date_val, place_val, race_no):
     if place_val in ['ST','HV']:
       base_url = "https://racing.hkjc.com/racing/information/Chinese/racing/RaceCard.aspx?"
@@ -540,7 +541,7 @@ def fetch_horse_age_only(date_val, place_val, race_no):
             age_data = []
             for row in table_rows:
                 tds = row.find_all('td')
-                if len(tds) >= 17:  # 確保索引 16 (馬齡) 存在
+                if tds[16]:  # 確保索引 16 (馬齡) 存在
                     age_data.append({
                         "編號": tds[0].text.strip(),
                         "馬名": tds[3].text.strip(),
