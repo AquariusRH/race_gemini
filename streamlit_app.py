@@ -1139,7 +1139,9 @@ with st.sidebar:
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.rerun()
-
+    show_bubble = st.checkbox("📍 顯示氣泡圖", value=False)
+    show_bar = st.checkbox("📊 顯示長條圖", value=True)
+    show_top = st.checkbox("🏆 顯示連贏賠率排名", value=True)
 # --- 賽事資料加載 ---
 @st.cache_data(ttl=3600)
 def fetch_race_card(date_str, venue):
@@ -1826,8 +1828,10 @@ if monitoring_on:
             st.metric("最後更新", st.session_state.last_update.strftime('%H:%M:%S') if st.session_state.last_update else "N/A")
             
             # A. 氣泡圖 (資金流向視覺化)
-            #print_bubble(race_no, print_list)
-            print_bar_chart(time_now)
+            if show_bubble:
+                print_bubble(race_no, print_list)
+            if show_bar:    
+                print_bar_chart(time_now)
             
             # B. 實時預測排名
             st.markdown("### 🤖 實時資金流綜合預測排名")
@@ -1936,8 +1940,9 @@ if monitoring_on:
                         #insidetextorientation='horizontal'
                     #)
                     #st.plotly_chart(fig4, width='stretch', key=f"top4_{time_now.strftime('&H%M%S')}")
-            st.markdown("### 連贏賠率排名")
-            print_top()
+            if show_top:
+                st.markdown("### 連贏賠率排名")
+                print_top()
            
             time.sleep(15)
         
