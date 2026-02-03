@@ -1141,7 +1141,7 @@ with st.sidebar:
         st.rerun()
         
     show_bubble = st.toggle("📍 顯示氣泡圖", value=False)
-    show_bar = st.ctoggle("📊 顯示長條圖", value=True)
+    show_bar = st.toggle("📊 顯示長條圖", value=True)
     show_top = st.toggle("🏆 顯示連贏賠率排名", value=True)
 # --- 賽事資料加載 ---
 @st.cache_data(ttl=3600)
