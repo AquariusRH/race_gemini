@@ -1139,9 +1139,10 @@ with st.sidebar:
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.rerun()
-    show_bubble = st.checkbox("📍 顯示氣泡圖", value=False)
-    show_bar = st.checkbox("📊 顯示長條圖", value=True)
-    show_top = st.checkbox("🏆 顯示連贏賠率排名", value=True)
+        
+    show_bubble = st.toggle("📍 顯示氣泡圖", value=False)
+    show_bar = st.ctoggle("📊 顯示長條圖", value=True)
+    show_top = st.toggle("🏆 顯示連贏賠率排名", value=True)
 # --- 賽事資料加載 ---
 @st.cache_data(ttl=3600)
 def fetch_race_card(date_str, venue):
