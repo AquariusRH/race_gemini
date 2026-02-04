@@ -1123,91 +1123,109 @@ def highlight_change(val):
 
 import plotly.graph_objects as go
 import pandas as pd
-import numpy as np
 from datetime import datetime, timedelta
 
 def print_plotly_advanced_bar(race_no):
-    # --- 1. 確定顯示哪一個時間點的數據 ---
-    all_data_len = len(st.session_state.overall_investment_dict['WIN'])
-    
-    # 初始化 session_state 中的索引（如果不存在）
-    if 'current_view_idx' not in st.session_state:
-        st.session_state.current_view_idx = all_data_len - 1
+    # 1. 確保基礎數據存在
+    df_win = st.session_state.overall_investment_dict['WIN']
+    df_qin = st.session_state.overall_investment_dict['QIN']
+    df_total = df_win + df_qin
+    all_timestamps = df_total.index
+    data_len = len(all_timestamps)
 
-    # 在圖表下方放 Slider，並綁定 key
-    # 當 Slider 移動時，會自動更新 st.session_state.current_view_idx
-    target_idx = st.select_slider(
-        "📊 歷史數據回溯 (拖動以檢視過去分鐘)",
-        options=list(range(all_data_len)),
-        value=st.session_state.current_view_idx,
-        format_func=lambda x: st.session_state.overall_investment_dict['WIN'].index[x].strftime("%H:%M:%S"),
-        key="view_slider" # 關鍵：與監控邏輯隔離
+    if data_len == 0:
+        st.warning("尚無數據")
+        return
+
+    # --- 關鍵：使用 session_state 鎖定滑塊位置 ---
+    # 如果是第一次運行，預設看最新（最後一筆）
+    if 'slider_idx' not in st.session_state:
+        st.session_state.slider_idx = data_len - 1
+    
+    # 確保索引不會因為數據增加而越界（例如重置後）
+    if st.session_state.slider_idx >= data_len:
+        st.session_state.slider_idx = data_len - 1
+
+    # 2. 建立滑塊 (放在圖表上方或下方皆可)
+    # 使用 key="slider_idx" 讓 Streamlit 自動同步 state
+    selected_idx = st.select_slider(
+        "📅 查看歷史時間點",
+        options=list(range(data_len)),
+        value=st.session_state.slider_idx,
+        format_func=lambda x: all_timestamps[x].strftime("%H:%M:%S"),
+        key="slider_idx" # 這裡會自動存入 st.session_state.slider_idx
     )
-    
-    # 更新目前要顯示的索引
-    idx = target_idx
 
-    # --- 2. 取得該索引對應的數據 ---
-    post_time = st.session_state.post_time_dict[race_no]
-    ts = st.session_state.overall_investment_dict['WIN'].index[idx]
+    # 3. 提取該時間點的數據
+    target_ts = all_timestamps[selected_idx]
+    current_total = df_total.iloc[selected_idx]
     
-    df_win_row = st.session_state.overall_investment_dict['WIN'].iloc[idx]
-    df_qin_row = st.session_state.overall_investment_dict['QIN'].iloc[idx]
-    df_total_row = df_win_row + df_qin_row
+    # 計算變動數據 (該時間點的前10筆總和)
+    start_idx = max(0, selected_idx - 9)
+    change_win = st.session_state.diff_dict['WIN'].iloc[start_idx:selected_idx+1].sum(axis=0)
+    change_qin = st.session_state.diff_dict['QIN'].iloc[start_idx:selected_idx+1].sum(axis=0)
     
-    # 變動數據 (這裡維持抓取最新的 10 筆，或者也可以隨 idx 變動)
-    change_win = st.session_state.diff_dict['WIN'].iloc[max(0, idx-10):idx+1].sum(axis=0)
-    change_qin = st.session_state.diff_dict['QIN'].iloc[max(0, idx-10):idx+1].sum(axis=0)
-    
-    # 賠率數據
-    odds_series = st.session_state.odds_dict['WIN'].iloc[idx]
-    
-    # 馬名排序 (按選定時間點的總額排)
-    sorted_cols = df_total_row.sort_values(ascending=False).index
+    # 賠率 (對應當前時間點)
+    current_odds = st.session_state.odds_dict['WIN'].iloc[selected_idx]
+
+    # 馬名排序與格式化 (按總額大到小)
+    sorted_cols = current_total.sort_values(ascending=False).index
     namelist_raw = st.session_state.race_dataframes[race_no]['馬名']
     horse_labels = [f"{c}.<br>{namelist_raw.iloc[c-1]}" for c in sorted_cols]
 
-    # --- 3. 顏色判斷 (基於選取的時間點 ts) ---
-    HK_TZ = timezone(timedelta(hours=8))
-    time_diff = (post_time.replace(tzinfo=HK_TZ) - ts.replace(tzinfo=HK_TZ)).total_seconds() / 60
+    # 4. 顏色邏輯
+    post_time = st.session_state.post_time_dict[race_no]
+    time_diff = (post_time.replace(tzinfo=None) - target_ts.replace(tzinfo=None)).total_seconds() / 60
     
-    if time_diff <= 5: bar_col = 'rgb(255, 99, 132)'   # 紅
-    elif time_diff <= 25: bar_col = 'rgb(54, 162, 235)' # 藍
-    else: bar_col = 'rgb(255, 205, 210)'               # 粉
+    if time_diff <= 5: bar_color = 'rgb(255, 99, 132)'   # 紅
+    elif time_diff <= 25: bar_color = 'rgb(54, 162, 235)' # 藍
+    else: bar_color = 'rgb(255, 205, 210)'               # 粉
 
-    # --- 4. 繪製 Plotly ---
+    # 5. 繪製 Plotly
     fig = go.Figure()
 
-    # 左柱：總投注 (WIN+QIN)
+    # --- 左柱：總投注額 (一組) ---
     fig.add_trace(go.Bar(
         x=horse_labels,
-        y=df_total_row[sorted_cols],
-        name='總投注額',
-        marker_color=bar_col,
-        offsetgroup=1,
-        text=odds_series[sorted_cols],
-        textposition='outside'
+        y=current_total[sorted_cols],
+        name='總投注(W+Q)',
+        marker_color=bar_color,
+        offsetgroup=1, # 第一分組
+        text=current_odds[sorted_cols], # 賠率
+        textposition='outside',         # 置於柱子上方
+        hovertemplate="總額: %{y}<br>賠率: %{text}<extra></extra>"
     ))
 
-    # 右柱：疊加變動 (WIN 灰色 + QIN 綠色)
+    # --- 右柱：近期變動疊加 (二組) ---
+    # WIN 變動 (底層 - 灰色)
     fig.add_trace(go.Bar(
-        x=horse_labels, y=change_win[sorted_cols],
-        name='WIN變動(10筆)', marker_color='grey', offsetgroup=2
+        x=horse_labels,
+        y=change_win[sorted_cols],
+        name='WIN變動',
+        marker_color='grey',
+        offsetgroup=2, # 第二分組
     ))
+    # QIN 變動 (疊加層 - 綠色)
     fig.add_trace(go.Bar(
-        x=horse_labels, y=change_qin[sorted_cols],
-        name='QIN變動(10筆)', marker_color='green', offsetgroup=2,
-        base=change_win[sorted_cols] # 疊加在灰色上面
+        x=horse_labels,
+        y=change_qin[sorted_cols],
+        name='QIN變動',
+        marker_color='green',
+        offsetgroup=2, # 與灰色同分組
+        base=change_win[sorted_cols] # 疊加核心：將起點設在灰色上方
     ))
 
+    # 佈局美化
     fig.update_layout(
-        title=f"數據回溯模式 | 觀測時間: {ts.strftime('%H:%M:%S')} (離跑 {int(time_diff)} 分)",
-        barmode='group',
-        height=500,
-        legend=dict(orientation="h", y=1.1)
+        title=f"獨贏及連贏 | 觀測時間: {target_ts.strftime('%H:%M:%S')} (離跑 {int(time_diff)} 分)",
+        barmode='group', # 組間並列 (總額 vs 變動)
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        height=550,
+        yaxis_title="金額",
+        margin=dict(t=100, b=50)
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, key=f"plotly_bar_{race_no}")
 # ==================== 4. 主介面邏輯 ====================
 
 # --- 輸入區 ---
@@ -1921,15 +1939,7 @@ if monitoring_on:
                 print_bubble(race_no, print_list)
             if show_bar:    
                 print_bar_chart(time_now)
-            history_index = st.select_slider(
-                "📊 數據回溯時間軸",
-                options=list(range(len(st.session_state.overall_investment_dict['WIN']))),
-                value=len(st.session_state.overall_investment_dict['WIN']) - 1,
-                format_func=lambda x: st.session_state.overall_investment_dict['WIN'].index[x].strftime("%H:%M:%S")
-            )
-            
-            # 執行繪圖 (傳入選定的索引進行切換)
-            # 注意：上面的函數需要微調 .iloc[-1] 為 .iloc[history_index] 即可實現全動態
+
             print_plotly_advanced_bar(race_no)
             # B. 實時預測排名
             st.markdown("### 🤖 實時資金流綜合預測排名")
