@@ -1187,21 +1187,48 @@ def print_plotly_advanced_bar(race_no, method): # 建議傳入 method 區分
     
             frames.append(go.Frame(data=frame_data, name=ts.strftime("%H:%M:%S")))
     
-        # --- 4. 配置佈局與 Plotly 滑塊 ---
-        fig = go.Figure(
+            # --- 4. 配置佈局與 Plotly 滑塊 ---
+            fig = go.Figure(
             data=frames[-1].data,
             layout=go.Layout(
-                title=f"{method} 資金流動分析 (拉軸不閃爍)",
-                barmode='group', dragmode=False, height=500,
-                xaxis={'fixedrange': True}, yaxis={'fixedrange': True},
-                legend=dict(orientation="h", y=1.1, x=1, xanchor='right'),
+                title=f"{method} 數據回溯",
+                barmode='group',
+                dragmode=False,
+                # 1. 顯著增加高度 (例如從 500 改為 700 或 800)
+                height=700, 
+                
+                # 2. 移除不必要的空白邊距，讓圖表充滿畫布
+                # t (top), b (bottom), l (left), r (right)
+                margin=dict(l=10, r=10, t=60, b=120), 
+                
+                xaxis={
+                    'fixedrange': True,
+                    'tickangle': 45,  # 傾斜標籤
+                    'automargin': True # 讓系統自動根據標籤長度調整底部空間
+                },
+                yaxis={
+                    'fixedrange': True,
+                    # 確保金額不會被切掉
+                    'automargin': True 
+                },
+                
+                # 3. 圖例位置優化 (放在頂部，不佔用側面寬度)
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.02,
+                    xanchor="right",
+                    x=1
+                ),
+    
+                # 4. 滑塊配置
                 sliders=[{
                     "active": data_len - 1,
-                    "currentvalue": {"prefix": "時間: ", "font": {"size": 14, "color": "#666"}},
-                    "pad": {"t": 60},
+                    "currentvalue": {"prefix": "觀測時間: "},
+                    "pad": {"t": 50, "b": 10}, # 控制滑塊上下間距
                     "steps": [
                         {
-                            "args": [[f.name], {"frame": {"duration": 0, "redraw": True}, "mode": "immediate"}],
+                            "args": [[f.name], {"frame": {"duration": 0, "redraw": False}, "mode": "immediate"}],
                             "label": f.name,
                             "method": "animate",
                         } for f in frames
@@ -1211,10 +1238,8 @@ def print_plotly_advanced_bar(race_no, method): # 建議傳入 method 區分
             frames=frames
         )
     
-        # --- 5. 解決 DuplicateKey：使用動態 Key ---
-        # 這裡加入資料筆數 (data_len) 作為後綴，保證唯一性且在新數據進來時更新
-        latest_ts_key = all_ts[-1].strftime("%H%M%S")
-        st.plotly_chart(fig, use_container_width=True, key=f"fluent_{race_no}_{method}_{latest_ts_key}")
+        # 5. 使用 use_container_width=True 讓圖表隨網頁寬度自動撐滿
+        st.plotly_chart(fig, use_container_width=True, key=f"fluent_{race_no}_{method}_{latest_ts}")
 # ==================== 4. 主介面邏輯 ====================
 
 # --- 輸入區 ---
