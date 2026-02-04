@@ -1282,10 +1282,11 @@ with st.sidebar:
     
     # 監控開關
     monitoring_on = st.toggle("啟動即時監控", value=False)
-    
+    keep_keys = ["show_bubble", "show_bar", "show_move_bar", "show_top", "bar_key", "bubble_key"]
     if st.button("重置所有數據"):
         for key in list(st.session_state.keys()):
-            del st.session_state[key]
+            if key not in keep_keys:
+                del st.session_state[key]
         st.rerun()
         
     show_bubble = st.toggle("📍 顯示氣泡圖", key="show_bubble", value=False)
