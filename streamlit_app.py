@@ -1156,7 +1156,12 @@ def print_plotly_advanced_bar(race_no, method): # 建議傳入 method 區分
         current_total = (df_base + df_top).iloc[-1]
         sorted_cols = current_total.sort_values(ascending=False).index
         namelist_raw = st.session_state.race_dataframes[race_no]['馬名']
-        horse_labels = [f"{c}.<br>{namelist_raw.iloc[c-1]}" for c in sorted_cols]
+        horse_labels = []
+        for c in sorted_cols:
+            name = namelist_raw.iloc[c-1]
+            # 讓馬名垂直排列：每個字中間加 <br>
+            vertical_name = "<br>".join(list(name))
+            horse_labels.append(f"{c}.<br>{vertical_name}")
         post_time = st.session_state.post_time_dict[race_no].replace(tzinfo=None)
     
         # --- 3. 預先計算所有動畫幀 (Frames) ---
@@ -1203,8 +1208,9 @@ def print_plotly_advanced_bar(race_no, method): # 建議傳入 method 區分
                 
                 xaxis={
                     'fixedrange': True,
-                    'tickangle': 45,  # 傾斜標籤
-                    'automargin': True # 讓系統自動根據標籤長度調整底部空間
+                    'tickangle': 0,      # 既然馬名已經垂直處理，角度設為 0
+                    'automargin': True,  # 強制自動補償標籤高度
+                    'tickfont': {'size': 14}
                 },
                 yaxis={
                     'fixedrange': True,
