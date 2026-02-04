@@ -1925,7 +1925,7 @@ if monitoring_on:
             if show_bar:    
                 print_bar_chart(time_now)
 
-            print_plotly_advanced_bar(race_no)
+            print_plotly_advanced_bar(race_no,print_list)
             # B. 實時預測排名
             st.markdown("### 🤖 實時資金流綜合預測排名")
             prediction_df = calculate_smart_score(race_no)
