@@ -1184,11 +1184,18 @@ def print_plotly_advanced_bar(race_no, method): # 建議傳入 method 區分
             # 25分內才顯示變動棒
             if time_diff <= 25:
                 start_idx = max(0, i - 9)
-                c_base = diff_base.iloc[start_idx:i+1].sum(axis=0)[sorted_cols]
-                c_top = diff_top.iloc[start_idx:i+1].sum(axis=0)[sorted_cols]
-                frame_data.append(go.Bar(x=horse_labels, y=c_base, marker_color='grey', offsetgroup=2, name=f'{label_base}變'))
+                raw_c_base = diff_base.iloc[start_idx:i+1].sum(axis=0)[sorted_cols]
+                raw_c_top = diff_top.iloc[start_idx:i+1].sum(axis=0)[sorted_cols]
+                
+                # --- 關鍵：執行放大邏輯 (正數 * 6, 負數 * 3) ---
+                def amplify(val):
+                    return val * 6 if val > 0 else val * 3
+    
+                amp_c_base = raw_c_base.apply(amplify)
+                amp_c_top = raw_c_top.apply(amplify)
+                frame_data.append(go.Bar(x=horse_labels, y=amp_c_base, marker_color='grey', offsetgroup=2, name=f'{label_base}變'))
                 if method != 'PLA':
-                    frame_data.append(go.Bar(x=horse_labels, y=c_top, marker_color='green', offsetgroup=2, base=c_base, name=f'{label_top}變'))
+                    frame_data.append(go.Bar(x=horse_labels, y=amp_c_top,, marker_color='green', offsetgroup=2, base=c_base, name=f'{label_top}變'))
     
             frames.append(go.Frame(data=frame_data, name=ts.strftime("%H:%M:%S")))
     
@@ -1204,7 +1211,7 @@ def print_plotly_advanced_bar(race_no, method): # 建議傳入 method 區分
                 
                 # 2. 移除不必要的空白邊距，讓圖表充滿畫布
                 # t (top), b (bottom), l (left), r (right)
-                margin=dict(l=10, r=10, t=60, b=120), 
+                margin=dict(l=20, r=20, t=60, b=350), 
                 
                 xaxis={
                     'fixedrange': True,
@@ -1237,7 +1244,7 @@ def print_plotly_advanced_bar(race_no, method): # 建議傳入 method 區分
                     },
                     # pad 指定滑塊與上方圖表物件的間距
                     # t: 150 確保滑塊被推到垂直馬名的下方
-                    "pad": {"t": 180, "b": 10}, 
+                    "pad": {"t": 180}, 
                     "steps": [
                         {
                             "args": [[f.name], {"frame": {"duration": 0, "redraw": False}, "mode": "immediate"}],
