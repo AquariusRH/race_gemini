@@ -1126,89 +1126,85 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
-def print_plotly_advanced_bar(race_no, m1=25, m2=5):
-    # 1. 取得數據
+def print_plotly_advanced_bar(race_no):
+    # --- 1. 確定顯示哪一個時間點的數據 ---
+    all_data_len = len(st.session_state.overall_investment_dict['WIN'])
+    
+    # 初始化 session_state 中的索引（如果不存在）
+    if 'current_view_idx' not in st.session_state:
+        st.session_state.current_view_idx = all_data_len - 1
+
+    # 在圖表下方放 Slider，並綁定 key
+    # 當 Slider 移動時，會自動更新 st.session_state.current_view_idx
+    target_idx = st.select_slider(
+        "📊 歷史數據回溯 (拖動以檢視過去分鐘)",
+        options=list(range(all_data_len)),
+        value=st.session_state.current_view_idx,
+        format_func=lambda x: st.session_state.overall_investment_dict['WIN'].index[x].strftime("%H:%M:%S"),
+        key="view_slider" # 關鍵：與監控邏輯隔離
+    )
+    
+    # 更新目前要顯示的索引
+    idx = target_idx
+
+    # --- 2. 取得該索引對應的數據 ---
     post_time = st.session_state.post_time_dict[race_no]
-    df_win = st.session_state.overall_investment_dict['WIN']
-    df_qin = st.session_state.overall_investment_dict['QIN']
-    df_total = df_win + df_qin  # 總投注額
+    ts = st.session_state.overall_investment_dict['WIN'].index[idx]
     
-    # 變動數據 (最後10筆的總和)
-    change_win = st.session_state.diff_dict['WIN'].tail(10).sum(axis=0)
-    change_qin = st.session_state.diff_dict['QIN'].tail(10).sum(axis=0)
+    df_win_row = st.session_state.overall_investment_dict['WIN'].iloc[idx]
+    df_qin_row = st.session_state.overall_investment_dict['QIN'].iloc[idx]
+    df_total_row = df_win_row + df_qin_row
     
-    # 賠率數據 (取最新一筆)
-    odds_series = st.session_state.odds_dict['WIN'].iloc[-1]
+    # 變動數據 (這裡維持抓取最新的 10 筆，或者也可以隨 idx 變動)
+    change_win = st.session_state.diff_dict['WIN'].iloc[max(0, idx-10):idx+1].sum(axis=0)
+    change_qin = st.session_state.diff_dict['QIN'].iloc[max(0, idx-10):idx+1].sum(axis=0)
     
-    # 馬名與 X 軸標籤 (處理成換行格式，如截圖所示)
+    # 賠率數據
+    odds_series = st.session_state.odds_dict['WIN'].iloc[idx]
+    
+    # 馬名排序 (按選定時間點的總額排)
+    sorted_cols = df_total_row.sort_values(ascending=False).index
     namelist_raw = st.session_state.race_dataframes[race_no]['馬名']
-    # 排序：按總投注額從大到小排序 (X 軸同步)
-    sorted_cols = df_total.iloc[-1].sort_values(ascending=False).index
-    horse_names = [f"{i}.<br>{namelist_raw.iloc[i-1]}" for i in sorted_cols]
+    horse_labels = [f"{c}.<br>{namelist_raw.iloc[c-1]}" for c in sorted_cols]
 
-    # 2. 計算顏色邏輯 (基於當前時間)
+    # --- 3. 顏色判斷 (基於選取的時間點 ts) ---
     HK_TZ = timezone(timedelta(hours=8))
-    now = datetime.now(HK_TZ)
-    if post_time.tzinfo is None:
-        post_time = post_time.replace(tzinfo=HK_TZ)
-        
-    time_diff = (post_time - now).total_seconds() / 60
+    time_diff = (post_time.replace(tzinfo=HK_TZ) - ts.replace(tzinfo=HK_TZ)).total_seconds() / 60
     
-    if time_diff <= 5:
-        main_bar_color = 'rgb(255, 100, 100)'   # 紅色
-    elif time_diff <= 25:
-        main_bar_color = 'rgb(100, 150, 255)'  # 藍色
-    else:
-        main_bar_color = 'pink'                # 粉紅色
+    if time_diff <= 5: bar_col = 'rgb(255, 99, 132)'   # 紅
+    elif time_diff <= 25: bar_col = 'rgb(54, 162, 235)' # 藍
+    else: bar_col = 'rgb(255, 205, 210)'               # 粉
 
-    # 3. 建立 Plotly 圖表
+    # --- 4. 繪製 Plotly ---
     fig = go.Figure()
 
-    # --- 左柱：總投注額 (Investment) ---
+    # 左柱：總投注 (WIN+QIN)
     fig.add_trace(go.Bar(
-        x=horse_names,
-        y=df_total.iloc[-1][sorted_cols],
+        x=horse_labels,
+        y=df_total_row[sorted_cols],
         name='總投注額',
-        marker_color=main_bar_color,
-        offsetgroup=1, # 第一組
-        text=odds_series[sorted_cols], # 賠率顯示
-        textposition='outside',        # 強制顯示在 Bar 上方
-        hovertemplate="馬匹: %{x}<br>總額: %{y}<br>賠率: %{text}<extra></extra>"
+        marker_color=bar_col,
+        offsetgroup=1,
+        text=odds_series[sorted_cols],
+        textposition='outside'
     ))
 
-    # --- 右柱：變動量疊加 (Changes) ---
-    # WIN 變動 (底層 - 灰色)
+    # 右柱：疊加變動 (WIN 灰色 + QIN 綠色)
     fig.add_trace(go.Bar(
-        x=horse_names,
-        y=change_win[sorted_cols],
-        name='WIN 變動',
-        marker_color='grey',
-        offsetgroup=2, # 第二組
-        hovertemplate="WIN 變動: %{y}<extra></extra>"
+        x=horse_labels, y=change_win[sorted_cols],
+        name='WIN變動(10筆)', marker_color='grey', offsetgroup=2
     ))
-
-    # QIN 變動 (頂層 - 綠色)
     fig.add_trace(go.Bar(
-        x=horse_names,
-        y=change_qin[sorted_cols],
-        name='QIN 變動',
-        marker_color='green',
-        offsetgroup=2, # 與 WIN 變動同組，實現疊加
-        base=change_win[sorted_cols], # 設定起始點，實現疊加效果
-        hovertemplate="QIN 變動: %{y}<extra></extra>"
+        x=horse_labels, y=change_qin[sorted_cols],
+        name='QIN變動(10筆)', marker_color='green', offsetgroup=2,
+        base=change_win[sorted_cols] # 疊加在灰色上面
     ))
 
-    # 4. 佈局設定
     fig.update_layout(
-        title=f"獨贏及連贏動態分析 | 距離開跑: {int(time_diff)} 分",
-        xaxis_tickangle=0,
-        yaxis_title="金額",
-        barmode='group', # 組間並列，組內透過 base 疊加
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        title=f"數據回溯模式 | 觀測時間: {ts.strftime('%H:%M:%S')} (離跑 {int(time_diff)} 分)",
+        barmode='group',
         height=500,
-        margin=dict(t=80, b=50),
-        # 加入時間回溯 Slider (選取歷史數據)
-        xaxis=dict(rangeslider=dict(visible=False)) # 如果不需要 X 軸縮放可關閉
+        legend=dict(orientation="h", y=1.1)
     )
 
     st.plotly_chart(fig, use_container_width=True)
