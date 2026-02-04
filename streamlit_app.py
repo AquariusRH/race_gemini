@@ -1282,6 +1282,7 @@ with st.sidebar:
         
     show_bubble = st.toggle("📍 顯示氣泡圖", value=False)
     show_bar = st.toggle("📊 顯示長條圖", value=True)
+    show_move_bar = st.toggle("📊 顯示移動長條圖", value=False)
     show_top = st.toggle("🏆 顯示連贏賠率排名", value=True)
 # --- 賽事資料加載 ---
 @st.cache_data(ttl=3600)
@@ -1973,8 +1974,8 @@ if monitoring_on:
                 print_bubble(race_no, print_list)
             if show_bar:    
                 print_bar_chart(time_now)
-
-            print_plotly_advanced_bar(race_no,print_list)
+            if show_move_bar:
+                print_plotly_advanced_bar(race_no,print_list)
             # B. 實時預測排名
             st.markdown("### 🤖 實時資金流綜合預測排名")
             prediction_df = calculate_smart_score(race_no)
