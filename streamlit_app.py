@@ -1134,72 +1134,71 @@ def print_plotly_advanced_bar(race_no, method): # 建議傳入 method 區分
             df_base, df_top = st.session_state.overall_investment_dict['WIN'], st.session_state.overall_investment_dict['QIN']
             diff_base, diff_top = st.session_state.diff_dict['WIN'], st.session_state.diff_dict['QIN']
             odds_df = st.session_state.odds_dict['WIN']
+            label_base, label_top = "WIN", "QIN"
         elif method == 'PLA&QPL':
             df_base, df_top = st.session_state.overall_investment_dict['PLA'], st.session_state.overall_investment_dict['QPL']
             diff_base, diff_top = st.session_state.diff_dict['PLA'], st.session_state.diff_dict['QPL']
             odds_df = st.session_state.odds_dict['PLA']
-        else: # PLA 情況略
+            label_base, label_top = "PLA", "QPL"
+        elif method == 'PLA':
             df_base = st.session_state.overall_investment_dict['PLA']
             df_top = pd.DataFrame(0, index=df_base.index, columns=df_base.columns)
             diff_base = st.session_state.diff_dict['PLA']
             diff_top = pd.DataFrame(0, index=diff_base.index, columns=diff_base.columns)
             odds_df = st.session_state.odds_dict['PLA']
+            label_base, label_top = "PLA", ""
     
         all_ts = df_base.index
-        if len(all_ts) == 0: return
+        data_len = len(all_ts)
+        if data_len == 0: return
     
-        # 2. 準備馬名 (以最後一筆數據排序為準，固定 X 軸)
+        # --- 2. 準備馬名與排序 (以最新數據為準固定 X 軸) ---
         current_total = (df_base + df_top).iloc[-1]
         sorted_cols = current_total.sort_values(ascending=False).index
         namelist_raw = st.session_state.race_dataframes[race_no]['馬名']
         horse_labels = [f"{c}.<br>{namelist_raw.iloc[c-1]}" for c in sorted_cols]
         post_time = st.session_state.post_time_dict[race_no].replace(tzinfo=None)
     
-        # 3. 預先計算所有「幀 (Frames)」
-        # 每一幀代表一個時間點的圖表狀態
+        # --- 3. 預先計算所有動畫幀 (Frames) ---
         frames = []
         for i, ts in enumerate(all_ts):
             ts_raw = ts.replace(tzinfo=None)
             time_diff = (post_time - ts_raw).total_seconds() / 60
             
-            # 顏色邏輯
+            # 顏色分段
             if time_diff <= 5: bar_col = 'rgb(255, 99, 132)'
             elif time_diff <= 25: bar_col = 'rgb(54, 162, 235)'
             else: bar_col = 'rgb(255, 205, 210)'
     
-            # 基礎 Bar 數據
             frame_data = [
-                # 左柱 (總額)
                 go.Bar(x=horse_labels, y=(df_base + df_top).iloc[i][sorted_cols], 
                        marker_color=bar_col, offsetgroup=1, 
-                       text=odds_df.iloc[i][sorted_cols], textposition='outside', name='總額')
+                       text=odds_df.iloc[i][sorted_cols], textposition='outside', name='總投注')
             ]
             
-            # 右柱 (變動) - 僅藍/紅階段
+            # 25分內才顯示變動棒
             if time_diff <= 25:
                 start_idx = max(0, i - 9)
                 c_base = diff_base.iloc[start_idx:i+1].sum(axis=0)[sorted_cols]
                 c_top = diff_top.iloc[start_idx:i+1].sum(axis=0)[sorted_cols]
-                frame_data.append(go.Bar(x=horse_labels, y=c_base, marker_color='grey', offsetgroup=2, name='WIN/PLA變'))
+                frame_data.append(go.Bar(x=horse_labels, y=c_base, marker_color='grey', offsetgroup=2, name=f'{label_base}變'))
                 if method != 'PLA':
-                    frame_data.append(go.Bar(x=horse_labels, y=c_top, marker_color='green', offsetgroup=2, 
-                                             base=c_base, name='QIN/QPL變'))
+                    frame_data.append(go.Bar(x=horse_labels, y=c_top, marker_color='green', offsetgroup=2, base=c_base, name=f'{label_top}變'))
     
             frames.append(go.Frame(data=frame_data, name=ts.strftime("%H:%M:%S")))
     
-        # 4. 建立初始 Figure
+        # --- 4. 配置佈局與 Plotly 滑塊 ---
         fig = go.Figure(
-            data=frames[-1].data, # 預設顯示最新一幀
+            data=frames[-1].data,
             layout=go.Layout(
-                title=f"{method} 數據回溯 (絲滑版)",
-                barmode='group', dragmode=False,
-                height=550,
+                title=f"{method} 資金流動分析 (拉軸不閃爍)",
+                barmode='group', dragmode=False, height=500,
                 xaxis={'fixedrange': True}, yaxis={'fixedrange': True},
-                # 配置 Slider 介面
+                legend=dict(orientation="h", y=1.1, x=1, xanchor='right'),
                 sliders=[{
-                    "active": len(all_ts) - 1,
-                    "currentvalue": {"prefix": "觀測時間: "},
-                    "pad": {"t": 50},
+                    "active": data_len - 1,
+                    "currentvalue": {"prefix": "時間: ", "font": {"size": 14, "color": "#666"}},
+                    "pad": {"t": 60},
                     "steps": [
                         {
                             "args": [[f.name], {"frame": {"duration": 0, "redraw": True}, "mode": "immediate"}],
@@ -1212,7 +1211,10 @@ def print_plotly_advanced_bar(race_no, method): # 建議傳入 method 區分
             frames=frames
         )
     
-        st.plotly_chart(fig, use_container_width=True, key=f"fluent_{race_no}_{method}")
+        # --- 5. 解決 DuplicateKey：使用動態 Key ---
+        # 這裡加入資料筆數 (data_len) 作為後綴，保證唯一性且在新數據進來時更新
+        latest_ts_key = all_ts[-1].strftime("%H%M%S")
+        st.plotly_chart(fig, use_container_width=True, key=f"fluent_{race_no}_{method}_{latest_ts_key}")
 # ==================== 4. 主介面邏輯 ====================
 
 # --- 輸入區 ---
