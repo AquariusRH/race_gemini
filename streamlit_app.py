@@ -1128,89 +1128,101 @@ from datetime import datetime, timedelta
 def print_plotly_advanced_bar(race_no, method): # 建議傳入 method 區分
     # 1. 取得對應數據 (這裡以 WIN/QIN 為例，你可以根據 method 調整)
     # 假設你的 method 分別是 'WIN&QIN' 或 'PLA&QPL'
-    if method == 'WIN&QIN':
-        df_base = st.session_state.overall_investment_dict['WIN']
-        df_top = st.session_state.overall_investment_dict['QIN']
-        diff_base = st.session_state.diff_dict['WIN']
-        diff_top = st.session_state.diff_dict['QIN']
-        odds_df = st.session_state.odds_dict['WIN']
-    else: # 預設位置
-        df_base = st.session_state.overall_investment_dict['PLA']
-        df_top = st.session_state.overall_investment_dict['QPL']
-        diff_base = st.session_state.diff_dict['PLA']
-        diff_top = st.session_state.diff_dict['QPL']
-        odds_df = st.session_state.odds_dict['PLA']
-
-    df_total = df_base + df_top
-    all_timestamps = df_total.index
-    data_len = len(all_timestamps)
-
-    # --- 防呆機制 1：完全沒數據 ---
-    if data_len == 0:
-        st.info(f"⏳ 正在等待 {method} 數據傳入...")
-        return
-
-    # --- 關鍵：使用動態 Key 解決重複與鎖定位置 ---
-    slider_key = f"slider_{race_no}_{method}"
+    for method in print_list:
+        # --- 1. 數據源判斷與提取 ---
+        if method == 'WIN&QIN':
+            df_base, df_top = st.session_state.overall_investment_dict['WIN'], st.session_state.overall_investment_dict['QIN']
+            diff_base, diff_top = st.session_state.diff_dict['WIN'], st.session_state.diff_dict['QIN']
+            odds_df = st.session_state.odds_dict['WIN']
+            label_base, label_top = "WIN", "QIN"
+        elif method == 'PLA&QPL':
+            df_base, df_top = st.session_state.overall_investment_dict['PLA'], st.session_state.overall_investment_dict['QPL']
+            diff_base, diff_top = st.session_state.diff_dict['PLA'], st.session_state.diff_dict['QPL']
+            odds_df = st.session_state.odds_dict['PLA']
+            label_base, label_top = "PLA", "QPL"
+        elif method == 'PLA':
+            df_base = st.session_state.overall_investment_dict['PLA']
+            df_top = pd.DataFrame(0, index=df_base.index, columns=df_base.columns)
+            diff_base = st.session_state.diff_dict['PLA']
+            diff_top = pd.DataFrame(0, index=df_base.index, columns=df_base.columns)
+            odds_df = st.session_state.odds_dict['PLA']
+            label_base, label_top = "PLA", ""
     
-    # 初始化該圖表的專屬索引
-    if slider_key not in st.session_state:
-        st.session_state[slider_key] = data_len - 1
+        df_total = df_base + df_top
+        all_timestamps = df_total.index
+        data_len = len(all_timestamps)
+        if data_len == 0: return
     
-    # --- 防呆機制 2：數據只有 1 筆時不顯示 Slider ---
-    if data_len > 1:
-        # 修正：確保索引不越界
+        # --- 2. 唯一 Slider Key (防止 Reload) ---
+        slider_key = f"slider_{race_no}_{method}"
+        if slider_key not in st.session_state:
+            st.session_state[slider_key] = data_len - 1
         if st.session_state[slider_key] >= data_len:
             st.session_state[slider_key] = data_len - 1
-            
+    
+        # 在圖表上方顯示時間軸
         selected_idx = st.select_slider(
-            f"📅 查看 {method} 歷史點",
+            f"⏳ {method} 時間回溯",
             options=list(range(data_len)),
             value=st.session_state[slider_key],
             format_func=lambda x: all_timestamps[x].strftime("%H:%M:%S"),
             key=slider_key
         )
-    else:
-        selected_idx = 0
-        st.caption(f"📍 當前僅有一筆數據：{all_timestamps[0].strftime('%H:%M:%S')}")
-
-    # 2. 提取選定點的數據
-    current_total = df_total.iloc[selected_idx]
-    start_idx = max(0, selected_idx - 9)
-    change_base = diff_base.iloc[start_idx:selected_idx+1].sum(axis=0)
-    change_top = diff_top.iloc[start_idx:selected_idx+1].sum(axis=0)
-    current_odds = odds_df.iloc[selected_idx]
-
-    # 3. 排序與顏色 (同前)
-    sorted_cols = current_total.sort_values(ascending=False).index
-    namelist_raw = st.session_state.race_dataframes[race_no]['馬名']
-    horse_labels = [f"{c}.<br>{namelist_raw.iloc[c-1]}" for c in sorted_cols]
     
-    # 顏色判斷
-    post_time = st.session_state.post_time_dict[race_no]
-    time_diff = (post_time.replace(tzinfo=None) - all_timestamps[selected_idx].replace(tzinfo=None)).total_seconds() / 60
+        # --- 3. 時間顏色與 Diff 顯示邏輯 ---
+        target_ts = all_timestamps[selected_idx]
+        post_time = st.session_state.post_time_dict[race_no]
+        time_diff = (post_time.replace(tzinfo=None) - target_ts.replace(tzinfo=None)).total_seconds() / 60
+        
+        # 顏色與顯示開關
+        if time_diff <= 5: 
+            bar_color, show_diff = 'rgb(255, 99, 132)', True   # 紅色
+        elif time_diff <= 25: 
+            bar_color, show_diff = 'rgb(54, 162, 235)', True   # 藍色
+        else: 
+            bar_color, show_diff = 'rgb(255, 205, 210)', False  # 粉紅色 (不顯 Diff)
     
-    if time_diff <= 5: bar_color = 'rgb(255, 99, 132)'
-    elif time_diff <= 25: bar_color = 'rgb(54, 162, 235)'
-    else: bar_color = 'rgb(255, 205, 210)'
-
-    # 4. 繪製 Plotly
-    fig = go.Figure()
-    # 左柱
-    fig.add_trace(go.Bar(x=horse_labels, y=current_total[sorted_cols], name='總額', 
-                         marker_color=bar_color, offsetgroup=1,
-                         text=current_odds[sorted_cols], textposition='outside'))
-    # 右柱疊加
-    fig.add_trace(go.Bar(x=horse_labels, y=change_base[sorted_cols], name='WIN/PLA變', 
-                         marker_color='grey', offsetgroup=2))
-    fig.add_trace(go.Bar(x=horse_labels, y=change_top[sorted_cols], name='QIN/QPL變', 
-                         marker_color='green', offsetgroup=2, base=change_base[sorted_cols]))
-
-    fig.update_layout(title=f"{method} | 觀測: {all_timestamps[selected_idx].strftime('%H:%M:%S')}", 
-                      barmode='group', height=500)
-
-    # 這裡的 Key 也要唯一
-    st.plotly_chart(fig, use_container_width=True, key=f"plotly_bar_{race_no}_{method}")
+        # 排序
+        current_total = df_total.iloc[selected_idx]
+        sorted_cols = current_total.sort_values(ascending=False).index
+        namelist_raw = st.session_state.race_dataframes[race_no]['馬名']
+        horse_labels = [f"{c}.<br>{namelist_raw.iloc[c-1]}" for c in sorted_cols]
+    
+        # --- 4. 繪製圖表 ---
+        fig = go.Figure()
+    
+        # 左柱：總額
+        fig.add_trace(go.Bar(
+            x=horse_labels, y=current_total[sorted_cols],
+            name='總投注額', marker_color=bar_color, offsetgroup=1,
+            text=odds_df.iloc[selected_idx][sorted_cols], textposition='outside'
+        ))
+    
+        # 右柱：疊加變動 (僅限藍/紅階段)
+        if show_diff:
+            start_idx = max(0, selected_idx - 9)
+            c_base = diff_base.iloc[start_idx:selected_idx+1].sum(axis=0)[sorted_cols]
+            c_top = diff_top.iloc[start_idx:selected_idx+1].sum(axis=0)[sorted_cols]
+    
+            fig.add_trace(go.Bar(x=horse_labels, y=c_base, name=f'{label_base}變動', 
+                                 marker_color='grey', offsetgroup=2))
+            if method != 'PLA':
+                fig.add_trace(go.Bar(x=horse_labels, y=c_top, name=f'{label_top}變動', 
+                                     marker_color='green', offsetgroup=2, base=c_base))
+    
+        # --- 5. 佈局設定 (關閉 Drag Mode) ---
+        fig.update_layout(
+            title=f"{method} 分析 | 離跑 {int(time_diff)} 分",
+            barmode='group',
+            dragmode=False, # ⬅️ 關鍵：關閉拖動模式，防止手殘位移
+            xaxis={'fixedrange': True}, # 禁用 X 軸縮放
+            yaxis={'fixedrange': True}, # 禁用 Y 軸縮放
+            height=500,
+            legend=dict(orientation="h", y=1.1, x=1, xanchor='right'),
+            margin=dict(t=80, b=50, l=20, r=20)
+        )
+    
+        st.plotly_chart(fig, use_container_width=True, key=f"plot_{race_no}_{method}")
 # ==================== 4. 主介面邏輯 ====================
 
 # --- 輸入區 ---
