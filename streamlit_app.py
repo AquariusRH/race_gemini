@@ -1239,6 +1239,7 @@ def print_plotly_advanced_bar(race_no, method): # 建議傳入 method 區分
         )
     
         # 5. 使用 use_container_width=True 讓圖表隨網頁寬度自動撐滿
+        latest_ts = all_ts[-1].strftime("%H%M%S")
         st.plotly_chart(fig, use_container_width=True, key=f"fluent_{race_no}_{method}_{latest_ts}")
 # ==================== 4. 主介面邏輯 ====================
 
