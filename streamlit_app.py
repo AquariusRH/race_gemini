@@ -1250,17 +1250,12 @@ def print_plotly_advanced_bar(race_no, method): # 建議傳入 method 區分
                 # 4. 滑塊配置
                 sliders=[{
                     "active": data_len - 1,
-                    "currentvalue": {
-                        "prefix": "觀測時間: ", 
-                        "offset": 20, # 讓時間文字離滑塊遠一點
-                        "font": {"size": 16}
-                    },
-                    # pad 指定滑塊與上方圖表物件的間距
-                    # t: 150 確保滑塊被推到垂直馬名的下方
-                    "pad": {"t": 180}, 
+                    "currentvalue": {"prefix": "時間: ", "offset": 30},
+                    "pad": {"t": 180},
                     "steps": [
                         {
-                            "args": [[f.name], {"frame": {"duration": 0, "redraw": False}, "mode": "immediate"}],
+                            # 關鍵：redraw 設為 True，確保顏色切換能被渲染
+                            "args": [[f.name], {"frame": {"duration": 0, "redraw": True}, "mode": "immediate"}],
                             "label": f.name,
                             "method": "animate",
                         } for f in frames
