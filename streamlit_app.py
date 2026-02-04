@@ -1152,33 +1152,33 @@ def print_plotly_advanced_bar(race_no, method): # 建議傳入 method 區分
         data_len = len(all_timestamps)
         if data_len == 0: return
     
-        # --- 2. 使用 Time 相關數據構建唯一 Key ---
-        # 獲取最新一筆數據的時間字串作為部分 Key
-        latest_time_str = all_timestamps[-1].strftime("%H%M%S")
-        slider_key = f"slider_{race_no}_{method}_{latest_time_str}"
+        # --- 2. 使用固定的 Key 來鎖定時間軸 ---
+        # 不要把時間放入 key 中，否則每次刷新都會重建組件導致重置
+        slider_key = f"slider_fixed_{race_no}_{method}"
         
-        # 這裡使用 session_state 來記住「跨時間刷新」後的索引位置
-        state_key = f"persistent_idx_{race_no}_{method}"
-        if state_key not in st.session_state:
-            st.session_state[state_key] = data_len - 1
+        # 確保 session_state 記錄了當前位置
+        if slider_key not in st.session_state:
+            st.session_state[slider_key] = data_len - 1
+        
+        # 防止數據增加或重置時索引越界
+        if st.session_state[slider_key] >= data_len:
+            st.session_state[slider_key] = data_len - 1
     
-        # 滑塊：使用 slider_key 確保 Streamlit 渲染唯一性
+        # 滑塊：使用固定的 key
         selected_idx = st.select_slider(
-            f"⏳ {method} 時間軸 ({all_timestamps[st.session_state[state_key]].strftime('%H:%M:%S')})",
+            f"⏳ {method} 時間軸",
             options=list(range(data_len)),
-            value=st.session_state[state_key],
-            format_func=lambda x: all_timestamps[x].strftime("%H:%M:%S"),
+            value=st.session_state[slider_key],
+            format_func=lambda x: all_timestamps[x].strftime("%H:%M:%S") if x < data_len else "",
             key=slider_key
         )
-        # 更新持久化狀態
-        st.session_state[state_key] = selected_idx
     
         # --- 3. 繪圖邏輯 ---
         target_ts = all_timestamps[selected_idx]
         post_time = st.session_state.post_time_dict[race_no]
         time_diff = (post_time.replace(tzinfo=None) - target_ts.replace(tzinfo=None)).total_seconds() / 60
         
-        # 顏色與 Diff 顯示邏輯
+        # 判斷顏色與是否顯示 Diff (粉紅色不顯示)
         if time_diff <= 5: 
             bar_color, show_diff = 'rgb(255, 99, 132)', True
         elif time_diff <= 25: 
@@ -1186,38 +1186,39 @@ def print_plotly_advanced_bar(race_no, method): # 建議傳入 method 區分
         else: 
             bar_color, show_diff = 'rgb(255, 205, 210)', False
     
-        # 數據整理
         current_total = (df_base + df_top).iloc[selected_idx]
         sorted_cols = current_total.sort_values(ascending=False).index
         namelist_raw = st.session_state.race_dataframes[race_no]['馬名']
         horse_labels = [f"{c}.<br>{namelist_raw.iloc[c-1]}" for c in sorted_cols]
     
         fig = go.Figure()
-        # 左柱
+        # 左柱：總額
         fig.add_trace(go.Bar(
             x=horse_labels, y=current_total[sorted_cols],
             name='總額', marker_color=bar_color, offsetgroup=1,
             text=odds_df.iloc[selected_idx][sorted_cols], textposition='outside'
         ))
     
-        # 右柱
+        # 右柱：近期變動 (僅藍/紅階段顯示)
         if show_diff:
             start_idx = max(0, selected_idx - 9)
             c_base = diff_base.iloc[start_idx:selected_idx+1].sum(axis=0)[sorted_cols]
             c_top = diff_top.iloc[start_idx:selected_idx+1].sum(axis=0)[sorted_cols]
+            
             fig.add_trace(go.Bar(x=horse_labels, y=c_base, name=f'{label_base}變', marker_color='grey', offsetgroup=2))
             if method != 'PLA':
                 fig.add_trace(go.Bar(x=horse_labels, y=c_top, name=f'{label_top}變', marker_color='green', offsetgroup=2, base=c_base))
     
+        # --- 4. 佈局設定 (關閉互動與縮放) ---
         fig.update_layout(
-            title=f"{method} 分析 | 離跑 {int(time_diff)} 分",
+            title=f"{method} | 離跑 {int(time_diff)} 分",
             barmode='group', dragmode=False,
             xaxis={'fixedrange': True}, yaxis={'fixedrange': True},
             height=500, legend=dict(orientation="h", y=1.1, x=1, xanchor='right')
         )
     
-        # 圖表 Key 也加入時間戳
-        st.plotly_chart(fig, use_container_width=True, key=f"plot_{race_no}_{method}_{latest_time_str}")
+        # 圖表 Key 也可以固定，因為我們希望它在同一處更新
+        st.plotly_chart(fig, use_container_width=True, key=f"plot_fixed_{race_no}_{method}")
 # ==================== 4. 主介面邏輯 ====================
 
 # --- 輸入區 ---
