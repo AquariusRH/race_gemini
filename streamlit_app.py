@@ -1170,15 +1170,28 @@ def print_plotly_advanced_bar(race_no, method): # 建議傳入 method 區分
             ts_raw = ts.replace(tzinfo=None)
             time_diff = (post_time - ts_raw).total_seconds() / 60
             
-            # 顏色分段
-            if time_diff <= 5: bar_col = 'rgb(255, 99, 132)'
-            elif time_diff <= 25: bar_col = 'rgb(54, 162, 235)'
-            else: bar_col = 'rgb(255, 205, 210)'
+            # 根據該幀的時間決定顏色
+            if time_diff <= 5: 
+                current_frame_color = 'rgb(255, 99, 132)'   # 紅 (5分內)
+                show_diff = True
+            elif time_diff <= 25: 
+                current_frame_color = 'rgb(54, 162, 235)'   # 藍 (5-25分)
+                show_diff = True
+            else: 
+                current_frame_color = 'rgb(255, 205, 210)' # 粉 (>25分)
+                show_diff = False
     
+            # 建立該幀的數據圖層
             frame_data = [
-                go.Bar(x=horse_labels, y=(df_base + df_top).iloc[i][sorted_cols], 
-                       marker_color=bar_col, offsetgroup=1, 
-                       text=odds_df.iloc[i][sorted_cols], textposition='outside', name='總投注')
+                go.Bar(
+                    x=horse_labels, 
+                    y=(df_base + df_top).iloc[i][sorted_cols], 
+                    marker_color=current_frame_color, # ⬅️ 確保顏色被寫入這一幀
+                    offsetgroup=1, 
+                    text=odds_df.iloc[i][sorted_cols], 
+                    textposition='outside', 
+                    name='總投注'
+                )
             ]
             
             # 25分內才顯示變動棒
