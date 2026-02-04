@@ -1200,7 +1200,7 @@ def print_plotly_advanced_bar(race_no, method): # 建議傳入 method 區分
                 barmode='group',
                 dragmode=False,
                 # 1. 顯著增加高度 (例如從 500 改為 700 或 800)
-                height=700, 
+                height=850, 
                 
                 # 2. 移除不必要的空白邊距，讓圖表充滿畫布
                 # t (top), b (bottom), l (left), r (right)
@@ -1230,8 +1230,14 @@ def print_plotly_advanced_bar(race_no, method): # 建議傳入 method 區分
                 # 4. 滑塊配置
                 sliders=[{
                     "active": data_len - 1,
-                    "currentvalue": {"prefix": "觀測時間: "},
-                    "pad": {"t": 50, "b": 10}, # 控制滑塊上下間距
+                    "currentvalue": {
+                        "prefix": "觀測時間: ", 
+                        "offset": 20, # 讓時間文字離滑塊遠一點
+                        "font": {"size": 16}
+                    },
+                    # pad 指定滑塊與上方圖表物件的間距
+                    # t: 150 確保滑塊被推到垂直馬名的下方
+                    "pad": {"t": 180, "b": 10}, 
                     "steps": [
                         {
                             "args": [[f.name], {"frame": {"duration": 0, "redraw": False}, "mode": "immediate"}],
@@ -1246,7 +1252,7 @@ def print_plotly_advanced_bar(race_no, method): # 建議傳入 method 區分
     
         # 5. 使用 use_container_width=True 讓圖表隨網頁寬度自動撐滿
         latest_ts = all_ts[-1].strftime("%H%M%S")
-        st.plotly_chart(fig, use_container_width=True, key=f"fluent_{race_no}_{method}_{latest_ts}")
+        st.plotly_chart(fig, width='stretch', key=f"fluent_{race_no}_{method}_{latest_ts}")
 # ==================== 4. 主介面邏輯 ====================
 
 # --- 輸入區 ---
