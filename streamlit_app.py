@@ -1120,6 +1120,98 @@ def print_top():
 def highlight_change(val):
     color = 'limegreen' if '+' in val else 'crimson' if '-' in val else ''
     return f'color: {color}'
+
+import plotly.graph_objects as go
+import pandas as pd
+import numpy as np
+from datetime import datetime, timedelta
+
+def print_plotly_advanced_bar(race_no, m1=25, m2=5):
+    # 1. 取得數據
+    post_time = st.session_state.post_time_dict[race_no]
+    df_win = st.session_state.overall_investment_dict['WIN']
+    df_qin = st.session_state.overall_investment_dict['QIN']
+    df_total = df_win + df_qin  # 總投注額
+    
+    # 變動數據 (最後10筆的總和)
+    change_win = st.session_state.diff_dict['WIN'].tail(10).sum(axis=0)
+    change_qin = st.session_state.diff_dict['QIN'].tail(10).sum(axis=0)
+    
+    # 賠率數據 (取最新一筆)
+    odds_series = st.session_state.odds_dict['WIN'].iloc[-1]
+    
+    # 馬名與 X 軸標籤 (處理成換行格式，如截圖所示)
+    namelist_raw = st.session_state.race_dataframes[race_no]['馬名']
+    # 排序：按總投注額從大到小排序 (X 軸同步)
+    sorted_cols = df_total.iloc[-1].sort_values(ascending=False).index
+    horse_names = [f"{i}.<br>{namelist_raw.iloc[i-1]}" for i in sorted_cols]
+
+    # 2. 計算顏色邏輯 (基於當前時間)
+    HK_TZ = timezone(timedelta(hours=8))
+    now = datetime.now(HK_TZ)
+    if post_time.tzinfo is None:
+        post_time = post_time.replace(tzinfo=HK_TZ)
+        
+    time_diff = (post_time - now).total_seconds() / 60
+    
+    if time_diff <= 5:
+        main_bar_color = 'rgb(255, 100, 100)'   # 紅色
+    elif time_diff <= 25:
+        main_bar_color = 'rgb(100, 150, 255)'  # 藍色
+    else:
+        main_bar_color = 'pink'                # 粉紅色
+
+    # 3. 建立 Plotly 圖表
+    fig = go.Figure()
+
+    # --- 左柱：總投注額 (Investment) ---
+    fig.add_trace(go.Bar(
+        x=horse_names,
+        y=df_total.iloc[-1][sorted_cols],
+        name='總投注額',
+        marker_color=main_bar_color,
+        offsetgroup=1, # 第一組
+        text=odds_series[sorted_cols], # 賠率顯示
+        textposition='outside',        # 強制顯示在 Bar 上方
+        hovertemplate="馬匹: %{x}<br>總額: %{y}<br>賠率: %{text}<extra></extra>"
+    ))
+
+    # --- 右柱：變動量疊加 (Changes) ---
+    # WIN 變動 (底層 - 灰色)
+    fig.add_trace(go.Bar(
+        x=horse_names,
+        y=change_win[sorted_cols],
+        name='WIN 變動',
+        marker_color='grey',
+        offsetgroup=2, # 第二組
+        hovertemplate="WIN 變動: %{y}<extra></extra>"
+    ))
+
+    # QIN 變動 (頂層 - 綠色)
+    fig.add_trace(go.Bar(
+        x=horse_names,
+        y=change_qin[sorted_cols],
+        name='QIN 變動',
+        marker_color='green',
+        offsetgroup=2, # 與 WIN 變動同組，實現疊加
+        base=change_win[sorted_cols], # 設定起始點，實現疊加效果
+        hovertemplate="QIN 變動: %{y}<extra></extra>"
+    ))
+
+    # 4. 佈局設定
+    fig.update_layout(
+        title=f"獨贏及連贏動態分析 | 距離開跑: {int(time_diff)} 分",
+        xaxis_tickangle=0,
+        yaxis_title="金額",
+        barmode='group', # 組間並列，組內透過 base 疊加
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        height=500,
+        margin=dict(t=80, b=50),
+        # 加入時間回溯 Slider (選取歷史數據)
+        xaxis=dict(rangeslider=dict(visible=False)) # 如果不需要 X 軸縮放可關閉
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
 # ==================== 4. 主介面邏輯 ====================
 
 # --- 輸入區 ---
@@ -1833,7 +1925,16 @@ if monitoring_on:
                 print_bubble(race_no, print_list)
             if show_bar:    
                 print_bar_chart(time_now)
+            history_index = st.select_slider(
+                "📊 數據回溯時間軸",
+                options=list(range(len(st.session_state.overall_investment_dict['WIN']))),
+                value=len(st.session_state.overall_investment_dict['WIN']) - 1,
+                format_func=lambda x: st.session_state.overall_investment_dict['WIN'].index[x].strftime("%H:%M:%S")
+            )
             
+            # 執行繪圖 (傳入選定的索引進行切換)
+            # 注意：上面的函數需要微調 .iloc[-1] 為 .iloc[history_index] 即可實現全動態
+            print_plotly_advanced_bar(race_no)
             # B. 實時預測排名
             st.markdown("### 🤖 實時資金流綜合預測排名")
             prediction_df = calculate_smart_score(race_no)
