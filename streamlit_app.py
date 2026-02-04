@@ -1195,7 +1195,7 @@ def print_plotly_advanced_bar(race_no, method): # 建議傳入 method 區分
                 amp_c_top = raw_c_top.apply(amplify)
                 frame_data.append(go.Bar(x=horse_labels, y=amp_c_base, marker_color='grey', offsetgroup=2, name=f'{label_base}變'))
                 if method != 'PLA':
-                    frame_data.append(go.Bar(x=horse_labels, y=amp_c_top, marker_color='green', offsetgroup=2, base=c_base, name=f'{label_top}變'))
+                    frame_data.append(go.Bar(x=horse_labels, y=amp_c_top, marker_color='green', offsetgroup=2, base=amp_c_base, name=f'{label_top}變'))
     
             frames.append(go.Frame(data=frame_data, name=ts.strftime("%H:%M:%S")))
     
