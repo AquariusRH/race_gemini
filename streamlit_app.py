@@ -1801,7 +1801,7 @@ def calculate_smart_score(race_no):
     # ----------------------------------------------------
     
     # 只取出計算好的分數欄位
-    static_scores = static_df[['馬名','騎師','練馬師','馬齡','TotalFormScore', 'FormScore', 'JockeyScore','TrainerScore', 'DrawScore', 'RatingDiffScore']]
+    static_scores = static_df[['馬名','馬齡','騎師','排位','練馬師','TotalFormScore', 'FormScore', 'JockeyScore','TrainerScore', 'DrawScore', 'RatingDiffScore']]
     
     # 使用 join 進行合併：左連接，以 df 的馬號為準。
     # 由於索引已統一為字串，join 將正確地按馬號匹配。
@@ -1898,7 +1898,7 @@ def calculate_smart_score_static(race_no):
                        (df['RatingDiffScore'] * 0.10)
                        
     # 清理並輸出
-    output_cols = ['馬名','騎師','練馬師', '馬齡','FormScore', 'JockeyScore', 'TrainerScore', 
+    output_cols = ['馬名','馬齡','騎師','排位','練馬師','FormScore', 'JockeyScore', 'TrainerScore', 
                    'DrawScore', 'RatingDiffScore', 'TotalScore']
     
     # 只選取存在的欄位
@@ -1997,8 +1997,8 @@ if monitoring_on:
                 display_df = prediction_df.copy()
                 #display_df = display_df[['馬名','騎師','馬齡','Odds', 'MoneyFlow', 'TotalFormScore', 'TotalScore']]
                 #display_df.columns = ['馬名','騎師','馬齡','當前賠率', '近期資金流(K)', '近績評分', '🔥綜合推薦分']
-                display_df = display_df[['馬名','騎師','練馬師','馬齡','Odds', 'MoneyFlow', 'TotalScore']]
-                display_df.columns = ['馬名','騎師','練馬師','馬齡','當前賠率', '近期資金流(K)', '🔥綜合推薦分']
+                display_df = display_df[['馬名','馬齡','騎師','排位','練馬師','Odds', 'MoneyFlow', 'TotalScore']]
+                display_df.columns = ['馬名','馬齡','騎師','排位','練馬師','當前賠率', '近期資金流(K)', '🔥綜合推薦分']
                 display_df['當前賠率'] = display_df['當前賠率'].apply(lambda x: f"{x:.1f}")
                 display_df['近期資金流(K)'] = display_df['近期資金流(K)'].apply(lambda x: f"{x:.1f}")
                 #display_df['近績評分'] = display_df['近績評分'].astype(float).round(0).astype('Int64')
@@ -2110,9 +2110,9 @@ else:
     if not static_prediction_df.empty:
         # 整理顯示格式
         display_df = static_prediction_df.copy()
-        display_df = display_df[['馬名','騎師','練馬師','馬齡', 'FormScore', 'JockeyScore', 'TrainerScore', 
+        display_df = display_df[['馬名','馬齡','騎師','排位','練馬師', 'FormScore', 'JockeyScore', 'TrainerScore', 
                    'DrawScore', 'RatingDiffScore', 'TotalScore']]
-        display_df.columns = ['馬名','騎師','練馬師','馬齡','近績狀態分','騎師分','練馬師分', '檔位優勢分', '評分負擔分', '🏆 靜態預測分']
+        display_df.columns = ['馬名','馬齡','騎師','排位','練馬師','近績狀態分','騎師分','練馬師分', '檔位優勢分', '評分負擔分', '🏆 靜態預測分']
 
         # 格式化
         display_df['近績狀態分'] = display_df['近績狀態分'].astype(int)
