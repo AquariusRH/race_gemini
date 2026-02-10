@@ -1150,7 +1150,7 @@ def print_plotly_advanced_bar(race_no, method): # 建議傳入 method 區分
     
         all_ts = df_base.index
         data_len = len(all_ts)
-        if data_len < 2: return
+        if data_len < 1: return
     
         # --- 2. 準備馬名與排序 (以最新數據為準固定 X 軸) ---
         current_total = (df_base + df_top).iloc[-1]
