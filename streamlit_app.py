@@ -15,6 +15,7 @@ import re
 from math import log
 from collections import Counter
 import plotly.express as px
+import itertools
 simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
 
 # ==================== 0. 頁面與字型設定 ====================
