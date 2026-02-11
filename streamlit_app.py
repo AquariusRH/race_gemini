@@ -1340,15 +1340,29 @@ def print_henery_model(gamma=1.18, min_value=1.1):
     """
     直接從 st.session_state 讀取數據並渲染預測結果
     """
-    # 1. 安全檢查：確保 session_state 裡有數據
-    if 'odds_dict' not in st.session_state or not st.session_state.odds_dict.get('WIN'):
+    # 1. 安全檢查：改用 .empty 或 len() 判斷
+    if 'odds_dict' not in st.session_state:
+        st.warning("⚠️ session_state 中找不到 odds_dict。")
+        return
+
+    win_data = st.session_state.odds_dict.get('WIN')
+
+    # 檢查是否為 None, 是否為空的 List, 或者是否為空的 DataFrame
+    is_win_empty = (
+        win_data is None or 
+        (isinstance(win_data, (list, dict)) and not win_data) or 
+        (isinstance(win_data, pd.DataFrame) and win_data.empty)
+    )
+
+    if is_win_empty:
         st.warning("⚠️ 尚未獲取獨贏 (WIN) 賠率數據。")
         return
 
-    win_odds_list = st.session_state.odds_dict['WIN']
+    # 2. 獲取 QIN 數據
     qin_odds_list = st.session_state.odds_dict.get('QIN', [])
-
-    if not qin_odds_list:
+    
+    # 同樣檢查 QIN
+    if (isinstance(qin_odds_list, pd.DataFrame) and qin_odds_list.empty) or not qin_odds_list:
         st.warning("⚠️ 尚未獲取連贏 (QIN) 賠率數據。")
         return
 
