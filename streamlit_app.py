@@ -1287,7 +1287,6 @@ def print_henery_model(gamma=1.18, min_value=1.1):
     try:
         win_data = st.session_state.odds_dict['WIN']
         qin_data = st.session_state.odds_dict['QIN']
-        st.write(qin_data)
     except KeyError as e:
         st.error(f"❌ odds_dict 缺失 Key: {e}")
         return pd.DataFrame()
@@ -1300,7 +1299,7 @@ def print_henery_model(gamma=1.18, min_value=1.1):
     # --- 2. 處理獨贏數據並歸一化勝率 ---
     # 確保 win_list 是 list 格式 (相容 Series/List)
     win_list = win_data.tolist() if hasattr(win_data, 'tolist') else list(win_data)
-    
+    st.write(win_list)
     valid_probs = {}
     inv_sum = 0
     for i, odds in enumerate(win_list):
