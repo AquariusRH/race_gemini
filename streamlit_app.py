@@ -1366,7 +1366,7 @@ def print_henery_model(gamma=1.18):
                     minutes = int(seconds_left // 60)
                     time_str = f"離開跑 {minutes} 分"  
     st.markdown(f"### 🕒 數據更新時間: `{time_str}`")
-    
+    st.dataframe(full_df)
     col1, col2 = st.columns(2)
 
     with col1:
