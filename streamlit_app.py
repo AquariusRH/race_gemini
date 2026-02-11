@@ -1355,8 +1355,8 @@ def print_henery_model(gamma=1.18):
             val_score = a_odds / theo_odds
             results.append({
                 "組合": f"{h1}-{h2}",
-                "馬1單": win_odds_map[h1],
-                "馬2單": win_odds_map[h2],
+                "馬1獨贏": win_odds_map[h1],
+                "馬2獨贏": win_odds_map[h2],
                 "實時Q": a_odds,
                 "理論Q": round(theo_odds, 1),
                 "Value": round(val_score, 2)
@@ -1365,7 +1365,6 @@ def print_henery_model(gamma=1.18):
     # --- 6. 渲染雙表格介面 ---
     if results:
         full_df = pd.DataFrame(results)
-        st.dataframe(full_df)
         col1, col2 = st.columns(2)
 
         with col1:
@@ -1374,7 +1373,7 @@ def print_henery_model(gamma=1.18):
             if not high_df.empty:
                 st.dataframe(
                     high_df.style.background_gradient(subset=['Value'], cmap='Greens')
-                    .format({"馬1單": "{:.1f}", "馬2單": "{:.1f}", "實時Q": "{:.1f}", "理論Q": "{:.1f}", "Value": "{:.2f}"}),
+                    .format({"馬1獨贏": "{:.1f}", "馬2獨贏": "{:.1f}", "實時Q": "{:.1f}", "理論Q": "{:.1f}", "Value": "{:.2f}"}),
                     use_container_width=True, hide_index=True
                 )
             else:
@@ -1386,7 +1385,7 @@ def print_henery_model(gamma=1.18):
             if not overheated_df.empty:
                 st.dataframe(
                     overheated_df.style.background_gradient(subset=['Value'], cmap='Reds_r')
-                    .format({"馬1單": "{:.1f}", "馬2單": "{:.1f}", "實時Q": "{:.1f}", "理論Q": "{:.1f}", "Value": "{:.2f}"}),
+                    .format({"馬1獨贏": "{:.1f}", "馬2獨贏": "{:.1f}", "實時Q": "{:.1f}", "理論Q": "{:.1f}", "Value": "{:.2f}"}),
                     use_container_width=True, hide_index=True
                 )
             else:
