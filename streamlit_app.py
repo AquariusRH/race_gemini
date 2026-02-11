@@ -1270,9 +1270,11 @@ def print_plotly_advanced_bar(race_no, method): # 建議傳入 method 區分
         latest_ts = all_ts[-1].strftime("%H%M%S")
         st.plotly_chart(fig, width='stretch', key=f"fluent_{race_no}_{method}_{latest_ts}")
 
-def print_henery_model(gamma=1.18, min_value=1.1):
+def print_henery_model(gamma=1.18):
     """
-    計算 Henery Model 並標註高價值 (>1.1) 與過熱 (<0.9) 的組合
+    計算 Henery Model 並分拆為兩個表格：
+    1. 高價值組合 (Value > 1.1)
+    2. 過熱組合 (Value < 0.9)
     """
     if 'odds_dict' not in st.session_state:
         return pd.DataFrame()
@@ -1311,7 +1313,7 @@ def print_henery_model(gamma=1.18, min_value=1.1):
             key = tuple(sorted([h.strip().lstrip('0') for h in str(comb_col).split(delim)]))
             actual_qin[key] = val
 
-    # --- 3. Henery 計算與狀態標註 ---
+    # --- 3. Henery 計算 ---
     results = []
     horses = sorted(valid_probs.keys(), key=int)
     
@@ -1326,44 +1328,50 @@ def print_henery_model(gamma=1.18, min_value=1.1):
         actual_odds = actual_qin.get((h1, h2))
         if actual_odds:
             val_score = actual_odds / theo_odds
-            
             results.append({
                 "組合": f"{h1}-{h2}",
                 "馬1單": win_odds_map.get(h1),
                 "馬2單": win_odds_map.get(h2),
                 "實時Q": actual_odds,
                 "理論Q": round(theo_odds, 2),
-                "Value": round(val_score, 3),
-                "超值 (>1.1)": "✅" if val_score > 1.1 else "",
-                "過熱 (<0.9)": "🔥" if val_score < 0.9 else ""
+                "Value": round(val_score, 3)
             })
 
-    # --- 4. 顯示結果 ---
     if not results:
         return pd.DataFrame()
 
-    full_df = pd.DataFrame(results).sort_values("Value", ascending=False)
-    
-    # 這裡我們不強制過濾 min_value，改為顯示全部但重點標註，或者你也可以保留過濾
-    # display_df = full_df[full_df["Value"] >= min_value] 
-    display_df = full_df.copy()
+    full_df = pd.DataFrame(results)
 
-    if not display_df.empty:
-        st.markdown(f"#### 🚀 Henery 價值與趨勢分析 (時間: `{win_df.iloc[-1].iloc[0]}`)")
-        
-        # 渲染表格，並對狀態欄位進行置中處理
-        st.dataframe(
-            display_df.style.background_gradient(subset=['Value'], cmap='RdYlGn')
-            .format({
-                "馬1單": "{:.1f}", "馬2單": "{:.1f}", 
-                "實時Q": "{:.1f}", "理論Q": "{:.1f}"
-            }),
-            use_container_width=True, 
-            hide_index=True
-        )
+    # --- 4. 拆分兩個表格並顯示 ---
+    st.markdown(f"### 🕒 數據更新時間: `{win_df.iloc[-1].iloc[0]}`")
+    
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.success("✅ **高價值組合 (Value > 1.1)**")
+        high_value_df = full_df[full_df["Value"] > 1.1].sort_values("Value", ascending=False)
+        if not high_value_df.empty:
+            st.dataframe(
+                high_value_df.style.background_gradient(subset=['Value'], cmap='Greens')
+                .format({"馬1單": "{:.1f}", "馬2單": "{:.1f}", "實時Q": "{:.1f}", "理論Q": "{:.1f}"}),
+                use_container_width=True, hide_index=True
+            )
+        else:
+            st.info("暫無高價值組合")
+
+    with col2:
+        st.error("🔥 **過熱組合 (Value < 0.9)**")
+        overheated_df = full_df[full_df["Value"] < 0.9].sort_values("Value", ascending=True)
+        if not overheated_df.empty:
+            st.dataframe(
+                overheated_df.style.background_gradient(subset=['Value'], cmap='Reds_r')
+                .format({"馬1單": "{:.1f}", "馬2單": "{:.1f}", "實時Q": "{:.1f}", "理論Q": "{:.1f}"}),
+                use_container_width=True, hide_index=True
+            )
+        else:
+            st.info("暫無過熱組合")
     
     return full_df
-
 # ==================== 4. 主介面邏輯 ====================
 
 # --- 輸入區 ---
