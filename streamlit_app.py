@@ -1286,7 +1286,7 @@ def print_henery_model(gamma=1.18):
         return pd.DataFrame()
 
     # --- 1. 提取最新 WIN 數據 ---
-    latest_win = win_df.iloc[-1].iloc[1:] 
+    latest_win = win_df.iloc[-1].iloc[0:] 
     valid_probs = {}
     win_odds_map = {}
     inv_sum = 0
@@ -1304,7 +1304,7 @@ def print_henery_model(gamma=1.18):
     for h in valid_probs: valid_probs[h] /= inv_sum
 
     # --- 2. 提取最新 QIN 數據 ---
-    latest_qin = qin_df.iloc[-1].iloc[1:]
+    latest_qin = qin_df.iloc[-1].iloc[0:]
     actual_qin = {}
     for comb_col, odds in latest_qin.items():
         val = pd.to_numeric(odds, errors='coerce')
