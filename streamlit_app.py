@@ -1387,7 +1387,7 @@ def print_henery_model(gamma=1.18):
         if not overheated_df.empty:
             st.dataframe(
                 overheated_df.style.background_gradient(subset=['Value'], cmap='Reds_r')
-                .format({"馬1單": "{:.1f}", "馬2單": "{:.1f}", "實時Q": "{:.1f}", "理論Q": "{:.1f}"}),
+                .format({"馬1獨贏": "{:.1f}", "馬2獨贏": "{:.1f}", "實時Q": "{:.1f}", "理論Q": "{:.1f}"}),
                 use_container_width=True, hide_index=True
             )
         else:
