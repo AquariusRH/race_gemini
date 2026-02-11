@@ -1309,9 +1309,18 @@ def print_henery_model(gamma=1.18):
     for comb_col, odds in latest_qin.items():
         val = pd.to_numeric(odds, errors='coerce')
         if val > 0 and val != np.inf and not pd.isna(val):
-            delim = '-' if '-' in str(comb_col) else ','
-            key = tuple(sorted([h.strip().lstrip('0') for h in str(comb_col).split(delim)]))
-            actual_qin[key] = val
+            col_str = str(comb_col).strip()
+            # 判斷分隔符 (支援 - 或 ,)
+            delim = '-' if '-' in col_str else ','
+            
+            if delim in col_str:
+                try:
+                    # 關鍵：將組合中每個元素標準化 (02-10 -> ('2', '10'))
+                    parts = [str(int(float(p.strip()))) for p in col_str.split(delim)]
+                    if len(parts) == 2:
+                        key = tuple(sorted(parts))
+                        actual_qin[key] = val
+                except: continue
 
     # --- 3. Henery 計算 ---
     results = []
