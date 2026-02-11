@@ -1305,6 +1305,7 @@ def print_henery_model(gamma=1.18):
 
     # --- 2. 提取最新 QIN 數據 ---
     latest_qin = qin_df.iloc[-1].iloc[0:]
+    st.write(latest_qin)
     actual_qin = {}
     for comb_col, odds in latest_qin.items():
         val = pd.to_numeric(odds, errors='coerce')
