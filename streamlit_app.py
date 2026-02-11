@@ -2112,8 +2112,6 @@ if monitoring_on:
                 print_bar_chart(time_now)
             if show_move_bar:
                 print_plotly_advanced_bar(race_no,print_list)
-            if show_henery:
-                print_henery_model(gamma=1.18)
             # B. 實時預測排名
             st.markdown("### 🤖 實時資金流綜合預測排名")
             prediction_df = calculate_smart_score(race_no)
@@ -2224,7 +2222,8 @@ if monitoring_on:
             if show_top:
                 st.markdown("### 連贏賠率排名")
                 print_top()
-           
+            if show_henery:
+                print_henery_model(gamma=1.18)
             time.sleep(15)
         
 
