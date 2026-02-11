@@ -1301,70 +1301,55 @@ def print_henery_model(gamma=1.18):
     if 'odds_dict' not in st.session_state: return
     win_df = st.session_state.odds_dict.get('WIN')
     qin_df = st.session_state.odds_dict.get('QIN')
+    if win_df is None or qin_df is None or len(win_df) == 0: return
 
-    if win_df is None or qin_df is None or len(win_df) == 0:
-        st.info("⌛ 等待賠率數據中...")
-        return
-
-    # --- 3. 處理 WIN (獨贏) 數據 ---
+    # --- 3. 處理 WIN (以整數作為馬號 Key) ---
     latest_win = win_df.iloc[-1]
-    win_probs = {}
-    win_odds_map = {}
+    win_probs, win_odds_map = {}, {}
     inv_sum = 0
     
-    for col_name, odds in latest_win.items():
+    for col, odds in latest_win.items():
         try:
-            # 標準化馬號：將 "01", 1, " 1" 全部轉為字串 "1"
-            h_str = str(int(float(str(col_name).strip())))
+            # 關鍵：馬號統一存成整數 2, 10
+            h_num = int(float(str(col).strip()))
             val = pd.to_numeric(odds, errors='coerce')
             if val > 0 and val != np.inf and not pd.isna(val):
-                win_probs[h_str] = 1.0 / val
-                win_odds_map[h_str] = val
+                win_probs[h_num] = 1.0 / val
+                win_odds_map[h_num] = val
                 inv_sum += 1.0 / val
-        except (ValueError, TypeError):
-            continue # 排除時間戳等非數字欄位
+        except: continue
             
     if inv_sum == 0: return
-    # 歸一化 (Normalization)
     for h in win_probs: win_probs[h] /= inv_sum
 
-    # --- 4. 處理 QIN (連贏) 數據 - 支援 "02,06" 格式 ---
+    # --- 4. 處理 QIN (最強力模糊解析) ---
     latest_qin = qin_df.iloc[-1]
     actual_qin = {}
     
     for comb_col, odds in latest_qin.items():
         val = pd.to_numeric(odds, errors='coerce')
-        if val > 0 and val != np.inf and not pd.isna(val):
-            col_str = str(comb_col).strip()
-            # 兼容逗號與橫槓分隔符
-            delim = ',' if ',' in col_str else '-'
-            
-            if delim in col_str:
-                try:
-                    # 標準化連贏組合： "02,10" -> ("2", "10")
-                    parts = [str(int(float(p.strip()))) for p in col_str.split(delim) if p.strip()]
-                    if len(parts) == 2:
-                        key = tuple(sorted(parts)) # 排序確保 (2, 10) 能對上 (10, 2)
-                        actual_qin[key] = val
-                except:
-                    continue
-    
-    # --- 5. Henery Model 理論機率與 Value 計算 ---
+        if val > 0 and not pd.isna(val):
+            # 使用正則表達式抓取所有數字，無視 "02,10" 中的 0 或逗號
+            nums = re.findall(r'\d+', str(comb_col))
+            if len(nums) == 2:
+                # 關鍵：轉成整數後排序，確保 (2, 10) 永遠是 (2, 10)
+                n1, n2 = int(nums[0]), int(nums[1])
+                key = tuple(sorted([n1, n2])) 
+                actual_qin[key] = val
+
+    # --- 5. Henery 計算 ---
     results = []
-    # 按照馬號數字大小排序 (1, 2, 3... 10, 11, 12)
-    horses = sorted(win_probs.keys(), key=int)
+    # 按馬號大小排序
+    horses = sorted(win_probs.keys())
     
     for h1, h2 in itertools.combinations(horses, 2):
         p1, p2 = win_probs[h1], win_probs[h2]
-        
-        # Henery 公式計算
         denom1 = sum(win_probs[h]**gamma for h in horses if h != h1)
         denom2 = sum(win_probs[h]**gamma for h in horses if h != h2)
-        
         p_qin = (p1 * (p2**gamma / denom1)) + (p2 * (p1**gamma / denom2))
         theo_odds = 1.0 / p_qin
         
-        # 檢索實時賠率
+        # 精確整數匹配： (2, 10)
         a_odds = actual_qin.get((h1, h2))
         if a_odds:
             val_score = a_odds / theo_odds
