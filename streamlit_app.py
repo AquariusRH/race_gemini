@@ -1299,7 +1299,7 @@ def print_henery_model(gamma=1.18, min_value=1.1):
     # --- 2. 處理獨贏數據並歸一化勝率 ---
     # 確保 win_list 是 list 格式 (相容 Series/List)
     win_list = win_data.tolist() if hasattr(win_data, 'tolist') else list(win_data)
-    st.write(win_list)
+    st.write(win_data)
     valid_probs = {}
     inv_sum = 0
     for i, odds in enumerate(win_list):
