@@ -1272,46 +1272,43 @@ def print_plotly_advanced_bar(race_no, method): # 建議傳入 method 區分
 
 def print_henery_model(gamma=1.18, min_value=1.1):
     """
-    專門處理橫向歷史 DataFrame 格式的 Henery Model
+    計算 Henery Model 並在結果表格中加入兩隻馬的個別獨贏賠率
     """
-    # 1. 安全檢查
+    # 1. 基礎檢查
     if 'odds_dict' not in st.session_state:
         return pd.DataFrame()
 
     win_df = st.session_state.odds_dict['WIN']
     qin_df = st.session_state.odds_dict['QIN']
 
-    # 使用 len() 避開 DataFrame 歧義報錯
     if len(win_df) == 0 or len(qin_df) == 0:
         return pd.DataFrame()
 
-    # --- 2. 提取最新 WIN 賠率並轉為勝率 ---
-    # 取最後一行，並排除第一欄(時間戳)
+    # --- 2. 提取最新 WIN 賠率並建立賠率對照表 ---
     latest_win = win_df.iloc[-1].iloc[1:] 
     
     valid_probs = {}
+    win_odds_map = {} # 新增：用來存放 {馬號: 賠率}
     inv_sum = 0
+    
     for horse_col, odds in latest_win.items():
-        # 確保 odds 是數字且不是 inf/NaN
         val = pd.to_numeric(odds, errors='coerce')
         if val > 0 and val != np.inf and not pd.isna(val):
             h_no = str(horse_col).strip()
             prob = 1.0 / val
             valid_probs[h_no] = prob
+            win_odds_map[h_no] = val # 記錄原始賠率
             inv_sum += prob
     
     if inv_sum == 0: return pd.DataFrame()
     for h in valid_probs: valid_probs[h] /= inv_sum
 
     # --- 3. 提取最新 QIN 賠率 ---
-    # 同理，取 QIN 表格最後一行的賠率
     latest_qin = qin_df.iloc[-1].iloc[1:]
     actual_qin = {}
     for comb_col, odds in latest_qin.items():
         val = pd.to_numeric(odds, errors='coerce')
         if val > 0 and val != np.inf and not pd.isna(val):
-            # 格式化 Key: 將 "1-2" 或 "1,2" 轉為 ('1', '2')
-            # 使用 split('-') 或 split(',') 視乎你 QIN 表頭的分隔符
             delim = '-' if '-' in str(comb_col) else ','
             key = tuple(sorted([h.strip().lstrip('0') for h in str(comb_col).split(delim)]))
             actual_qin[key] = val
@@ -1323,29 +1320,27 @@ def print_henery_model(gamma=1.18, min_value=1.1):
     for h1, h2 in itertools.combinations(horses, 2):
         p1, p2 = valid_probs[h1], valid_probs[h2]
         
-        # Henery 公式核心
+        # Henery 公式計算
         denom1 = sum(valid_probs[h]**gamma for h in horses if h != h1)
         denom2 = sum(valid_probs[h]**gamma for h in horses if h != h2)
         
         p_qin = (p1 * (p2**gamma / denom1)) + (p2 * (p1**gamma / denom2))
         theo_odds = 1.0 / p_qin
         
-        # 匹配實時賠率
         actual_odds = actual_qin.get((h1, h2))
         if actual_odds:
-            val = actual_odds / theo_odds
+            val_score = actual_odds / theo_odds
             results.append({
                 "組合": f"{h1}-{h2}",
+                "馬1單抽": win_odds_map.get(h1), # 加入馬1獨贏賠率
+                "馬2單抽": win_odds_map.get(h2), # 加入馬2獨贏賠率
                 "實時Q": actual_odds,
                 "理論Q": round(theo_odds, 2),
-                "Value": round(val, 3)
+                "Value": round(val_score, 3)
             })
 
     # --- 5. 顯示結果 ---
     if not results:
-        # 如果還是沒東西，印出一個樣本檢查 Key 是否匹配
-        # st.write(f"Debug - WIN Horses: {list(valid_probs.keys())[:3]}")
-        # st.write(f"Debug - QIN Keys: {list(actual_qin.keys())[:3]}")
         return pd.DataFrame()
 
     full_df = pd.DataFrame(results).sort_values("Value", ascending=False)
@@ -1353,9 +1348,17 @@ def print_henery_model(gamma=1.18, min_value=1.1):
 
     if not display_df.empty:
         st.markdown(f"#### 🚀 Henery 價值精算 (數據時間: `{win_df.iloc[-1].iloc[0]}`)")
+        
+        # 使用更直觀的欄位順序顯示
         st.dataframe(
-            display_df.style.background_gradient(subset=['Value'], cmap='YlGn'),
-            use_container_width=True,
+            display_df.style.background_gradient(subset=['Value'], cmap='YlGn')
+            .format({
+                "馬1單抽": "{:.1f}",
+                "馬2單抽": "{:.1f}",
+                "實時Q": "{:.1f}",
+                "理論Q": "{:.1f}"
+            }),
+            use_container_width=True, 
             hide_index=True
         )
     
