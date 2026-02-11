@@ -1372,10 +1372,14 @@ def print_henery_model(gamma=1.18):
             st.success("✅ **高價值組合 (Value > 1.1)**")
             high_df = full_df[full_df["Value"] > 1.1].sort_values("實時Q", ascending=False).head(15)
             if not high_df.empty:
-                st.table(
-                    high_df.style.background_gradient(subset=['Value'], cmap='Greens').hide(axis='index')
+                high_html = (
+                    high_df.style.background_gradient(subset=['Value'], cmap='Greens')
                     .format({"馬1獨贏": "{:.1f}", "馬2獨贏": "{:.1f}", "實時Q": "{:.1f}", "理論Q": "{:.1f}", "Value": "{:.2f}"})
+                    .hide(axis='index')
+                    .set_table_attributes('style="width:100%; border-collapse: collapse;"')
+                    .to_html()
                 )
+                st.markdown(high_html, unsafe_allow_html=True)
             else:
                 st.info("目前無符合條件組合")
 
