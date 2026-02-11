@@ -1372,27 +1372,27 @@ def print_henery_model(gamma=1.18):
         )
     # --- 6. 渲染雙表格介面 ---
     if results:
-    full_df = pd.DataFrame(results)
-    full_df = full_df[full_df["實時Q"] < 100]
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.success("✅ **高價值組合 (Value > 1.1)**")
-        high_df = full_df[full_df["Value"] > 1.1].sort_values("實時Q", ascending=False).head(15)
-        if not high_df.empty:
-            st.markdown(get_table_html(high_df, 'Greens'), unsafe_allow_html=True)
-        else:
-            st.info("目前無符合條件組合")
-
-    with col2:
-        st.error("🔥 **過熱組合 (Value < 0.9)**")
-        overheated_df = full_df[full_df["Value"] < 0.9].sort_values("實時Q", ascending=True).head(15)
-        if not overheated_df.empty:
-            st.markdown(get_table_html(overheated_df, 'Reds_r'), unsafe_allow_html=True)
-        else:
-            st.info("目前無過熱組合")
-
-        return full_df # 最後回傳完整 DataFrame
+        full_df = pd.DataFrame(results)
+        full_df = full_df[full_df["實時Q"] < 100]
+        col1, col2 = st.columns(2)
+    
+        with col1:
+            st.success("✅ **高價值組合 (Value > 1.1)**")
+            high_df = full_df[full_df["Value"] > 1.1].sort_values("實時Q", ascending=False).head(15)
+            if not high_df.empty:
+                st.markdown(get_table_html(high_df, 'Greens'), unsafe_allow_html=True)
+            else:
+                st.info("目前無符合條件組合")
+    
+        with col2:
+            st.error("🔥 **過熱組合 (Value < 0.9)**")
+            overheated_df = full_df[full_df["Value"] < 0.9].sort_values("實時Q", ascending=True).head(15)
+            if not overheated_df.empty:
+                st.markdown(get_table_html(overheated_df, 'Reds_r'), unsafe_allow_html=True)
+            else:
+                st.info("目前無過熱組合")
+    
+            return full_df # 最後回傳完整 DataFrame
     
     return pd.DataFrame()
 # ==================== 4. 主介面邏輯 ====================
