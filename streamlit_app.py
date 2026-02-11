@@ -1295,7 +1295,7 @@ def print_henery_model(gamma=1.18):
         val = pd.to_numeric(odds, errors='coerce')
         if val > 0 and val != np.inf and not pd.isna(val):
             h_no = str(horse).strip()
-            win_probs[h_no] = 1.0 / val
+            valid_probs[h_no] = 1.0 / val
             win_odds_map[h_no] = val
             inv_sum += 1.0 / val
     
