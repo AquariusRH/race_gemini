@@ -1351,7 +1351,9 @@ def print_henery_model(gamma=1.18, min_value=1.1):
     if results:
             df = pd.DataFrame(results).sort_values("Value", ascending=False)
             st.dataframe(df[df["Value"] >= min_value], use_container_width=True, hide_index=True)
+            st.write(1)
             return df
+    st.write(2)
     return pd.DataFrame()
 
     # 4. 排序並過濾
