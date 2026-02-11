@@ -1348,7 +1348,7 @@ def print_henery_model(gamma=1.18):
                         actual_qin[key] = val
                 except:
                     continue
-
+    
     # --- 5. Henery Model 理論機率與 Value 計算 ---
     results = []
     # 按照馬號數字大小排序 (1, 2, 3... 10, 11, 12)
@@ -1380,6 +1380,7 @@ def print_henery_model(gamma=1.18):
     # --- 6. 渲染雙表格介面 ---
     if results:
         full_df = pd.DataFrame(results)
+        st.dataframe(full_df)
         col1, col2 = st.columns(2)
 
         with col1:
