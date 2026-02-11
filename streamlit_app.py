@@ -1374,7 +1374,7 @@ def print_henery_model(gamma=1.18):
             if not high_df.empty:
                 st.table(
                     high_df.style.background_gradient(subset=['Value'], cmap='Greens')
-                    .format({"馬1獨贏": "{:.1f}", "馬2獨贏": "{:.1f}", "實時Q": "{:.1f}", "理論Q": "{:.1f}", "Value": "{:.2f}"}).hide_index()
+                    .format({"馬1獨贏": "{:.1f}", "馬2獨贏": "{:.1f}", "實時Q": "{:.1f}", "理論Q": "{:.1f}", "Value": "{:.2f}"}).hide(axis='index')
                 )
             else:
                 st.info("目前無符合條件組合")
@@ -1385,7 +1385,7 @@ def print_henery_model(gamma=1.18):
             if not overheated_df.empty:
                 st.table(
                     overheated_df.style.background_gradient(subset=['Value'], cmap='Reds_r')
-                    .format({"馬1獨贏": "{:.1f}", "馬2獨贏": "{:.1f}", "實時Q": "{:.1f}", "理論Q": "{:.1f}", "Value": "{:.2f}"}).hide_index()
+                    .format({"馬1獨贏": "{:.1f}", "馬2獨贏": "{:.1f}", "實時Q": "{:.1f}", "理論Q": "{:.1f}", "Value": "{:.2f}"}).hide(axis='index')
                 )
             else:
                 st.info("目前無過熱組合")
