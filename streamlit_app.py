@@ -1269,72 +1269,86 @@ def print_plotly_advanced_bar(race_no, method): # 建議傳入 method 區分
         latest_ts = all_ts[-1].strftime("%H%M%S")
         st.plotly_chart(fig, width='stretch', key=f"fluent_{race_no}_{method}_{latest_ts}")
 
-def calculate_henery_predictions(odds_values, gamma=1.2):
+def print_henery_model(gamma=1.18, min_value=1.1):
     """
-    輸入: get_odds_data() 的回傳字典
-    輸出: 包含價值的 DataFrame
+    計算 Henery Model，直接在介面印出表格並回傳結果
     """
-    win_odds_list = odds_values.get("WIN", [])
-    qin_odds_list = odds_values.get("QIN", [])
-
-    if not win_odds_list or not qin_odds_list:
+    # 1. 基礎檢查
+    if 'odds_dict' not in st.session_state:
         return pd.DataFrame()
 
-    # --- 1. 處理獨贏數據 ---
-    # 建立馬號與賠率的對應 (假設 index+1 為馬號，並過濾掉 SCR/inf)
-    win_probs = {}
-    total_inv_prob = 0
+    win_data = st.session_state.odds_dict['WIN']
+    qin_data = st.session_state.odds_dict['QIN']
+
+    # 使用 len() 解決 ValueError: The truth value of a DataFrame is ambiguous
+    if len(win_data) == 0 or len(qin_data) == 0:
+        return pd.DataFrame()
+
+    # 2. 轉換數據格式
+    win_list = win_data.tolist() if hasattr(win_data, 'tolist') else list(win_data)
     
-    for i, odds in enumerate(win_odds_list):
-        if odds != np.inf and odds > 0:
-            horse_no = str(i + 1)
+    valid_probs = {}
+    inv_sum = 0
+    for i, odds in enumerate(win_list):
+        if odds != np.inf and odds > 0 and not pd.isna(odds):
             prob = 1.0 / odds
-            win_probs[horse_no] = prob
-            total_inv_prob += prob
-
-    # 歸一化勝率 (Normalized Probabilities)
-    for h in win_probs:
-        win_probs[h] /= total_inv_prob
-
-    # --- 2. 計算連贏 (QIN) 理論值 ---
-    results = []
-    horses = list(win_probs.keys())
+            valid_probs[str(i + 1)] = prob
+            inv_sum += prob
     
-    # 將 QIN 原始數據轉為字典方便查詢 {(h1, h2): odds}
-    # get_odds_data() 傳回的是 [('1,2', 15.0), ('1,3', 20.0)...]
-    actual_qin_dict = {}
-    for comb, odds in qin_odds_list:
-        if odds != np.inf:
-            actual_qin_dict[tuple(sorted(comb.split(',')))] = odds
+    if inv_sum == 0: return pd.DataFrame()
+    for horse in valid_probs:
+        valid_probs[horse] /= inv_sum
 
-    for h1, h2 in itertools.combinations(sorted(horses, key=int), 2):
-        p1 = win_probs[h1]
-        p2 = win_probs[h2]
+    # 3. Henery Model 核心計算
+    results = []
+    horses = sorted(valid_probs.keys(), key=int)
+    
+    actual_qin = {}
+    for comb, odds in qin_data:
+        if odds != np.inf and not pd.isna(odds):
+            key = tuple(sorted(str(comb).split(',')))
+            actual_qin[key] = odds
+
+    for h1, h2 in itertools.combinations(horses, 2):
+        p1, p2 = valid_probs[h1], valid_probs[h2]
+        denom1 = sum(valid_probs[h]**gamma for h in horses if h != h1)
+        denom2 = sum(valid_probs[h]**gamma for h in horses if h != h2)
         
-        # Henery 分母: 排除當前第一名後的加權總和
-        denom1 = sum(win_probs[h]**gamma for h in horses if h != h1)
-        denom2 = sum(win_probs[h]**gamma for h in horses if h != h2)
+        # Henery 機率公式
+        p_h1_h2 = p1 * (p2**gamma / denom1)
+        p_h2_h1 = p2 * (p1**gamma / denom2)
         
-        # P(h1_1st, h2_2nd) + P(h2_1st, h1_2nd)
-        theo_prob = (p1 * (p2**gamma / denom1)) + (p2 * (p1**gamma / denom2))
+        theo_prob = p_h1_h2 + p_h2_h1
         theo_odds = 1.0 / theo_prob
         
-        actual_odds = actual_qin_dict.get((h1, h2))
-        
+        actual_odds = actual_qin.get((h1, h2))
         if actual_odds:
-            value = actual_odds / theo_odds
+            val = actual_odds / theo_odds
             results.append({
                 "組合": f"{h1}-{h2}",
-                "實時連贏": actual_odds,
-                "理論賠率": round(theo_odds, 2),
-                "期望價值": round(value, 3),
-                "信號": "🔥" if value > 1.2 else ("✅" if value > 1.05 else "---")
+                "實時Q": actual_odds,
+                "理論Q": round(theo_odds, 2),
+                "Value": round(val, 3)
             })
 
-    df = pd.DataFrame(results)
-    if not df.empty:
-        return df.sort_values("期望價值", ascending=False)
-    return df
+    if not results:
+        return pd.DataFrame()
+
+    # 4. 排序並過濾
+    full_df = pd.DataFrame(results).sort_values("Value", ascending=False)
+    display_df = full_df[full_df["Value"] >= min_value]
+
+    # --- 關鍵步驟：直接在介面 Print Table ---
+    if not display_df.empty:
+        st.markdown(f"#### 📊 Henery 精算價值表 (Gamma: {gamma})")
+        st.dataframe(
+            display_df.style.background_gradient(subset=['Value'], cmap='YlGn'),
+            use_container_width=True,
+            hide_index=True
+        )
+    
+    # --- 回傳數據 ---
+    return full_df
 
 def print_henery_model(gamma=1.18, min_value=1.1):
     """
