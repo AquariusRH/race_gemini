@@ -1365,12 +1365,12 @@ def print_henery_model(gamma=1.18):
     # --- 6. 渲染雙表格介面 ---
     if results:
         full_df_unsort = pd.DataFrame(results)
-        full_df = full_df_unsort[full_df_unsort["實時Q"] < 100]]
+        full_df = full_df_unsort[full_df_unsort["實時Q"] < 100]
         col1, col2 = st.columns(2)
 
         with col1:
             st.success("✅ **高價值組合 (Value > 1.1)**")
-            high_df = full_df[full_df["Value"] > 1.1].sort_values("實時Q", ascending=False).head(25)
+            high_df = full_df[full_df["Value"] > 1.1].sort_values("實時Q", ascending=False).head(15)
             if not high_df.empty:
                 st.table(
                     high_df.style.background_gradient(subset=['Value'], cmap='Greens')
@@ -1381,7 +1381,7 @@ def print_henery_model(gamma=1.18):
 
         with col2:
             st.error("🔥 **過熱組合 (Value < 0.9)**")
-            overheated_df = full_df[full_df["Value"] < 0.9].sort_values("實時Q", ascending=True).head(25)
+            overheated_df = full_df[full_df["Value"] < 0.9].sort_values("實時Q", ascending=True).head(15)
             if not overheated_df.empty:
                 st.table(
                     overheated_df.style.background_gradient(subset=['Value'], cmap='Reds_r')
