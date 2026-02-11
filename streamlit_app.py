@@ -1330,8 +1330,8 @@ def print_henery_model(gamma=1.18):
             val_score = actual_odds / theo_odds
             results.append({
                 "組合": f"{h1}-{h2}",
-                "馬1單": win_odds_map.get(h1),
-                "馬2單": win_odds_map.get(h2),
+                "馬1獨贏": win_odds_map.get(h1),
+                "馬2獨贏": win_odds_map.get(h2),
                 "實時Q": actual_odds,
                 "理論Q": round(theo_odds, 2),
                 "Value": round(val_score, 3)
