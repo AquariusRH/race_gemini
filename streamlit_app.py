@@ -1272,9 +1272,8 @@ def print_plotly_advanced_bar(race_no, method): # 建議傳入 method 區分
 
 def print_henery_model(gamma=1.18, min_value=1.1):
     """
-    計算 Henery Model 並在結果表格中加入兩隻馬的個別獨贏賠率
+    計算 Henery Model 並標註高價值 (>1.1) 與過熱 (<0.9) 的組合
     """
-    # 1. 基礎檢查
     if 'odds_dict' not in st.session_state:
         return pd.DataFrame()
 
@@ -1284,11 +1283,10 @@ def print_henery_model(gamma=1.18, min_value=1.1):
     if len(win_df) == 0 or len(qin_df) == 0:
         return pd.DataFrame()
 
-    # --- 2. 提取最新 WIN 賠率並建立賠率對照表 ---
+    # --- 1. 提取最新 WIN 數據 ---
     latest_win = win_df.iloc[-1].iloc[1:] 
-    
     valid_probs = {}
-    win_odds_map = {} # 新增：用來存放 {馬號: 賠率}
+    win_odds_map = {}
     inv_sum = 0
     
     for horse_col, odds in latest_win.items():
@@ -1297,13 +1295,13 @@ def print_henery_model(gamma=1.18, min_value=1.1):
             h_no = str(horse_col).strip()
             prob = 1.0 / val
             valid_probs[h_no] = prob
-            win_odds_map[h_no] = val # 記錄原始賠率
+            win_odds_map[h_no] = val
             inv_sum += prob
     
     if inv_sum == 0: return pd.DataFrame()
     for h in valid_probs: valid_probs[h] /= inv_sum
 
-    # --- 3. 提取最新 QIN 賠率 ---
+    # --- 2. 提取最新 QIN 數據 ---
     latest_qin = qin_df.iloc[-1].iloc[1:]
     actual_qin = {}
     for comb_col, odds in latest_qin.items():
@@ -1313,14 +1311,12 @@ def print_henery_model(gamma=1.18, min_value=1.1):
             key = tuple(sorted([h.strip().lstrip('0') for h in str(comb_col).split(delim)]))
             actual_qin[key] = val
 
-    # --- 4. Henery Model 計算 ---
+    # --- 3. Henery 計算與狀態標註 ---
     results = []
     horses = sorted(valid_probs.keys(), key=int)
     
     for h1, h2 in itertools.combinations(horses, 2):
         p1, p2 = valid_probs[h1], valid_probs[h2]
-        
-        # Henery 公式計算
         denom1 = sum(valid_probs[h]**gamma for h in horses if h != h1)
         denom2 = sum(valid_probs[h]**gamma for h in horses if h != h2)
         
@@ -1330,33 +1326,37 @@ def print_henery_model(gamma=1.18, min_value=1.1):
         actual_odds = actual_qin.get((h1, h2))
         if actual_odds:
             val_score = actual_odds / theo_odds
+            
             results.append({
                 "組合": f"{h1}-{h2}",
-                "馬1獨贏": win_odds_map.get(h1), # 加入馬1獨贏賠率
-                "馬2獨贏": win_odds_map.get(h2), # 加入馬2獨贏賠率
+                "馬1單": win_odds_map.get(h1),
+                "馬2單": win_odds_map.get(h2),
                 "實時Q": actual_odds,
                 "理論Q": round(theo_odds, 2),
-                "Value": round(val_score, 3)
+                "Value": round(val_score, 3),
+                "超值 (>1.1)": "✅" if val_score > 1.1 else "",
+                "過熱 (<0.9)": "🔥" if val_score < 0.9 else ""
             })
 
-    # --- 5. 顯示結果 ---
+    # --- 4. 顯示結果 ---
     if not results:
         return pd.DataFrame()
 
     full_df = pd.DataFrame(results).sort_values("Value", ascending=False)
-    display_df = full_df[full_df["Value"] >= min_value]
+    
+    # 這裡我們不強制過濾 min_value，改為顯示全部但重點標註，或者你也可以保留過濾
+    # display_df = full_df[full_df["Value"] >= min_value] 
+    display_df = full_df.copy()
 
     if not display_df.empty:
-        st.markdown(f"#### 🚀 Henery 價值精算 (數據時間: `{win_df.iloc[-1].iloc[0]}`)")
+        st.markdown(f"#### 🚀 Henery 價值與趨勢分析 (時間: `{win_df.iloc[-1].iloc[0]}`)")
         
-        # 使用更直觀的欄位順序顯示
+        # 渲染表格，並對狀態欄位進行置中處理
         st.dataframe(
-            display_df.style.background_gradient(subset=['Value'], cmap='YlGn')
+            display_df.style.background_gradient(subset=['Value'], cmap='RdYlGn')
             .format({
-                "馬1單抽": "{:.1f}",
-                "馬2單抽": "{:.1f}",
-                "實時Q": "{:.1f}",
-                "理論Q": "{:.1f}"
+                "馬1單": "{:.1f}", "馬2單": "{:.1f}", 
+                "實時Q": "{:.1f}", "理論Q": "{:.1f}"
             }),
             use_container_width=True, 
             hide_index=True
