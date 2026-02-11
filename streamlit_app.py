@@ -1362,14 +1362,14 @@ def print_henery_model(gamma=1.18):
                 "Value": round(val_score, 2)
             })
     def get_table_html(df, cmap_name):
-    return (
-        df.style.background_gradient(subset=['Value'], cmap=cmap_name)
-        .format({"馬1獨贏": "{:.1f}", "馬2獨贏": "{:.1f}", "實時Q": "{:.1f}", "理論Q": "{:.1f}", "Value": "{:.2f}"})
-        .hide(axis='index')
-        # This CSS ensures headers don't wrap and the table fills the width
-        .set_table_attributes('style="width:100%; border-collapse: collapse; white-space: nowrap;"')
-        .to_html()
-    )
+        return (
+            df.style.background_gradient(subset=['Value'], cmap=cmap_name)
+            .format({"馬1獨贏": "{:.1f}", "馬2獨贏": "{:.1f}", "實時Q": "{:.1f}", "理論Q": "{:.1f}", "Value": "{:.2f}"})
+            .hide(axis='index')
+            # This CSS ensures headers don't wrap and the table fills the width
+            .set_table_attributes('style="width:100%; border-collapse: collapse; white-space: nowrap;"')
+            .to_html()
+        )
     # --- 6. 渲染雙表格介面 ---
     if results:
     full_df = pd.DataFrame(results)
