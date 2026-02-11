@@ -1291,14 +1291,16 @@ def print_henery_model(gamma=1.18):
     win_odds_map = {}
     inv_sum = 0
     
-    for horse_col, odds in latest_win.items():
-        val = pd.to_numeric(odds, errors='coerce')
-        if val > 0 and val != np.inf and not pd.isna(val):
-            h_no = str(horse_col).strip()
-            prob = 1.0 / val
-            valid_probs[h_no] = prob
-            win_odds_map[h_no] = val
-            inv_sum += prob
+    for col, odds in latest_win.items():
+        # 標準化馬號：轉為字串 -> 去空白 -> 轉整數 -> 轉字串 (確保 "01" 和 1 都變成 "1")
+        try:
+            h_str = str(int(float(str(col).strip()))) 
+            val = pd.to_numeric(odds, errors='coerce')
+            if val > 0 and val != np.inf and not pd.isna(val):
+                win_probs[h_str] = 1.0 / val
+                win_odds_map[h_str] = val
+                inv_sum += 1.0 / val
+        except: continue
     
     if inv_sum == 0: return pd.DataFrame()
     for h in valid_probs: valid_probs[h] /= inv_sum
