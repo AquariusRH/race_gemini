@@ -1272,137 +1272,143 @@ def print_plotly_advanced_bar(race_no, method): # 建議傳入 method 區分
 
 def print_henery_model(gamma=1.18):
     """
-    計算 Henery Model 並分拆為兩個表格：
-    1. 高價值組合 (Value > 1.1)
-    2. 過熱組合 (Value < 0.9)
+    Henery Model 完整實作版
+    解決問題：
+    1. 1號馬缺失 (不再使用 iloc[1:])
+    2. 雙位數馬匹 (10, 11, 12) 匹配失敗
+    3. 格式相容性 (支援 "02,10", "2-10", "2.0,10.0" 等格式)
     """
-    if 'odds_dict' not in st.session_state:
-        return pd.DataFrame()
+    # --- 1. 時間處理與合併顯示 ---
+    HK_TZ = timezone(timedelta(hours=8))
+    now = datetime.now(HK_TZ)
+    
+    # 獲取開跑倒數
+    post_time_raw = st.session_state.post_time_dict.get(st.session_state.get('current_race', '1'))
+    if post_time_raw:
+        post_time = post_time_raw.replace(tzinfo=HK_TZ) if post_time_raw.tzinfo is None else post_time_raw
+        seconds_left = (post_time - now).total_seconds()
+        time_str = "🏁 已開跑" if seconds_left <= 0 else f"⏳ 離開跑 {int(seconds_left // 60)} 分"
+    else:
+        time_str = "未載入"
 
-    win_df = st.session_state.odds_dict['WIN']
-    qin_df = st.session_state.odds_dict['QIN']
+    # 獲取最後更新時間
+    last_upd = st.session_state.last_update.strftime('%H:%M:%S') if st.session_state.get('last_update') else "N/A"
+    
+    # 合併顯示在一句 Markdown 中
+    st.markdown(f"#### {time_str} ｜ 📟 數據最後同步: `{last_upd}`")
 
-    if len(win_df) == 0 or len(qin_df) == 0:
-        return pd.DataFrame()
+    # --- 2. 數據合法性檢查 ---
+    if 'odds_dict' not in st.session_state: return
+    win_df = st.session_state.odds_dict.get('WIN')
+    qin_df = st.session_state.odds_dict.get('QIN')
 
-    # --- 1. 提取最新 WIN 數據 ---
-    latest_win = win_df.iloc[-1].iloc[0:] 
-    valid_probs = {}
+    if win_df is None or qin_df is None or len(win_df) == 0:
+        st.info("⌛ 等待賠率數據中...")
+        return
+
+    # --- 3. 處理 WIN (獨贏) 數據 ---
+    latest_win = win_df.iloc[-1]
+    win_probs = {}
     win_odds_map = {}
     inv_sum = 0
     
-    for horse, odds in latest_win.items():
-        val = pd.to_numeric(odds, errors='coerce')
-        if val > 0 and val != np.inf and not pd.isna(val):
-            h_no = str(horse).strip()
-            valid_probs[h_no] = 1.0 / val
-            win_odds_map[h_no] = val
-            inv_sum += 1.0 / val
-    
-    if inv_sum == 0: return pd.DataFrame()
-    for h in valid_probs: valid_probs[h] /= inv_sum
+    for col_name, odds in latest_win.items():
+        try:
+            # 標準化馬號：將 "01", 1, " 1" 全部轉為字串 "1"
+            h_str = str(int(float(str(col_name).strip())))
+            val = pd.to_numeric(odds, errors='coerce')
+            if val > 0 and val != np.inf and not pd.isna(val):
+                win_probs[h_str] = 1.0 / val
+                win_odds_map[h_str] = val
+                inv_sum += 1.0 / val
+        except (ValueError, TypeError):
+            continue # 排除時間戳等非數字欄位
+            
+    if inv_sum == 0: return
+    # 歸一化 (Normalization)
+    for h in win_probs: win_probs[h] /= inv_sum
 
-    # --- 2. 提取最新 QIN 數據 ---
-    latest_qin = qin_df.iloc[-1].iloc[0:]
-    st.write(latest_qin)
+    # --- 4. 處理 QIN (連贏) 數據 - 支援 "02,06" 格式 ---
+    latest_qin = qin_df.iloc[-1]
     actual_qin = {}
+    
     for comb_col, odds in latest_qin.items():
         val = pd.to_numeric(odds, errors='coerce')
         if val > 0 and val != np.inf and not pd.isna(val):
             col_str = str(comb_col).strip()
-            # 判斷分隔符 (支援 - 或 ,)
-            delim = '-' if '-' in col_str else ','
+            # 兼容逗號與橫槓分隔符
+            delim = ',' if ',' in col_str else '-'
             
             if delim in col_str:
                 try:
-                    # 關鍵：將組合中每個元素標準化 (02-10 -> ('2', '10'))
-                    parts = [str(int(float(p.strip()))) for p in col_str.split(delim)]
+                    # 標準化連贏組合： "02,10" -> ("2", "10")
+                    parts = [str(int(float(p.strip()))) for p in col_str.split(delim) if p.strip()]
                     if len(parts) == 2:
-                        key = tuple(sorted(parts))
+                        key = tuple(sorted(parts)) # 排序確保 (2, 10) 能對上 (10, 2)
                         actual_qin[key] = val
-                except: continue
+                except:
+                    continue
 
-    # --- 3. Henery 計算 ---
+    # --- 5. Henery Model 理論機率與 Value 計算 ---
     results = []
-    horses = sorted(valid_probs.keys(), key=int)
+    # 按照馬號數字大小排序 (1, 2, 3... 10, 11, 12)
+    horses = sorted(win_probs.keys(), key=int)
     
     for h1, h2 in itertools.combinations(horses, 2):
-        p1, p2 = valid_probs[h1], valid_probs[h2]
-        denom1 = sum(valid_probs[h]**gamma for h in horses if h != h1)
-        denom2 = sum(valid_probs[h]**gamma for h in horses if h != h2)
+        p1, p2 = win_probs[h1], win_probs[h2]
+        
+        # Henery 公式計算
+        denom1 = sum(win_probs[h]**gamma for h in horses if h != h1)
+        denom2 = sum(win_probs[h]**gamma for h in horses if h != h2)
         
         p_qin = (p1 * (p2**gamma / denom1)) + (p2 * (p1**gamma / denom2))
         theo_odds = 1.0 / p_qin
         
-        actual_odds = actual_qin.get((h1, h2))
-        if actual_odds:
-            val_score = actual_odds / theo_odds
+        # 檢索實時賠率
+        a_odds = actual_qin.get((h1, h2))
+        if a_odds:
+            val_score = a_odds / theo_odds
             results.append({
                 "組合": f"{h1}-{h2}",
-                "馬1獨贏": win_odds_map.get(h1),
-                "馬2獨贏": win_odds_map.get(h2),
-                "實時Q": actual_odds,
-                "理論Q": round(theo_odds, 2),
-                "Value": round(val_score, 3)
+                "馬1單": win_odds_map[h1],
+                "馬2單": win_odds_map[h2],
+                "實時Q": a_odds,
+                "理論Q": round(theo_odds, 1),
+                "Value": round(val_score, 2)
             })
 
-    if not results:
-        return pd.DataFrame()
+    # --- 6. 渲染雙表格介面 ---
+    if results:
+        full_df = pd.DataFrame(results)
+        col1, col2 = st.columns(2)
 
-    full_df = pd.DataFrame(results)
+        with col1:
+            st.success("✅ **高價值組合 (Value > 1.1)**")
+            high_df = full_df[full_df["Value"] > 1.1].sort_values("Value", ascending=False)
+            if not high_df.empty:
+                st.dataframe(
+                    high_df.style.background_gradient(subset=['Value'], cmap='Greens')
+                    .format({"馬1單": "{:.1f}", "馬2單": "{:.1f}", "實時Q": "{:.1f}", "理論Q": "{:.1f}", "Value": "{:.2f}"}),
+                    use_container_width=True, hide_index=True
+                )
+            else:
+                st.info("目前無符合條件組合")
 
-    # --- 4. 拆分兩個表格並顯示 ---
-    HK_TZ = timezone(timedelta(hours=8))
-    now_naive = datetime.now()
-    now = now_naive + datere.relativedelta(hours=8)
-    now = now.replace(tzinfo=HK_TZ)
-    post_time_raw = st.session_state.post_time_dict.get(race_no)
-            
-    if post_time_raw is None:
-                time_str = "未載入"
-    else:
-                # 確保 post_time 也有時區
-                if post_time_raw.tzinfo is None:
-                    post_time = post_time_raw.replace(tzinfo=HK_TZ)
-                else:
-                    post_time = post_time_raw  # 已有時區
-            
-                seconds_left = (post_time - now).total_seconds()
-                
-                if seconds_left <= 0:
-                    time_str = "已開跑"
-                else:
-                    minutes = int(seconds_left // 60)
-                    time_str = f"離開跑 {minutes} 分"  
-    st.markdown(f"### 🕒 數據更新時間: `{time_str}`")
-    st.dataframe(full_df)
-    col1, col2 = st.columns(2)
+        with col2:
+            st.error("🔥 **過熱組合 (Value < 0.9)**")
+            overheated_df = full_df[full_df["Value"] < 0.9].sort_values("Value", ascending=True)
+            if not overheated_df.empty:
+                st.dataframe(
+                    overheated_df.style.background_gradient(subset=['Value'], cmap='Reds_r')
+                    .format({"馬1單": "{:.1f}", "馬2單": "{:.1f}", "實時Q": "{:.1f}", "理論Q": "{:.1f}", "Value": "{:.2f}"}),
+                    use_container_width=True, hide_index=True
+                )
+            else:
+                st.info("目前無過熱組合")
 
-    with col1:
-        st.success("✅ **高價值組合 (Value > 1.1)**")
-        high_value_df = full_df[full_df["Value"] > 1.1].sort_values("Value", ascending=False)
-        if not high_value_df.empty:
-            st.dataframe(
-                high_value_df.style.background_gradient(subset=['Value'], cmap='Greens')
-                .format({"馬1獨贏": "{:.1f}", "馬2獨贏": "{:.1f}", "實時Q": "{:.1f}", "理論Q": "{:.1f}"}),
-                use_container_width=True, hide_index=True
-            )
-        else:
-            st.info("暫無高價值組合")
-
-    with col2:
-        st.error("🔥 **過熱組合 (Value < 0.9)**")
-        overheated_df = full_df[full_df["Value"] < 0.9].sort_values("Value", ascending=True)
-        if not overheated_df.empty:
-            st.dataframe(
-                overheated_df.style.background_gradient(subset=['Value'], cmap='Reds_r')
-                .format({"馬1獨贏": "{:.1f}", "馬2獨贏": "{:.1f}", "實時Q": "{:.1f}", "理論Q": "{:.1f}"}),
-                use_container_width=True, hide_index=True
-            )
-        else:
-            st.info("暫無過熱組合")
+        return full_df # 最後回傳完整 DataFrame
     
-    return full_df
+    return pd.DataFrame()
 # ==================== 4. 主介面邏輯 ====================
 
 # --- 輸入區 ---
