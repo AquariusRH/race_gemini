@@ -2100,10 +2100,35 @@ if monitoring_on:
                 change_overall(time_now)
                 # 由於篇幅限制，假設已運行
                 st.session_state.last_update = time_now
-    
+        
         # 3. 顯示結果
         with placeholder.container():
-            st.metric("最後更新", st.session_state.last_update.strftime('%H:%M:%S') if st.session_state.last_update else "N/A")
+            HK_TZ = timezone(timedelta(hours=8))
+            now_naive = datetime.now()
+            now = now_naive + datere.relativedelta(hours=8)
+            now = now.replace(tzinfo=HK_TZ)
+            post_time_raw = st.session_state.post_time_dict.get(race_no)
+                    
+            if post_time_raw is None:
+                        time_str = "未載入"
+            else:
+                        # 確保 post_time 也有時區
+                        if post_time_raw.tzinfo is None:
+                            post_time = post_time_raw.replace(tzinfo=HK_TZ)
+                        else:
+                            post_time = post_time_raw  # 已有時區
+                    
+                        seconds_left = (post_time - now).total_seconds()
+                        
+                        if seconds_left <= 0:
+                            time_str = "已開跑"
+                        else:
+                            minutes = int(seconds_left // 60)
+                            time_str = f"離開跑 {minutes} 分"  
+            last_update_str = st.session_state.last_update.strftime('%H:%M:%S') if st.session_state.last_update else "N/A"
+            status_icon = "🏁" if "已開跑" in time_str else "⏳"
+    
+            st.info(f"{status_icon} {time_str} ｜ ⏱️ 最後同步時間：{last_update_str}")
             
             # A. 氣泡圖 (資金流向視覺化)
             if show_bubble:
