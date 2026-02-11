@@ -1343,7 +1343,29 @@ def print_henery_model(gamma=1.18):
     full_df = pd.DataFrame(results)
 
     # --- 4. 拆分兩個表格並顯示 ---
-    st.markdown(f"### 🕒 數據更新時間: `{win_df.iloc[-1].iloc[0]}`")
+    HK_TZ = timezone(timedelta(hours=8))
+    now_naive = datetime.now()
+    now = now_naive + datere.relativedelta(hours=8)
+    now = now.replace(tzinfo=HK_TZ)
+    post_time_raw = st.session_state.post_time_dict.get(race_no)
+            
+    if post_time_raw is None:
+                time_str = "未載入"
+    else:
+                # 確保 post_time 也有時區
+                if post_time_raw.tzinfo is None:
+                    post_time = post_time_raw.replace(tzinfo=HK_TZ)
+                else:
+                    post_time = post_time_raw  # 已有時區
+            
+                seconds_left = (post_time - now).total_seconds()
+                
+                if seconds_left <= 0:
+                    time_str = "已開跑"
+                else:
+                    minutes = int(seconds_left // 60)
+                    time_str = f"離開跑 {minutes} 分"  
+    st.markdown(f"### 🕒 數據更新時間: `{time_str}`")
     
     col1, col2 = st.columns(2)
 
