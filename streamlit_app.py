@@ -1383,10 +1383,15 @@ def print_henery_model(gamma=1.18):
             st.error("🔥 **過熱組合 (Value < 0.9)**")
             overheated_df = full_df[full_df["Value"] < 0.9].sort_values("實時Q", ascending=True).head(15)
             if not overheated_df.empty:
-                st.table(
-                    overheated_df.style.background_gradient(subset=['Value'], cmap='Reds_r').hide(axis='index')
+                table_html = (
+                    overheated_df.style.background_gradient(subset=['Value'], cmap='Reds_r')
                     .format({"馬1獨贏": "{:.1f}", "馬2獨贏": "{:.1f}", "實時Q": "{:.1f}", "理論Q": "{:.1f}", "Value": "{:.2f}"})
+                    .hide(axis='index')
+                    .to_html()
                 )
+                
+                # Display via markdown
+                st.markdown(table_html, unsafe_allow_html=True)
             else:
                 st.info("目前無過熱組合")
 
