@@ -2091,7 +2091,7 @@ if monitoring_on:
             if show_move_bar:
                 print_plotly_advanced_bar(race_no,print_list)
             if show_henery:
-                print_henery_model(gamma=1.18, min_value=1.1)
+                print_henery_model(gamma=1.18)
             # B. 實時預測排名
             st.markdown("### 🤖 實時資金流綜合預測排名")
             prediction_df = calculate_smart_score(race_no)
