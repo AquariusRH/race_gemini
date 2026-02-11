@@ -1407,7 +1407,7 @@ with st.sidebar:
     
     # 監控開關
     monitoring_on = st.toggle("啟動即時監控", value=False)
-    keep_keys = ["show_bubble", "show_bar", "show_move_bar", "show_top", "bar_key", "bubble_key"]
+    keep_keys = ["show_bubble", "show_bar", "show_move_bar", "show_top", "show_henery","bar_key", "bubble_key"]
     if st.button("重置所有數據"):
         for key in list(st.session_state.keys()):
             if key not in keep_keys:
