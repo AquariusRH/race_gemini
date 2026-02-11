@@ -1303,11 +1303,27 @@ def print_henery_model(gamma=1.18, min_value=1.1):
     results = []
     horses = sorted(valid_probs.keys(), key=int)
     
+    # 將 QIN 數據轉為字典
     actual_qin = {}
-    for comb, odds in qin_data:
-        if odds != np.inf and not pd.isna(odds):
-            key = tuple(sorted(str(comb).split(',')))
-            actual_qin[key] = odds
+    
+    # 修正處：判斷 qin_data 的類型並正確提取數據
+    if isinstance(qin_data, pd.DataFrame):
+        # 假設 DataFrame 的欄位是 ['combString', 'oddsValue'] 或類似
+        # 我們根據位置取前兩欄
+        for row in qin_data.itertuples(index=False):
+            comb = row[0] # 第一欄通常是組合字串，如 "1,2"
+            odds = row[1] # 第二欄通常是賠率
+            if odds != np.inf and not pd.isna(odds):
+                key = tuple(sorted(str(comb).split(',')))
+                actual_qin[key] = odds
+    else:
+        # 如果是 List，確保每個 element 真的只有兩個值
+        for item in qin_data:
+            if len(item) >= 2:
+                comb, odds = item[0], item[1]
+                if odds != np.inf and not pd.isna(odds):
+                    key = tuple(sorted(str(comb).split(',')))
+                    actual_qin[key] = odds
 
     for h1, h2 in itertools.combinations(horses, 2):
         p1, p2 = valid_probs[h1], valid_probs[h2]
@@ -1331,7 +1347,10 @@ def print_henery_model(gamma=1.18, min_value=1.1):
                 "Value": round(val, 3)
             })
 
-    if not results:
+    if results:
+            df = pd.DataFrame(results).sort_values("Value", ascending=False)
+            st.dataframe(df[df["Value"] >= min_value], use_container_width=True, hide_index=True)
+            return df
         return pd.DataFrame()
 
     # 4. 排序並過濾
