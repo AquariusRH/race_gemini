@@ -2128,7 +2128,7 @@ if monitoring_on:
             last_update_str = st.session_state.last_update.strftime('%H:%M:%S') if st.session_state.last_update else "N/A"
             status_icon = "🏁" if "已開跑" in time_str else "⏳"
     
-            st.info(f"{status_icon} {time_str} ｜ ⏱️ 最後同步時間：{last_update_str}")
+            st.markdown(f"###{status_icon} {time_str} ｜ ⏱️ 最後同步時間：`{last_update_str}`")
             
             # A. 氣泡圖 (資金流向視覺化)
             if show_bubble:
