@@ -1365,7 +1365,7 @@ def print_henery_model(gamma=1.18):
     # --- 6. 渲染雙表格介面 ---
     if results:
         full_df_unsort = pd.DataFrame(results)
-        full_df = full_df_unsort[full_df_unsort["實時Q"] < 100]
+        full_df = full_df_unsort[full_df_unsort["實時Q"] < 100].reset_index(drop=True)
         col1, col2 = st.columns(2)
 
         with col1:
