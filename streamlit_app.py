@@ -1277,16 +1277,17 @@ def print_henery_model(gamma=1.18, min_value=1.1):
     2. 計算理論賠率與實時賠率的 Value 差
     3. 直接在 Streamlit 渲染表格並回傳結果
     """
-    st.write("進入")
+    
     # --- 1. 安全檢查與數據讀取 ---
     if 'odds_dict' not in st.session_state:
         st.warning("⚠️ 系統尚未準備好 odds_dict 資料。")
         return pd.DataFrame()
-
+    
     # 直接索取數據 (不使用 .get 以確保 Key 存在)
     try:
         win_data = st.session_state.odds_dict['WIN']
         qin_data = st.session_state.odds_dict['QIN']
+        st.write(qin_data)
     except KeyError as e:
         st.error(f"❌ odds_dict 缺失 Key: {e}")
         return pd.DataFrame()
