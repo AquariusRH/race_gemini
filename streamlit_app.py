@@ -1283,7 +1283,7 @@ def print_henery_model(gamma=1.18):
     now = datetime.now(HK_TZ)
     
     # 獲取開跑倒數
-    post_time_raw = st.session_state.post_time_dict.get(st.session_state.get('current_race', '1'))
+    post_time_raw = st.session_state.post_time_dict[race_no]
     if post_time_raw:
         post_time = post_time_raw.replace(tzinfo=HK_TZ) if post_time_raw.tzinfo is None else post_time_raw
         seconds_left = (post_time - now).total_seconds()
