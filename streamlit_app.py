@@ -1774,13 +1774,28 @@ query RaceCardProfile($date: String, $venueCode: String, $type: STStatType, $ids
             response = requests.post(url, headers=headers, json=payload, timeout=10)
         else:
             url = 'https://info.cld.hkjc.com/graphql/base/'
-            headers = {'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'}
+            headers = {
+                'Content-Type': 'application/json',
+                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1'
+            }
             
-            # 測試 S1 (澳洲)
-            s1_vars = {"date": "2026-02-14", "venueCode": "S1", "type": "LIEF_TIME", "ids": [], "raceNumber": "1", "meetingDate": "20260214", "venCode": "S1"}
+            # 這是針對 S1 場次最常用的白名單查詢格式
+            payload = {
+                "operationName": "RaceCardProfile",
+                "variables": {
+                    "date": "2026-02-14",
+                    "venueCode": "S1",
+                    "type": "LIEF_TIME",
+                    "ids": [], 
+                    "raceNumber": "1",
+                    "meetingDate": "20260214",
+                    "venCode": "S1"
+                },
+                # 注意：這裡的 Query 字串必須極度精確，建議從瀏覽器的 Network Tab 直接 Copy
+                "query": "query RaceCardProfile($date: String, $venueCode: String, $type: STStatType, $ids: [String!], $raceNumber: String, $meetingDate: String) { raceMeetingProfile(date: $date, venueCode: $venueCode) { totalNumberOfRace status races { id no status postTime raceName_en runners { horse { name_en id } no jockey { name_en } trainer { name_en } stat(type: $type) { numStarts numFirst } } } } }"
+            }
             
-            response = requests.post(url, headers=headers, json={"variables": s1_vars, "query": "query RaceCardProfile($date: String, $venueCode: String) { raceMeetingProfile(date: $date, venueCode: $venueCode) { totalNumberOfRace races { raceName_en } } }"})
-            
+            response = requests.post(url, headers=headers, json=payload)
             st.write(response.json())
             #st.write(payload_oversea)
             #response = requests.post(url, headers=headers, json=payload_oversea, timeout=10)
