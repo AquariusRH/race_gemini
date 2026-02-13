@@ -1773,8 +1773,17 @@ query RaceCardProfile($date: String, $venueCode: String, $type: STStatType, $ids
         if venue in ['ST','HV']:
             response = requests.post(url, headers=headers, json=payload, timeout=10)
         else:
-            st.write(payload_oversea)
-            response = requests.post(url, headers=headers, json=payload_oversea, timeout=10)
+            url = 'https://info.cld.hkjc.com/graphql/base/'
+            headers = {'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'}
+            
+            # 測試 S1 (澳洲)
+            s1_vars = {"date": "2026-02-14", "venueCode": "S1", "type": "LIEF_TIME", "ids": [], "raceNumber": "1", "meetingDate": "20260214", "venCode": "S1"}
+            
+            response = requests.post(url, headers=headers, json={"variables": s1_vars, "query": "query RaceCardProfile($date: String, $venueCode: String) { raceMeetingProfile(date: $date, venueCode: $venueCode) { totalNumberOfRace races { raceName_en } } }"})
+            
+            st.write(response.json())
+            #st.write(payload_oversea)
+            #response = requests.post(url, headers=headers, json=payload_oversea, timeout=10)
         if response.status_code == 200:
             data = response.json()
             races = data.get('data', {}).get('raceMeetings', [])
