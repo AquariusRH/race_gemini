@@ -551,71 +551,7 @@ def fetch_horse_age_only(date_val, place_val, race_no):
         except Exception as e:
             st.error(f"獲取馬齡失敗: {e}")
             return None
-    else:
-        date_str = str(date_val).replace('-', '')
-        headers = {
-            'accept': '*/*',
-            'accept-language': 'en-us,en;q=0.9',
-            'content-type': 'application/json',
-            'origin': 'https://racing.hkjc.com',
-            'priority': 'u=1, i',
-            'referer': 'https://racing.hkjc.com/',
-            'sec-ch-ua': '"Not(A:Brand";v="8", "Chromium";v="144", "Google Chrome";v="144"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-platform': '"Windows"',
-            'sec-fetch-dest': 'empty',
-            'sec-fetch-mode': 'cors',
-            'sec-fetch-site': 'same-site',
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36',
-        }
-        
-        json_data = {
-            'variables': {
-                'date': str(date_val),
-                'venueCode': str(place_val),
-                'type': 'LIEF_TIME',
-                'meetingDate': date_str,
-                'raceNumber': str(race_no),
-                'venCode': str(place_val),
-            },
-            'query': '\nquery RaceCardProfile($date: String, $venueCode: String, $type: STStatType, $ids: [String!], $raceNumber: String, $meetingDate: String) {\n  raceMeetingProfile(date: $date, venueCode: $venueCode) {\n    totalNumberOfRace\n    status\n    pmPools {\n      leg {\n        races\n      }\n      status\n      oddsType\n    }\n    races {\n      id\n      no\n      status\n      postTime\n      raceName_en\n      raceName_ch\n      raceResults {\n        status\n      }\n      countryCodeNm {\n        code\n        english\n        chinese\n      }\n      distance\n      raceCourse {\n        code\n        description_en\n        description_ch\n      }\n      raceTrack {\n        code\n        description_en\n        description_ch\n      }\n      raceType_en\n      raceType_ch\n      raceClass_en\n      raceClass_ch\n      country_en\n      country_ch\n      winningMargin {\n        seqNo\n        lbw\n      }\n      go_en\n      go_ch\n      remarks {\n        name_en\n        name_ch\n        seqNo\n      }\n      runners {\n        horse {\n          name_en\n          name_ch\n          id\n        }\n        status\n        color\n        no\n        handicapWeight\n        jockey {\n          code\n          name_en\n          name_ch\n        }\n        trainer {\n          code\n          name_en\n          name_ch\n        }\n        id\n        last6run\n        internationalRating\n        currentRating \n        sire\n        sexNm {\n          chinese\n          english\n          code\n        }\n        age\n        barrierDrawNumber\n        gearInfo\n        stat(type: $type) {\n          statType\n          numStarts\n          numFirst\n          numSecond\n          numThird\n        }\n        damNm {\n          code\n          chinese\n          english\n        }\n        sireOfDamNm {\n          code\n          chinese\n          english\n        }\n        ownerNm {\n          code\n          chinese\n          english\n        }\n        colorNm {\n          code\n          chinese\n          english\n        }\n      }\n    }\n    date\n    venueCode\n  }\n\n  simulcastHorse(ids: $ids, raceNumber: $raceNumber, meetingDate: $meetingDate, venCode: $venueCode) {\n    id\n    brandNumber\n    earings\n    performanceStats {\n      type\n      firstPlace\n      secondPlace\n      thirdPlace\n      totalRun\n      ssn\n    } \n  }\n}\n',
-        }
-        
-        
-        try:
-            response = requests.post('https://info.cld.hkjc.com/graphql/base/', headers=headers, json=json_data)
 
-            if response.status_code == 200:
-                res_json = response.json()
-            # 1. 深入資料層級
-            # 這裡假設 variables 傳入的是特定場次，races 通常會是一個列表
-                data = res_json.get('data', {})
-                st.write('notdata')
-                profile_list = data.get('raceMeetingProfile', [])
-                st.write('notprofile')
-                # 注意：races 是 [ ] 列表，所以這裡不能接著 .get('runners')
-                age_data = []
-                for profile in profile_list:
-                    # 現在的 profile 是字典了，可以使用 .get()
-                    races_list = profile.get('races', [])
-                    
-                    for race in races_list:
-                        runners = race.get('runners', [])
-                        
-                        for runner in runners:
-                            # 模仿你的邏輯：抓取 編號、馬名、馬齡
-                            horse_info = runner.get('horse', {})
-                            
-                            age_data.append({
-                                "編號": str(runner.get('no', '')),
-                                "馬名": horse_info.get('name_ch', ''),
-                                "馬齡": str(runner.get('age', ''))
-                            })
-                    
-                    # 返回 DataFrame 並設定編號為索引
-                    return pd.DataFrame(age_data).set_index("編號")
-        except Exception as e:
-            st.error(f"解析發生錯誤: {e}")
 
 def save_odds_data(time_now,odds):
   for method in methodlist:
@@ -1751,6 +1687,86 @@ def fetch_race_card(date_str, venue):
         st.error(e)
     return {}
 
+def fetch_race_card_oversea():
+        date_str = str(date_val).replace('-', '')
+        headers = {
+            'accept': '*/*',
+            'accept-language': 'en-us,en;q=0.9',
+            'content-type': 'application/json',
+            'origin': 'https://racing.hkjc.com',
+            'priority': 'u=1, i',
+            'referer': 'https://racing.hkjc.com/',
+            'sec-ch-ua': '"Not(A:Brand";v="8", "Chromium";v="144", "Google Chrome";v="144"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+            'sec-fetch-dest': 'empty',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'same-site',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36',
+        }
+        
+        json_data = {
+            'variables': {
+                'date': str(date_val),
+                'venueCode': str(place_val),
+                'type': 'LIEF_TIME',
+                'meetingDate': date_str,
+                'raceNumber': str(race_no),
+                'venCode': str(place_val),
+            },
+            'query': '\nquery RaceCardProfile($date: String, $venueCode: String, $type: STStatType, $ids: [String!], $raceNumber: String, $meetingDate: String) {\n  raceMeetingProfile(date: $date, venueCode: $venueCode) {\n    totalNumberOfRace\n    status\n    pmPools {\n      leg {\n        races\n      }\n      status\n      oddsType\n    }\n    races {\n      id\n      no\n      status\n      postTime\n      raceName_en\n      raceName_ch\n      raceResults {\n        status\n      }\n      countryCodeNm {\n        code\n        english\n        chinese\n      }\n      distance\n      raceCourse {\n        code\n        description_en\n        description_ch\n      }\n      raceTrack {\n        code\n        description_en\n        description_ch\n      }\n      raceType_en\n      raceType_ch\n      raceClass_en\n      raceClass_ch\n      country_en\n      country_ch\n      winningMargin {\n        seqNo\n        lbw\n      }\n      go_en\n      go_ch\n      remarks {\n        name_en\n        name_ch\n        seqNo\n      }\n      runners {\n        horse {\n          name_en\n          name_ch\n          id\n        }\n        status\n        color\n        no\n        handicapWeight\n        jockey {\n          code\n          name_en\n          name_ch\n        }\n        trainer {\n          code\n          name_en\n          name_ch\n        }\n        id\n        last6run\n        internationalRating\n        currentRating \n        sire\n        sexNm {\n          chinese\n          english\n          code\n        }\n        age\n        barrierDrawNumber\n        gearInfo\n        stat(type: $type) {\n          statType\n          numStarts\n          numFirst\n          numSecond\n          numThird\n        }\n        damNm {\n          code\n          chinese\n          english\n        }\n        sireOfDamNm {\n          code\n          chinese\n          english\n        }\n        ownerNm {\n          code\n          chinese\n          english\n        }\n        colorNm {\n          code\n          chinese\n          english\n        }\n      }\n    }\n    date\n    venueCode\n  }\n\n  simulcastHorse(ids: $ids, raceNumber: $raceNumber, meetingDate: $meetingDate, venCode: $venueCode) {\n    id\n    brandNumber\n    earings\n    performanceStats {\n      type\n      firstPlace\n      secondPlace\n      thirdPlace\n      totalRun\n      ssn\n    } \n  }\n}\n',
+        }
+        
+        
+        try:
+            response = requests.post('https://info.cld.hkjc.com/graphql/base/', headers=headers, json=json_data)
+
+            if response.status_code == 200:
+                res_json = response.json()
+            # 1. 深入資料層級
+            # 這裡假設 variables 傳入的是特定場次，races 通常會是一個列表
+                data = res_json.get('data', {})
+                profile_list = data.get('raceMeetingProfile', [])
+                # 注意：races 是 [ ] 列表，所以這裡不能接著 .get('runners')
+                data_list = []
+                for profile in profile_list:
+                    # 現在的 profile 是字典了，可以使用 .get()
+                    races_list = profile.get('races', [])
+                    
+                    for race in races_list:
+                        runners = race.get('runners', [])
+                        
+                        for r in runners:
+                            # 模仿你的邏輯：抓取 編號、馬名、馬齡
+                            h = r.get('horse', {})
+                            rating_val = int(r.get('currentRating')) if r.get('currentRating') else 0
+                            draw_val = int(r.get('barrierDrawNumber')) if r.get('barrierDrawNumber') else 0
+                            weight_val = int(r.get('handicapWeight')) if r.get('handicapWeight') else 0
+                            data_list.append({
+                                "馬號": str(r.get('no', '')),
+                                "馬名": h.get('name_ch', ''),
+                                "馬齡": str(r.get('age', '')),
+                                "騎師": r['jockey']['name_ch'] if r.get('jockey') else '',
+                                "練馬師": r['trainer']['name_ch'] if r.get('trainer') else '',
+                                "近績": r.get('last6run', ''),
+                                "評分": rating_val,
+                                "排位": draw_val,
+                                "負磅": weight_val
+                            })
+                        df = pd.DataFrame(data_list)
+                        if not df.empty:
+                            # 將馬號轉換為數字並排序，確保順序正確
+                            df['馬號_int'] = pd.to_numeric(df['馬號'], errors='coerce')
+                            df = df.sort_values("馬號_int").drop(columns=['馬號_int']).set_index("馬號")
+                        # Post Time
+                        pt_str = race.get("postTime")
+                        pt = datetime.fromisoformat(pt_str) if pt_str else None
+
+                        race_info[r_no] = {"df": df, "post_time": pt}
+                    # 返回 DataFrame 並設定編號為索引
+                return race_info
+        except Exception as e:
+            st.error(f"解析發生錯誤: {e}")
 
 def parse_form_score(last6run_str):
     """
