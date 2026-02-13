@@ -1627,7 +1627,7 @@ def fetch_race_card(date_str, venue):
         "date": date_str,
         "venueCode": venue,
         "type": "LIEF_TIME",
-        "meetingDate": data_str.replace("-", ""),
+        "meetingDate": date_str.replace("-", ""),
         "raceNumber": "1",
         "venCode": venue,
         "ids": [] # Add horse IDs if specific simulcast data is needed
