@@ -589,9 +589,14 @@ def fetch_horse_age_only(date_val, place_val, race_no):
                 res_json = response.json()
             # 1. 深入資料層級
             # 這裡假設 variables 傳入的是特定場次，races 通常會是一個列表
-                races_list = res_json.get('data', {}).get('raceMeetingProfile', {}).get('races', [])
-                
-                all_horses = []
+                data = res_json.get('data', {})
+                st.write('notdata')
+                profile = data.get('raceMeetingProfile', {})
+                st.write('notprofile')
+                # 注意：races 是 [ ] 列表，所以這裡不能接著 .get('runners')
+                races_list = profile.get('races', [])
+                st.write('notraces')
+                age_data = []
                 
                 for race in races_list:
                     # 現在的 race 是字典 { } 了，所以可以用 .get()
