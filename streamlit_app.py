@@ -527,12 +527,16 @@ def fetch_horse_age_only(date_val, place_val, race_no):
         base_url = "https://racing.hkjc.com/racing/information/Chinese/racing/RaceCard.aspx?"
         date_str = str(date_val).replace('-', '/')
         url = f"{base_url}RaceDate={date_str}&Racecourse={place_val}&RaceNo={race_no}"
+    else:
+        date_str = str(date_val).replace('-', '')
+        url = f"https://racing.hkjc.com/zh-hk/overseas/race-card?RaceDate=&{date_str}&Racecourse={place_val}&RaceNo={race_no}"
         
         try:
             # 使用同步 requests 取得網頁
             response = requests.get(url, timeout=20)
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, 'html.parser')
+                st.write(soup)
                 # 這是馬會排位表每行馬匹數據的 class
                 table_rows = soup.find_all('tr', class_='f_tac f_fs13')
                 
