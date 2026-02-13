@@ -594,18 +594,19 @@ def fetch_horse_age_only(date_val, place_val, race_no):
                 all_horses = []
                 
                 for race in races_list:
-                    race_no = race.get('no') # 這是第幾場
+                    # 現在的 race 是字典 { } 了，所以可以用 .get()
                     runners = race.get('runners', [])
                     
                     for runner in runners:
-                        # 模仿你原本的判斷邏輯
-                        # 在 JSON 中，我們直接確認 age 鍵是否存在
-                        if "age" in runner:
-                            age_data.append({
-                                "編號": str(runner.get('no', '')),               # 相當於 tds[0]
-                                "馬名": runner.get('horse', {}).get('name_ch', ''), # 相當於 tds[3]
-                                "馬齡": str(runner.get('age', ''))               # 相當於 tds[16]
-                            })
+                        # runner 也是字典 { }，可以用 .get()
+                        # 模仿你的邏輯
+                        horse_info = runner.get('horse', {}) 
+                        
+                        age_data.append({
+                            "編號": str(runner.get('no', '')),
+                            "馬名": horse_info.get('name_ch', ''), # 從 horse 字典裡 get
+                            "馬齡": str(runner.get('age', ''))
+                        })
                     
                     # 返回 DataFrame 並設定編號為索引
                     return pd.DataFrame(age_data).set_index("編號")
