@@ -1621,7 +1621,7 @@ def fetch_race_card(date_str, venue):
       }
       """
   }
-    payload_oversea = {
+  payload_oversea = {
     "operationName": "RaceCardProfile",
     "variables": {
         "date": date_str,
@@ -1716,7 +1716,7 @@ def fetch_race_card(date_str, venue):
       }
     }
     """
-}
+    }
     try:
         if venue in ['ST','HV']:
             response = requests.post(url, headers=headers, json=payload, timeout=10)
