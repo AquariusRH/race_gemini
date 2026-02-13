@@ -563,7 +563,7 @@ def fetch_horse_age_only(date_val, place_val, race_no):
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, 'html.parser')
                 tbody = soup.find('tbody', id='race_card_table_body')
-
+                st.write(tbody)
                 if tbody:
                     # 2. 抓取所有行
                     table_rows = tbody.find_all('tr', class_=lambda x: x and 'MuiTableRow-root' in x)
