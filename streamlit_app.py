@@ -1687,7 +1687,7 @@ def fetch_race_card(date_str, venue):
         st.error(e)
     return {}
 
-def fetch_race_card_oversea(date_val, place_val,race_no):
+def fetch_race_card_oversea(date_val, place_val):
         date_str = str(date_val).replace('-', '')
         headers = {
             'accept': '*/*',
@@ -1711,7 +1711,7 @@ def fetch_race_card_oversea(date_val, place_val,race_no):
                 'venueCode': str(place_val),
                 'type': 'LIEF_TIME',
                 'meetingDate': date_str,
-                'raceNumber': str(race_no),
+                'raceNumber': '1',
                 'venCode': str(place_val),
             },
             'query': '\nquery RaceCardProfile($date: String, $venueCode: String, $type: STStatType, $ids: [String!], $raceNumber: String, $meetingDate: String) {\n  raceMeetingProfile(date: $date, venueCode: $venueCode) {\n    totalNumberOfRace\n    status\n    pmPools {\n      leg {\n        races\n      }\n      status\n      oddsType\n    }\n    races {\n      id\n      no\n      status\n      postTime\n      raceName_en\n      raceName_ch\n      raceResults {\n        status\n      }\n      countryCodeNm {\n        code\n        english\n        chinese\n      }\n      distance\n      raceCourse {\n        code\n        description_en\n        description_ch\n      }\n      raceTrack {\n        code\n        description_en\n        description_ch\n      }\n      raceType_en\n      raceType_ch\n      raceClass_en\n      raceClass_ch\n      country_en\n      country_ch\n      winningMargin {\n        seqNo\n        lbw\n      }\n      go_en\n      go_ch\n      remarks {\n        name_en\n        name_ch\n        seqNo\n      }\n      runners {\n        horse {\n          name_en\n          name_ch\n          id\n        }\n        status\n        color\n        no\n        handicapWeight\n        jockey {\n          code\n          name_en\n          name_ch\n        }\n        trainer {\n          code\n          name_en\n          name_ch\n        }\n        id\n        last6run\n        internationalRating\n        currentRating \n        sire\n        sexNm {\n          chinese\n          english\n          code\n        }\n        age\n        barrierDrawNumber\n        gearInfo\n        stat(type: $type) {\n          statType\n          numStarts\n          numFirst\n          numSecond\n          numThird\n        }\n        damNm {\n          code\n          chinese\n          english\n        }\n        sireOfDamNm {\n          code\n          chinese\n          english\n        }\n        ownerNm {\n          code\n          chinese\n          english\n        }\n        colorNm {\n          code\n          chinese\n          english\n        }\n      }\n    }\n    date\n    venueCode\n  }\n\n  simulcastHorse(ids: $ids, raceNumber: $raceNumber, meetingDate: $meetingDate, venCode: $venueCode) {\n    id\n    brandNumber\n    earings\n    performanceStats {\n      type\n      firstPlace\n      secondPlace\n      thirdPlace\n      totalRun\n      ssn\n    } \n  }\n}\n',
@@ -2130,7 +2130,7 @@ if not st.session_state.api_called:
         if place in ["ST","HV"]:
             race_card_data = fetch_race_card(date_str, place)
         else:
-            race_card_data = fetch_race_card_oversea(date_str, place,race_no)
+            race_card_data = fetch_race_card_oversea(date_str, place)
 
         if race_card_data:
             st.session_state.race_dataframes = {k: v['df'] for k,v in race_card_data.items()}
