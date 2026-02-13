@@ -539,12 +539,16 @@ def fetch_horse_age_only(date_val, place_val, race_no):
                 
                 age_data = []
                 for row in table_rows:
-                    tds = row.find_all('td')
-                    if tds[16]:  # 確保索引 16 (馬齡) 存在
+                    tds = row.find_all('td')              
+                    if len(tds) > 5:
+                        horse_no = tds[0].get_text(strip=True)
+                        horse_name = tds[3].get_text(strip=True)
+                        horse_age = tds[5].get_text(strip=True)
+                        
                         age_data.append({
-                            "編號": tds[0].text.strip(),
-                            "馬名": tds[3].text.strip(),
-                            "馬齡": tds[16].text.strip()
+                            "編號": horse_no,
+                            "馬名": horse_name,
+                            "馬齡": horse_age
                         })
                 
                 # 返回 DataFrame 並設定編號為索引
