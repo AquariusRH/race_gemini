@@ -1621,154 +1621,7 @@ def fetch_race_card(date_str, venue):
       }
       """
   }
-    payload_oversea = {
-    "operationName": "RaceCardProfile",
-    "variables": {
-        "date": date_str,
-        "venueCode": venue,
-        "type": "LIEF_TIME",
-        "meetingDate": date_str.replace("-", ""),
-        "raceNumber": "1",
-        "venCode": venue,
-        "ids": []  # This key must exist as an empty list to avoid a 400 error
-    },
-    "query": """
-query RaceCardProfile($date: String, $venueCode: String, $type: STStatType, $ids: [String!], $raceNumber: String, $meetingDate: String) {
-  raceMeetingProfile(date: $date, venueCode: $venueCode) {
-    totalNumberOfRace
-    status
-    pmPools {
-      leg {
-        races
-      }
-      status
-      oddsType
-    }
-    races {
-      id
-      no
-      status
-      postTime
-      raceName_en
-      raceName_ch
-      raceResults {
-        status
-      }
-      countryCodeNm {
-        code
-        english
-        chinese
-      }
-      distance
-      raceCourse {
-        code
-        description_en
-        description_ch
-      }
-      raceTrack {
-        code
-        description_en
-        description_ch
-      }
-      raceType_en
-      raceType_ch
-      raceClass_en
-      raceClass_ch
-      country_en
-      country_ch
-      winningMargin {
-        seqNo
-        lbw
-      }
-      go_en
-      go_ch
-      remarks {
-        name_en
-        name_ch
-        seqNo
-      }
-      runners {
-        horse {
-          name_en
-          name_ch
-          id
-        }
-        status
-        color
-        no
-        handicapWeight
-        jockey {
-          code
-          name_en
-          name_ch
-        }
-        trainer {
-          code
-          name_en
-          name_ch
-        }
-        id
-        last6run
-        internationalRating
-        currentRating 
-        sire
-        sexNm {
-          chinese
-          english
-          code
-        }
-        age
-        barrierDrawNumber
-        gearInfo
-        stat(type: $type) {
-          statType
-          numStarts
-          numFirst
-          numSecond
-          numThird
-        }
-        damNm {
-          code
-          chinese
-          english
-        }
-        sireOfDamNm {
-          code
-          chinese
-          english
-        }
-        ownerNm {
-          code
-          chinese
-          english
-        }
-        colorNm {
-          code
-          chinese
-          english
-        }
-      }
-    }
-    date
-    venueCode
-  }
-
-  simulcastHorse(ids: $ids, raceNumber: $raceNumber, meetingDate: $meetingDate, venCode: $venueCode) {
-    id
-    brandNumber
-    earings
-    performanceStats {
-      type
-      firstPlace
-      secondPlace
-      thirdPlace
-      totalRun
-      ssn
-    } 
-  }
-}
-"""
-}
+    
     try:
         if venue in ['ST','HV']:
             response = requests.post(url, headers=headers, json=payload, timeout=10)
@@ -1792,20 +1645,17 @@ query RaceCardProfile($date: String, $venueCode: String, $type: STStatType, $ids
         
             json_data = {
                 'variables': {
-                    'date': '2026-02-14',
-                    'venueCode': 'S1',
+                    'date': date_str,
+                    'venueCode': venue,
                     'type': 'LIEF_TIME',
-                    'meetingDate': '20260214',
+                    'meetingDate': date_str.replace('-',''),
                     'raceNumber': '1',
-                    'venCode': 'S1',
+                    'venCode': venue,
                 },
                 'query': '\nquery RaceCardProfile($date: String, $venueCode: String, $type: STStatType, $ids: [String!], $raceNumber: String, $meetingDate: String) {\n  raceMeetingProfile(date: $date, venueCode: $venueCode) {\n    totalNumberOfRace\n    status\n    pmPools {\n      leg {\n        races\n      }\n      status\n      oddsType\n    }\n    races {\n      id\n      no\n      status\n      postTime\n      raceName_en\n      raceName_ch\n      raceResults {\n        status\n      }\n      countryCodeNm {\n        code\n        english\n        chinese\n      }\n      distance\n      raceCourse {\n        code\n        description_en\n        description_ch\n      }\n      raceTrack {\n        code\n        description_en\n        description_ch\n      }\n      raceType_en\n      raceType_ch\n      raceClass_en\n      raceClass_ch\n      country_en\n      country_ch\n      winningMargin {\n        seqNo\n        lbw\n      }\n      go_en\n      go_ch\n      remarks {\n        name_en\n        name_ch\n        seqNo\n      }\n      runners {\n        horse {\n          name_en\n          name_ch\n          id\n        }\n        status\n        color\n        no\n        handicapWeight\n        jockey {\n          code\n          name_en\n          name_ch\n        }\n        trainer {\n          code\n          name_en\n          name_ch\n        }\n        id\n        last6run\n        internationalRating\n        currentRating \n        sire\n        sexNm {\n          chinese\n          english\n          code\n        }\n        age\n        barrierDrawNumber\n        gearInfo\n        stat(type: $type) {\n          statType\n          numStarts\n          numFirst\n          numSecond\n          numThird\n        }\n        damNm {\n          code\n          chinese\n          english\n        }\n        sireOfDamNm {\n          code\n          chinese\n          english\n        }\n        ownerNm {\n          code\n          chinese\n          english\n        }\n        colorNm {\n          code\n          chinese\n          english\n        }\n      }\n    }\n    date\n    venueCode\n  }\n\n  simulcastHorse(ids: $ids, raceNumber: $raceNumber, meetingDate: $meetingDate, venCode: $venueCode) {\n    id\n    brandNumber\n    earings\n    performanceStats {\n      type\n      firstPlace\n      secondPlace\n      thirdPlace\n      totalRun\n      ssn\n    } \n  }\n}\n',
             }
             
-            response = requests.post('https://info.cld.hkjc.com/graphql/base/', headers=headers, json=json_data)
-            st.write(response.json())
-            #st.write(payload_oversea)
-            #response = requests.post(url, headers=headers, json=payload_oversea, timeout=10)
+            response = requests.post(url, headers=headers, json=json_data)
         if response.status_code == 200:
             data = response.json()
             races = data.get('data', {}).get('raceMeetings', [])
