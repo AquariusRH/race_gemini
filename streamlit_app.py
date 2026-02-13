@@ -1624,70 +1624,149 @@ def fetch_race_card(date_str, venue):
     payload_oversea = {
     "operationName": "RaceCardProfile",
     "variables": {
-        "date": date_str,                        # "2026-02-14"
-        "venueCode": venue,                      # "S1"
-        "type": "LIEF_TIME",                     # Lifetime stats
-        "meetingDate": date_str.replace("-", ""), # "20260214"
+        "date": date_str,
+        "venueCode": venue,
+        "type": "LIEF_TIME",
+        "meetingDate": date_str.replace("-", ""),
         "raceNumber": "1",
-        "venCode": venue                          # Leaving this empty is fine
+        "venCode": venue 
     },
     "query": """
-    query RaceCardProfile($date: String, $venueCode: String, $type: STStatType, $ids: [String!], $raceNumber: String, $meetingDate: String) {
-      raceMeetingProfile(date: $date, venueCode: $venueCode) {
-        totalNumberOfRace
-        status
-        pmPools {
-          leg { races }
-          status
-          oddsType
-        }
-        races {
-          id
-          no
-          status
-          postTime
-          raceName_en
-          raceName_ch
-          distance
-          raceCourse { description_en }
-          raceTrack { description_en }
-          go_en
-          runners {
-            no
-            horse { 
-              name_en 
-              name_ch 
-              id 
-            }
-            jockey { name_en name_ch }
-            trainer { name_en name_ch }
-            barrierDrawNumber
-            handicapWeight
-            last6run
-            stat(type: $type) {
-              numStarts
-              numFirst
-              numSecond
-              numThird
-            }
-            sire
-            damNm { english }
-            ownerNm { english }
-          }
-        }
+query RaceCardProfile($date: String, $venueCode: String, $type: STStatType, $ids: [String!], $raceNumber: String, $meetingDate: String) {
+  raceMeetingProfile(date: $date, venueCode: $venueCode) {
+    totalNumberOfRace
+    status
+    pmPools {
+      leg {
+        races
       }
-      simulcastHorse(ids: $ids, raceNumber: $raceNumber, meetingDate: $meetingDate, venCode: $venueCode) {
+      status
+      oddsType
+    }
+    races {
+      id
+      no
+      status
+      postTime
+      raceName_en
+      raceName_ch
+      raceResults {
+        status
+      }
+      countryCodeNm {
+        code
+        english
+        chinese
+      }
+      distance
+      raceCourse {
+        code
+        description_en
+        description_ch
+      }
+      raceTrack {
+        code
+        description_en
+        description_ch
+      }
+      raceType_en
+      raceType_ch
+      raceClass_en
+      raceClass_ch
+      country_en
+      country_ch
+      winningMargin {
+        seqNo
+        lbw
+      }
+      go_en
+      go_ch
+      remarks {
+        name_en
+        name_ch
+        seqNo
+      }
+      runners {
+        horse {
+          name_en
+          name_ch
+          id
+        }
+        status
+        color
+        no
+        handicapWeight
+        jockey {
+          code
+          name_en
+          name_ch
+        }
+        trainer {
+          code
+          name_en
+          name_ch
+        }
         id
-        brandNumber
-        performanceStats {
-          totalRun
-          firstPlace
-          secondPlace
-          thirdPlace
+        last6run
+        internationalRating
+        currentRating 
+        sire
+        sexNm {
+          chinese
+          english
+          code
+        }
+        age
+        barrierDrawNumber
+        gearInfo
+        stat(type: $type) {
+          statType
+          numStarts
+          numFirst
+          numSecond
+          numThird
+        }
+        damNm {
+          code
+          chinese
+          english
+        }
+        sireOfDamNm {
+          code
+          chinese
+          english
+        }
+        ownerNm {
+          code
+          chinese
+          english
+        }
+        colorNm {
+          code
+          chinese
+          english
         }
       }
     }
-    """
+    date
+    venueCode
+  }
+
+  simulcastHorse(ids: $ids, raceNumber: $raceNumber, meetingDate: $meetingDate, venCode: $venueCode) {
+    id
+    brandNumber
+    earings
+    performanceStats {
+      type
+      firstPlace
+      secondPlace
+      thirdPlace
+      totalRun
+      ssn
+    } 
+  }
+}
+"""
 }
     try:
         if venue in ['ST','HV']:
