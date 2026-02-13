@@ -1631,9 +1631,7 @@ def fetch_race_card(date_str, venue):
         "raceNumber": "1",
         "venCode": venue 
     },
-    "query": """
-query RaceCardProfile($date: String, $venueCode: String, $type: STStatType, $ids: [String!], $raceNumber: String, $meetingDate: String) {
-  raceMeetingProfile(date: $date, venueCode: $venueCode) {
+    "query": """ {
     totalNumberOfRace
     status
     pmPools {
