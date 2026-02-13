@@ -1687,7 +1687,7 @@ def fetch_race_card(date_str, venue):
         st.error(e)
     return {}
 
-def fetch_race_card_oversea(date_str, place,race_no):
+def fetch_race_card_oversea(date_val, place_val,race_no):
         date_str = str(date_val).replace('-', '')
         headers = {
             'accept': '*/*',
