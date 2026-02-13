@@ -1621,8 +1621,107 @@ def fetch_race_card(date_str, venue):
       }
       """
   }
+    payload_oversea = {
+    "operationName": "RaceCardProfile",
+    "variables": {
+        "date": date_str,
+        "venueCode": venue,
+        "type": "LIEF_TIME",
+        "meetingDate": data_str.replace("-", ""),
+        "raceNumber": "1",
+        "venCode": venue,
+        "ids": [] # Add horse IDs if specific simulcast data is needed
+    },
+    "query": """
+    fragment runnerDetails on Runner {
+      id
+      no
+      status
+      color
+      handicapWeight
+      barrierDrawNumber
+      age
+      sexNm { chinese english code }
+      last6run
+      internationalRating
+      currentRating
+      gearInfo
+      sire
+      horse { name_en name_ch id }
+      jockey { code name_en name_ch }
+      trainer { code name_en name_ch }
+      stat(type: $type) {
+        statType
+        numStarts
+        numFirst
+        numSecond
+        numThird
+      }
+      damNm { english chinese }
+      ownerNm { english chinese }
+    }
+
+    query RaceCardProfile(
+      $date: String, 
+      $venueCode: String, 
+      $type: STStatType, 
+      $ids: [String!], 
+      $raceNumber: String, 
+      $meetingDate: String
+    ) {
+      raceMeetingProfile(date: $date, venueCode: $venueCode) {
+        date
+        venueCode
+        status
+        totalNumberOfRace
+        pmPools {
+          oddsType
+          status
+          leg { races }
+        }
+        races {
+          id
+          no
+          status
+          postTime
+          raceName_en
+          raceName_ch
+          distance
+          go_en
+          raceClass_en
+          raceCourse { description_en }
+          raceTrack { description_en }
+          runners {
+            ...runnerDetails
+          }
+        }
+      }
+      
+      simulcastHorse(
+        ids: $ids, 
+        raceNumber: $raceNumber, 
+        meetingDate: $meetingDate, 
+        venCode: $venueCode
+      ) {
+        id
+        brandNumber
+        performanceStats {
+          type
+          totalRun
+          firstPlace
+          secondPlace
+          thirdPlace
+          ssn
+        }
+      }
+    }
+    """
+}
     try:
-        response = requests.post(url, headers=headers, json=payload, timeout=10)
+        if venue in ['ST','HV']:
+            response = requests.post(url, headers=headers, json=payload, timeout=10)
+        else:
+            response = requests.post(url, headers=headers, json=payload_oversea, timeout=10)
         if response.status_code == 200:
             data = response.json()
             races = data.get('data', {}).get('raceMeetings', [])
