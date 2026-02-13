@@ -1692,108 +1692,7 @@ def fetch_race_card(date_str, venue):
         st.error(e)
     return {}
 
-def fetch_race_card_oversea(date_str, venue):
-    """
-    Fetch overseas (simulcast) race card using the whitelisted RaceCardProfile query.
-    """
-    url = 'https://info.cld.hkjc.com/graphql/base/'
-    headers = {
-        'accept': '*/*',
-        'accept-language': 'en-us,en;q=0.9',
-        'content-type': 'application/json',
-        'origin': 'https://racing.hkjc.com',
-        'priority': 'u=1, i',
-        'referer': 'https://racing.hkjc.com/',
-        'sec-ch-ua': '"Not(A:Brand";v="8", "Chromium";v="144", "Google Chrome";v="144"',
-        'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': '"Windows"',
-        'sec-fetch-dest': 'empty',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-site': 'same-site',
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36',
-    }
-    
-    json_data = {
-        'variables': {
-            'date': '2026-02-14',
-            'venueCode': 'S1',
-            'type': 'LIEF_TIME',
-            'meetingDate': '20260214',
-            'raceNumber': '1',
-            'venCode': 'S1',
-        },
-        'query': '\nquery RaceCardProfile($date: String, $venueCode: String, $type: STStatType, $ids: [String!], $raceNumber: String, $meetingDate: String) {\n  raceMeetingProfile(date: $date, venueCode: $venueCode) {\n    totalNumberOfRace\n    status\n    pmPools {\n      leg {\n        races\n      }\n      status\n      oddsType\n    }\n    races {\n      id\n      no\n      status\n      postTime\n      raceName_en\n      raceName_ch\n      raceResults {\n        status\n      }\n      countryCodeNm {\n        code\n        english\n        chinese\n      }\n      distance\n      raceCourse {\n        code\n        description_en\n        description_ch\n      }\n      raceTrack {\n        code\n        description_en\n        description_ch\n      }\n      raceType_en\n      raceType_ch\n      raceClass_en\n      raceClass_ch\n      country_en\n      country_ch\n      winningMargin {\n        seqNo\n        lbw\n      }\n      go_en\n      go_ch\n      remarks {\n        name_en\n        name_ch\n        seqNo\n      }\n      runners {\n        horse {\n          name_en\n          name_ch\n          id\n        }\n        status\n        color\n        no\n        handicapWeight\n        jockey {\n          code\n          name_en\n          name_ch\n        }\n        trainer {\n          code\n          name_en\n          name_ch\n        }\n        id\n        last6run\n        internationalRating\n        currentRating \n        sire\n        sexNm {\n          chinese\n          english\n          code\n        }\n        age\n        barrierDrawNumber\n        gearInfo\n        stat(type: $type) {\n          statType\n          numStarts\n          numFirst\n          numSecond\n          numThird\n        }\n        damNm {\n          code\n          chinese\n          english\n        }\n        sireOfDamNm {\n          code\n          chinese\n          english\n        }\n        ownerNm {\n          code\n          chinese\n          english\n        }\n        colorNm {\n          code\n          chinese\n          english\n        }\n      }\n    }\n    date\n    venueCode\n  }\n\n  simulcastHorse(ids: $ids, raceNumber: $raceNumber, meetingDate: $meetingDate, venCode: $venueCode) {\n    id\n    brandNumber\n    earings\n    performanceStats {\n      type\n      firstPlace\n      secondPlace\n      thirdPlace\n      totalRun\n      ssn\n    } \n  }\n}\n',
-    }
 
-    try:
-        response = requests.post('https://info.cld.hkjc.com/graphql/base/', headers=headers, json=json_data)
-        
-        if response.status_code == 200:
-            res_json = response.json()
-            st.write(res_json)
-            if "errors" in res_json:
-                print(f"GraphQL Error: {res_json['errors'][0]['message']}")
-                return {}
-
-            # Navigation path: data -> raceMeetingProfile -> races
-            profile = res_json.get('data', {}).get('raceMeetingProfile')
-            if not profile:
-                return {}
-
-            race_info = {}
-            races = profile.get('races', [])
-
-            for race in races:
-                r_no = str(race['no'])
-                runners = race.get('runners', [])
-
-                # 1. Filter standby horses
-                filtered_runners = [r for r in runners if not r.get('standbyNo')]
-
-                data_list = []
-                for r in filtered_runners:
-                    # 2. Robust numeric conversion
-                    def safe_int(val):
-                        try:
-                            return int(val) if val else 0
-                        except:
-                            return 0
-
-                    data_list.append({
-                        "馬號": r.get('no'),
-                        "馬名": r.get('horse', {}).get('name_ch', '未知'),
-                        "騎師": r.get('jockey', {}).get('name_ch', '') if r.get('jockey') else '',
-                        "練馬師": r.get('trainer', {}).get('name_ch', '') if r.get('trainer') else '',
-                        "近績": r.get('last6run', ''),
-                        "評分": safe_int(r.get('currentRating')),
-                        "排位": safe_int(r.get('barrierDrawNumber')),
-                        "負磅": safe_int(r.get('handicapWeight')),
-                        "馬齡": safe_int(r.get('age'))
-                    })
-
-                # 3. Create DataFrame and Sort
-                df = pd.DataFrame(data_list)
-                if not df.empty:
-                    df['馬號_int'] = pd.to_numeric(df['馬號'], errors='coerce')
-                    df = df.sort_values("馬號_int").drop(columns=['馬號_int']).set_index("馬號")
-
-                # 4. Handle Post Time
-                pt_str = race.get("postTime")
-                pt = None
-                if pt_str:
-                    try:
-                        pt = datetime.fromisoformat(pt_str.replace('Z', '+00:00'))
-                    except:
-                        pt = pt_str
-
-                race_info[r_no] = {"df": df, "post_time": pt}
-
-            return race_info
-
-    except Exception as e:
-        print(f"Fetch Error: {e}")
-    
-    return {}
 def parse_form_score(last6run_str):
     """
     將 '1/2/4/11/2' 這樣的字串轉換為實力分數 (0-100)
@@ -2144,10 +2043,8 @@ def calculate_smart_score_static(race_no):
 date_str = str(Date)
 if not st.session_state.api_called:
     with st.spinner("載入賽事資料中..."):
-        if venue in ['ST','HV']:
-            race_card_data = fetch_race_card(date_str, place)
-        else:
-            race_card_data = fetch_race_card_oversea(date_str,place)
+        race_card_data = fetch_race_card(date_str, place)
+
         if race_card_data:
             st.session_state.race_dataframes = {k: v['df'] for k,v in race_card_data.items()}
             st.session_state.post_time_dict = {k: v['post_time'] for k,v in race_card_data.items()}
