@@ -1629,8 +1629,7 @@ def fetch_race_card(date_str, venue):
         "type": "LIEF_TIME",
         "meetingDate": date_str.replace("-", ""),
         "raceNumber": "1",
-        "venCode": venue,
-        "ids": [] # Add horse IDs if specific simulcast data is needed
+        "venCode": venue
     },
     "query": """
     fragment runnerDetails on Runner {
