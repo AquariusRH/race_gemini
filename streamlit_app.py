@@ -1727,12 +1727,12 @@ def fetch_race_card_oversea(date_val, place_val,race_no):
             # 這裡假設 variables 傳入的是特定場次，races 通常會是一個列表
                 data = res_json.get('data', {})
                 profile_list = data.get('raceMeetingProfile', [])
+                race_info = {}
                 # 注意：races 是 [ ] 列表，所以這裡不能接著 .get('runners')
-                data_list = []
                 for profile in profile_list:
                     # 現在的 profile 是字典了，可以使用 .get()
                     races_list = profile.get('races', [])
-                    
+                    data_list = []
                     for race in races_list:
                         runners = race.get('runners', [])
                         
