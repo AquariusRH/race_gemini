@@ -560,7 +560,7 @@ def fetch_horse_age_only(date_val, place_val, race_no):
             response = requests.get(url, timeout=20)
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, 'html.parser')
-                
+                st.write(soup)
                 # 這是馬會排位表每行馬匹數據的 class
                 table_rows = soup.find_all('tr', class_='f_tac f_fs13')
                 
