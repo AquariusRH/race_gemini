@@ -2014,11 +2014,20 @@ def calculate_smart_score_static(race_no):
     # 4. 負擔分數 (Burden Score) - 權重 10%
     # 評分與負磅的關係：評分越高負磅越重，負擔越大
     # 簡化：評分最高的馬匹，給予負擔分數較低（因為大家都看好它，但它要負重）
-    static_df['Rating_int'] = pd.to_numeric(static_df['評分'], errors='coerce').fillna(0)
+    static_df['Rating_int'] = pd.to_numeric(static_df['評分'], errors='coerce').fillna(0).astype(float)
+
+    # 2. 計算最大評分
     max_rating = static_df['Rating_int'].max()
     
-    # 評分差異分數 (相對分數)：評分接近最高分者得分較高
-    static_df['RatingDiffScore'] = (static_df['Rating_int'] / max_rating) * 100
+    # 3. 評分差異分數 (相對分數)
+    # 加入條件判斷：如果最高評分大於 0 才進行除法，否則全給 0 分（或 100 分，取決於你的邏輯）
+    if max_rating > 0:
+        static_df['RatingDiffScore'] = (static_df['Rating_int'] / max_rating) * 100
+    else:
+        static_df['RatingDiffScore'] = 0.0
+    
+    # 4. 如果你最後一定要轉換回整數，請再次確保填補可能產生的 inf/nan
+    static_df['RatingDiffScore'] = static_df['RatingDiffScore'].replace([np.inf, -np.inf], 0).fillna(0).astype(int)
     
     # --- 最終加權公式 (完全基於靜態數據) ---
     df = static_df.copy()
