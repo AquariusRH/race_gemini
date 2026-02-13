@@ -1781,19 +1781,49 @@ query RaceCardProfile($date: String, $venueCode: String, $type: STStatType, $ids
             
             # 這是針對 S1 場次最常用的白名單查詢格式
             payload = {
-                "operationName": "RaceCardProfile",
-                "variables": {
-                    "date": "2026-02-14",
-                    "venueCode": "S1",
-                    "type": "LIEF_TIME",
-                    "ids": [], 
-                    "raceNumber": "1",
-                    "meetingDate": "20260214",
-                    "venCode": "S1"
-                },
-                # 注意：這裡的 Query 字串必須極度精確，建議從瀏覽器的 Network Tab 直接 Copy
-                "query": "query RaceCardProfile($date: String, $venueCode: String, $type: STStatType, $ids: [String!], $raceNumber: String, $meetingDate: String) { raceMeetingProfile(date: $date, venueCode: $venueCode) { totalNumberOfRace status races { id no status postTime raceName_en runners { horse { name_en id } no jockey { name_en } trainer { name_en } stat(type: $type) { numStarts numFirst } } } } }"
+            "operationName": "RaceCardProfile",
+            "variables": {
+                "date": "2026-02-14",
+                "venueCode": "S1",
+                "type": "LIEF_TIME"
+                # 移除了 ids, raceNumber, meetingDate，因為下面的 Query 沒用到它們
+            },
+            "query": """
+        query RaceCardProfile($date: String, $venueCode: String, $type: STStatType) {
+          raceMeetingProfile(date: $date, venueCode: $venueCode) {
+            totalNumberOfRace
+            status
+            pmPools {
+              leg { races }
+              status
+              oddsType
             }
+            races {
+              id
+              no
+              status
+              postTime
+              raceName_en
+              raceName_ch
+              distance
+              go_en
+              runners {
+                horse { name_en name_ch id }
+                no
+                jockey { name_en name_ch }
+                trainer { name_en name_ch }
+                stat(type: $type) {
+                  numStarts
+                  numFirst
+                  numSecond
+                  numThird
+                }
+              }
+            }
+          }
+        }
+        """
+        }
             
             response = requests.post(url, headers=headers, json=payload)
             st.write(response.json())
