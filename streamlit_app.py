@@ -594,6 +594,7 @@ def fetch_horse_age_only(date_val, place_val, race_no):
                 profile_list = data.get('raceMeetingProfile', [])
                 st.write('notprofile')
                 # 注意：races 是 [ ] 列表，所以這裡不能接著 .get('runners')
+                age_data = []
                 for profile in profile_list:
                     # 現在的 profile 是字典了，可以使用 .get()
                     races_list = profile.get('races', [])
