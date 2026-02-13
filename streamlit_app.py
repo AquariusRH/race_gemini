@@ -561,7 +561,9 @@ def fetch_horse_age_only(date_val, place_val, race_no):
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, 'html.parser')
                 st.write(soup)
-                return None
+         except Exception as e:
+            st.error(f"獲取馬齡失敗: {e}")
+            return None  
 
 def save_odds_data(time_now,odds):
   for method in methodlist:
