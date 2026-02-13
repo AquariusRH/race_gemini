@@ -553,11 +553,33 @@ def fetch_horse_age_only(date_val, place_val, race_no):
             return None
     else:
         date_str = str(date_val).replace('-', '')
-        url = f"https://racing.hkjc.com/zh-hk/overseas/race-card?RaceDate=&{date_str}&Racecourse={place_val}&RaceNo={race_no}"
-        st.write(url)
+        headers = {
+            'accept': '*/*',
+            'accept-language': 'en-us,en;q=0.9',
+            'content-type': 'application/json',
+            'origin': 'https://racing.hkjc.com',
+            'priority': 'u=1, i',
+            'referer': 'https://racing.hkjc.com/',
+            'sec-ch-ua': '"Not(A:Brand";v="8", "Chromium";v="144", "Google Chrome";v="144"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+            'sec-fetch-dest': 'empty',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'same-site',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36',
+        }
+        
+        json_data = {
+            'variables': {
+                'meetingDate': date_str,
+                'raceNumber': race_no,
+                'venCode': place_val,
+            },
+            'query': '\nquery SimulcastRaceInfo($ids: [String!], $raceNumber: String, $meetingDate: String, $venCode: String) {\n  simulcastHorse(ids: $ids, raceNumber: $raceNumber, meetingDate: $meetingDate, venCode: $venCode) {\n    id\n    horseFormRecord {\n      id\n      date\n      jockey {\n        code\n        name_ch\n        name_en\n      }\n      trainer {\n        name_ch\n        name_en\n      }\n      raceNo\n      placeNo\n      ruPlace\n      venue {\n        code\n        chinese\n        english\n      }\n      track {\n        english\n        chinese\n        code\n      }\n      gear\n      comments {\n        code\n        chinese\n        english\n      }\n      winners{\n        pos\n        name {\n          chinese\n          english\n        }\n        cnty {\n          code\n          chinese\n          english\n        }\n      }\n      med {\n        code\n        chinese\n        english\n      }\n      raceName {\n        code\n        chinese\n        english\n      }\n      course {\n        code\n        chinese\n        english\n      }\n      raceId\n      raceIndex\n      runnerStatus\n      racingComments {\n        name\n        date\n      }\n      winOdds\n      resultIndex\n      horseWeight\n      actualWeight\n      marginOrLBW {\n        code\n        chinese\n        english\n      }\n      season\n      runnerResults {\n        id\n      }\n      racecourse {\n        code\n        chinese\n        english\n      }\n      going {\n        code\n        chinese\n        english\n      }\n      sectionTimeSplits {\n        sectionTime\n        gpSec\n        sectionNo\n      }\n      raceTimeSplits {\n        sectionNo\n        gpSec\n        sectionTime\n      }\n      sectionInfos {\n        sectionNo\n        ruPos\n        sectionTime\n      }\n      barrierDrNo\n      distance\n      finalTimeOfRace\n      raceCountry {\n        code\n        chinese\n        english\n      }\n      cntyShortNm {\n        code\n        chinese\n        english\n      }\n      racecourse {\n        code\n        chinese\n        english\n      }\n      numOfStarters\n      currency {\n        english\n        code\n        chinese\n      }\n      ageCondition {\n        code\n        english\n        chinese\n      } \n      condition {\n        code\n        english\n        chinese\n      }\n      prizeMoney\n      fav\n      placingRemarks\n      className {\n        chinese\n        code\n        english\n      }\n      raceTurn {\n        chinese\n        code\n        english\n      }\n    }\n    brandNumber\n  }\n}\n',
+        }
+        
         try:
-            # 使用同步 requests 取得網頁
-            response = requests.get(url, timeout=20)
+            response = requests.post('https://info.cld.hkjc.com/graphql/base/', headers=headers, json=json_data)
             
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, 'html.parser')
