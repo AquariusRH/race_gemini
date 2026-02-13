@@ -591,7 +591,7 @@ def fetch_horse_age_only(date_val, place_val, race_no):
             # 這裡假設 variables 傳入的是特定場次，races 通常會是一個列表
                 data = res_json.get('data', {})
                 st.write('notdata')
-                profile = data.get('raceMeetingProfile', {})
+                profile_list = data.get('raceMeetingProfile', [])
                 st.write('notprofile')
                 # 注意：races 是 [ ] 列表，所以這裡不能接著 .get('runners')
                 for profile in profile_list:
