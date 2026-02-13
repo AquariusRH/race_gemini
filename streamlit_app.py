@@ -594,24 +594,22 @@ def fetch_horse_age_only(date_val, place_val, race_no):
                 profile = data.get('raceMeetingProfile', {})
                 st.write('notprofile')
                 # 注意：races 是 [ ] 列表，所以這裡不能接著 .get('runners')
-                races_list = profile.get('races', [])
-                st.write('notraces')
-                age_data = []
-                
-                for race in races_list:
-                    # 現在的 race 是字典 { } 了，所以可以用 .get()
-                    runners = race.get('runners', [])
+                for profile in profile_list:
+                    # 現在的 profile 是字典了，可以使用 .get()
+                    races_list = profile.get('races', [])
                     
-                    for runner in runners:
-                        # runner 也是字典 { }，可以用 .get()
-                        # 模仿你的邏輯
-                        horse_info = runner.get('horse', {}) 
+                    for race in races_list:
+                        runners = race.get('runners', [])
                         
-                        age_data.append({
-                            "編號": str(runner.get('no', '')),
-                            "馬名": horse_info.get('name_ch', ''), # 從 horse 字典裡 get
-                            "馬齡": str(runner.get('age', ''))
-                        })
+                        for runner in runners:
+                            # 模仿你的邏輯：抓取 編號、馬名、馬齡
+                            horse_info = runner.get('horse', {})
+                            
+                            age_data.append({
+                                "編號": str(runner.get('no', '')),
+                                "馬名": horse_info.get('name_ch', ''),
+                                "馬齡": str(runner.get('age', ''))
+                            })
                     
                     # 返回 DataFrame 並設定編號為索引
                     return pd.DataFrame(age_data).set_index("編號")
