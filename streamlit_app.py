@@ -533,39 +533,6 @@ def fetch_horse_age_only(date_val, place_val, race_no):
             response = requests.get(url, timeout=20)
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, 'html.parser')
-                
-                # 這是馬會排位表每行馬匹數據的 class
-                table_rows = soup.find_all('tr', class_='f_tac f_fs13')
-                
-                age_data = []
-                for row in table_rows:
-                    tds = row.find_all('td')              
-                    if len(tds) > 5:
-                        horse_no = tds[0].get_text(strip=True)
-                        horse_name = tds[3].get_text(strip=True)
-                        horse_age = tds[5].get_text(strip=True)
-                        
-                        age_data.append({
-                            "編號": horse_no,
-                            "馬名": horse_name,
-                            "馬齡": horse_age
-                        })
-                
-                # 返回 DataFrame 並設定編號為索引
-                return pd.DataFrame(age_data).set_index("編號")
-        except Exception as e:
-            st.error(f"獲取馬齡失敗: {e}")
-            return None  
-    else:
-        date_str = str(date_val).replace('-', '')
-        url = f"https://racing.hkjc.com/zh-hk/overseas/race-card?RaceDate=&{date_str}&Racecourse={place_val}&RaceNo={race_no}"
-        st.write(url)
-        try:
-            # 使用同步 requests 取得網頁
-            response = requests.get(url, timeout=20)
-            
-            if response.status_code == 200:
-                soup = BeautifulSoup(response.text, 'html.parser')
                 st.write(soup)
                 # 這是馬會排位表每行馬匹數據的 class
                 table_rows = soup.find_all('tr', class_='f_tac f_fs13')
@@ -580,6 +547,47 @@ def fetch_horse_age_only(date_val, place_val, race_no):
                             "馬齡": tds[16].text.strip()
                         })
                 
+                # 返回 DataFrame 並設定編號為索引
+                return pd.DataFrame(age_data).set_index("編號")
+        except Exception as e:
+            st.error(f"獲取馬齡失敗: {e}")
+            return None
+    else:
+        date_str = str(date_val).replace('-', '')
+        url = f"https://racing.hkjc.com/zh-hk/overseas/race-card?RaceDate=&{date_str}&Racecourse={place_val}&RaceNo={race_no}"
+        st.write(url)
+        try:
+            # 使用同步 requests 取得網頁
+            response = requests.get(url, timeout=20)
+            
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.text, 'html.parser')
+                tbody = soup.find('tbody', id='race_card_table_body')
+
+                if tbody:
+                    # 2. 抓取所有行
+                    table_rows = tbody.find_all('tr', class_=lambda x: x and 'MuiTableRow-root' in x)
+                    
+                    age_data = []
+                    for row in table_rows:
+                        tds = row.find_all('td')
+                        
+                        # 根據截圖，"6" 是第 6 個 td (index 為 5)
+                        # index 0: 編號 (1)
+                        # index 1: 烙印/往績 (1/1/6/3/7)
+                        # index 3: 馬名
+                        # index 5: 馬齡 (6)
+                        
+                        if len(tds) > 5:
+                            horse_no = tds[0].get_text(strip=True)
+                            horse_name = tds[3].get_text(strip=True)
+                            horse_age = tds[5].get_text(strip=True)
+                            
+                            age_data.append({
+                                "編號": horse_no,
+                                "馬名": horse_name,
+                                "馬齡": horse_age
+                            })
                 # 返回 DataFrame 並設定編號為索引
                 return pd.DataFrame(age_data).set_index("編號")
         except Exception as e:
