@@ -1730,6 +1730,7 @@ def fetch_race_card_oversea(date_str, venue):
         
         if response.status_code == 200:
             res_json = response.json()
+            st.write(res_json)
             if "errors" in res_json:
                 print(f"GraphQL Error: {res_json['errors'][0]['message']}")
                 return {}
