@@ -1621,7 +1621,7 @@ def fetch_race_card(date_str, venue):
       }
       """
   }
-  payload_oversea = {
+    payload_oversea = {
     "operationName": "RaceCardProfile",
     "variables": {
         "date": date_str,
