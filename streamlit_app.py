@@ -1775,57 +1775,34 @@ query RaceCardProfile($date: String, $venueCode: String, $type: STStatType, $ids
         else:
             url = 'https://info.cld.hkjc.com/graphql/base/'
             headers = {
-                'Content-Type': 'application/json',
-                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1'
+            'accept': '*/*',
+            'accept-language': 'en-us,en;q=0.9',
+            'content-type': 'application/json',
+            'origin': 'https://racing.hkjc.com',
+            'priority': 'u=1, i',
+            'referer': 'https://racing.hkjc.com/',
+            'sec-ch-ua': '"Not(A:Brand";v="8", "Chromium";v="144", "Google Chrome";v="144"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+            'sec-fetch-dest': 'empty',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'same-site',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36',
+            }
+        
+            json_data = {
+                'variables': {
+                    'date': '2026-02-14',
+                    'venueCode': 'S1',
+                    'type': 'LIEF_TIME',
+                    'meetingDate': '20260214',
+                    'raceNumber': '1',
+                    'venCode': 'S1',
+                },
+                'query': '\nquery RaceCardProfile($date: String, $venueCode: String, $type: STStatType, $ids: [String!], $raceNumber: String, $meetingDate: String) {\n  raceMeetingProfile(date: $date, venueCode: $venueCode) {\n    totalNumberOfRace\n    status\n    pmPools {\n      leg {\n        races\n      }\n      status\n      oddsType\n    }\n    races {\n      id\n      no\n      status\n      postTime\n      raceName_en\n      raceName_ch\n      raceResults {\n        status\n      }\n      countryCodeNm {\n        code\n        english\n        chinese\n      }\n      distance\n      raceCourse {\n        code\n        description_en\n        description_ch\n      }\n      raceTrack {\n        code\n        description_en\n        description_ch\n      }\n      raceType_en\n      raceType_ch\n      raceClass_en\n      raceClass_ch\n      country_en\n      country_ch\n      winningMargin {\n        seqNo\n        lbw\n      }\n      go_en\n      go_ch\n      remarks {\n        name_en\n        name_ch\n        seqNo\n      }\n      runners {\n        horse {\n          name_en\n          name_ch\n          id\n        }\n        status\n        color\n        no\n        handicapWeight\n        jockey {\n          code\n          name_en\n          name_ch\n        }\n        trainer {\n          code\n          name_en\n          name_ch\n        }\n        id\n        last6run\n        internationalRating\n        currentRating \n        sire\n        sexNm {\n          chinese\n          english\n          code\n        }\n        age\n        barrierDrawNumber\n        gearInfo\n        stat(type: $type) {\n          statType\n          numStarts\n          numFirst\n          numSecond\n          numThird\n        }\n        damNm {\n          code\n          chinese\n          english\n        }\n        sireOfDamNm {\n          code\n          chinese\n          english\n        }\n        ownerNm {\n          code\n          chinese\n          english\n        }\n        colorNm {\n          code\n          chinese\n          english\n        }\n      }\n    }\n    date\n    venueCode\n  }\n\n  simulcastHorse(ids: $ids, raceNumber: $raceNumber, meetingDate: $meetingDate, venCode: $venueCode) {\n    id\n    brandNumber\n    earings\n    performanceStats {\n      type\n      firstPlace\n      secondPlace\n      thirdPlace\n      totalRun\n      ssn\n    } \n  }\n}\n',
             }
             
-            # 這是針對 S1 場次最常用的白名單查詢格式
-            payload = {
-            "operationName": "RaceCardProfile",
-            "variables": {
-                "date": "2026-02-14",
-                "venueCode": "S1",
-                "type": "LIEF_TIME"
-                # 移除了 ids, raceNumber, meetingDate，因為下面的 Query 沒用到它們
-            },
-            "query": """
-        query RaceCardProfile($date: String, $venueCode: String, $type: STStatType) {
-          raceMeetingProfile(date: $date, venueCode: $venueCode) {
-            totalNumberOfRace
-            status
-            pmPools {
-              leg { races }
-              status
-              oddsType
-            }
-            races {
-              id
-              no
-              status
-              postTime
-              raceName_en
-              raceName_ch
-              distance
-              go_en
-              runners {
-                horse { name_en name_ch id }
-                no
-                jockey { name_en name_ch }
-                trainer { name_en name_ch }
-                stat(type: $type) {
-                  numStarts
-                  numFirst
-                  numSecond
-                  numThird
-                }
-              }
-            }
-          }
-        }
-        """
-        }
-            
-            response = requests.post(url, headers=headers, json=payload)
+            response = requests.post('https://info.cld.hkjc.com/graphql/base/', headers=headers, json=json_data)
             st.write(response.json())
             #st.write(payload_oversea)
             #response = requests.post(url, headers=headers, json=payload_oversea, timeout=10)
