@@ -1629,8 +1629,7 @@ def fetch_race_card(date_str, venue):
         "type": "LIEF_TIME",                     # Lifetime stats
         "meetingDate": date_str.replace("-", ""), # "20260214"
         "raceNumber": "1",
-        "venCode": venue,
-        "ids": []                                # Leaving this empty is fine
+        "venCode": venue                          # Leaving this empty is fine
     },
     "query": """
     query RaceCardProfile($date: String, $venueCode: String, $type: STStatType, $ids: [String!], $raceNumber: String, $meetingDate: String) {
