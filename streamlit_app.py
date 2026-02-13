@@ -580,37 +580,48 @@ def fetch_horse_age_only(date_val, place_val, race_no):
         
         try:
             response = requests.post('https://info.cld.hkjc.com/graphql/base/', headers=headers, json=json_data)
-            
+
             if response.status_code == 200:
-                soup = BeautifulSoup(response.text, 'html.parser')
-                tbody = soup.find('tbody', id='race_card_table_body')
-                st.write(soup)
-                if tbody:
-                    # 2. 抓取所有行
-                    table_rows = tbody.find_all('tr', class_=lambda x: x and 'MuiTableRow-root' in x)
+                res_json = response.json()
+                
+                # 2. 定義提取邏輯
+                horse_list = res_json.get('data', {}).get('simulcastHorse', [])
+                parsed_results = []
+                
+                for horse in horse_list:
+                    # 取得完整編號並提取最後兩位作為馬號 (例如 20260214S10801 -> 1)
+                    brand_raw = horse.get('brandNumber', '')
+                    horse_no = brand_raw[-2:].lstrip('0') if brand_raw else "N/A"
                     
-                    age_data = []
-                    for row in table_rows:
-                        tds = row.find_all('td')
+                    # 取得往績紀錄
+                    records = horse.get('horseFormRecord', [])
+                    if records:
+                        # 我們取第一筆往績來獲得馬名與年齡條件
+                        latest = records[0]
                         
-                        # 根據截圖，"6" 是第 6 個 td (index 為 5)
-                        # index 0: 編號 (1)
-                        # index 1: 烙印/往績 (1/1/6/3/7)
-                        # index 3: 馬名
-                        # index 5: 馬齡 (6)
+                        # 從 winners 欄位中抓取主馬名稱 (通常第一個 winner 就是本馬資訊)
+                        horse_name = "未知馬名"
+                        if latest.get('winners'):
+                            horse_name = latest['winners'][0].get('name', {}).get('chinese', '未知')
                         
-                        if len(tds) > 5:
-                            horse_no = tds[0].get_text(strip=True)
-                            horse_name = tds[3].get_text(strip=True)
-                            horse_age = tds[5].get_text(strip=True)
-                            
-                            age_data.append({
-                                "編號": horse_no,
-                                "馬名": horse_name,
-                                "馬齡": horse_age
-                            })
-                # 返回 DataFrame 並設定編號為索引
-                return pd.DataFrame(age_data).set_index("編號")
+                        # 抓取馬齡條件 (例如：三歲以上)
+                        horse_age = latest.get('ageCondition', {}).get('chinese', '未知')
+                        
+                        parsed_results.append({
+                            "編號": int(horse_no) if horse_no.isdigit() else horse_no,
+                            "馬名": horse_name,
+                            "馬齡": horse_age
+                        })
+            
+                # 3. 轉換為 DataFrame 並排序
+                df = pd.DataFrame(parsed_results).sort_values("編號").set_index("編號")
+                
+                # 4. 在 Streamlit 顯示
+                st.success("資料抓取成功！")
+                st.table(df)
+            
+            else:
+                st.error(f"連線失敗，錯誤碼：{response.status_code}")
         except Exception as e:
             st.error(f"獲取馬齡失敗: {e}")
             return None  
