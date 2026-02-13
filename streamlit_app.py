@@ -524,36 +524,38 @@ query rw_GetTrainerRanking($season: String) {
         
 def fetch_horse_age_only(date_val, place_val, race_no):
     if place_val in ['ST','HV']:
-      base_url = "https://racing.hkjc.com/racing/information/Chinese/racing/RaceCard.aspx?"
+        base_url = "https://racing.hkjc.com/racing/information/Chinese/racing/RaceCard.aspx?"
+        date_str = str(date_val).replace('-', '/')
+        url = f"{base_url}RaceDate={date_str}&Racecourse={place_val}&RaceNo={race_no}"
+        
+        try:
+            # 使用同步 requests 取得網頁
+            response = requests.get(url, timeout=20)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.text, 'html.parser')
+                # 這是馬會排位表每行馬匹數據的 class
+                table_rows = soup.find_all('tr', class_='f_tac f_fs13')
+                
+                age_data = []
+                for row in table_rows:
+                    tds = row.find_all('td')
+                    if tds[16]:  # 確保索引 16 (馬齡) 存在
+                        age_data.append({
+                            "編號": tds[0].text.strip(),
+                            "馬名": tds[3].text.strip(),
+                            "馬齡": tds[16].text.strip()
+                        })
+                
+                # 返回 DataFrame 並設定編號為索引
+                return pd.DataFrame(age_data).set_index("編號")
+        except Exception as e:
+            st.error(f"獲取馬齡失敗: {e}")
+            return None  
     else:
-      base_url = "https://racing.hkjc.com/racing/overseas/Chinese/racecard.aspx?para="
-
-    date_str = str(date_val).replace('-', '/')
-    url = f"{base_url}RaceDate={date_str}&Racecourse={place_val}&RaceNo={race_no}"
-    
-    try:
-        # 使用同步 requests 取得網頁
-        response = requests.get(url, timeout=20)
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.text, 'html.parser')
-            # 這是馬會排位表每行馬匹數據的 class
-            table_rows = soup.find_all('tr', class_='f_tac f_fs13')
-            
-            age_data = []
-            for row in table_rows:
-                tds = row.find_all('td')
-                if tds[16]:  # 確保索引 16 (馬齡) 存在
-                    age_data.append({
-                        "編號": tds[0].text.strip(),
-                        "馬名": tds[3].text.strip(),
-                        "馬齡": tds[16].text.strip()
-                    })
-            
-            # 返回 DataFrame 並設定編號為索引
-            return pd.DataFrame(age_data).set_index("編號")
-    except Exception as e:
-        st.error(f"獲取馬齡失敗: {e}")
+        base_url = "https://racing.hkjc.com/racing/overseas/Chinese/racecard.aspx?para="
         return None
+
+    
 
 
 def save_odds_data(time_now,odds):
