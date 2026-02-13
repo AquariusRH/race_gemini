@@ -531,7 +531,7 @@ def fetch_horse_age_only(date_val, place_val, race_no):
         date_str = str(date_val).replace('-', '')
         url = f"https://racing.hkjc.com/zh-hk/overseas/race-card?RaceDate=&{date_str}&Racecourse={place_val}&RaceNo={race_no}"
         
-        try:
+    try:
             # 使用同步 requests 取得網頁
             response = requests.get(url, timeout=20)
             if response.status_code == 200:
