@@ -1687,7 +1687,7 @@ def fetch_race_card(date_str, venue):
         st.error(e)
     return {}
 
-def fetch_race_card_oversea():
+def fetch_race_card_oversea(date_str, place,race_no):
         date_str = str(date_val).replace('-', '')
         headers = {
             'accept': '*/*',
@@ -2127,7 +2127,10 @@ def calculate_smart_score_static(race_no):
 date_str = str(Date)
 if not st.session_state.api_called:
     with st.spinner("載入賽事資料中..."):
-        race_card_data = fetch_race_card(date_str, place)
+        if place in ["ST","HV"]:
+            race_card_data = fetch_race_card(date_str, place)
+        else:
+            race_card_data = fetch_race_card_oversea(date_str, place,race_no)
 
         if race_card_data:
             st.session_state.race_dataframes = {k: v['df'] for k,v in race_card_data.items()}
