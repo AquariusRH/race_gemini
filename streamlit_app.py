@@ -1629,9 +1629,12 @@ def fetch_race_card(date_str, venue):
         "type": "LIEF_TIME",
         "meetingDate": date_str.replace("-", ""),
         "raceNumber": "1",
-        "venCode": venue 
+        "venCode": venue,
+        "ids": []  # This key must exist as an empty list to avoid a 400 error
     },
-    "query": """ {
+    "query": """
+query RaceCardProfile($date: String, $venueCode: String, $type: STStatType, $ids: [String!], $raceNumber: String, $meetingDate: String) {
+  raceMeetingProfile(date: $date, venueCode: $venueCode) {
     totalNumberOfRace
     status
     pmPools {
