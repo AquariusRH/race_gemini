@@ -587,48 +587,30 @@ def fetch_horse_age_only(date_val, place_val, race_no):
 
             if response.status_code == 200:
                 res_json = response.json()
+            # 1. 深入資料層級
+            # 這裡假設 variables 傳入的是特定場次，races 通常會是一個列表
+                races_list = res_json.get('data', {}).get('raceMeetingProfile', {}).get('races', [])
                 
-                # 2. 定義提取邏輯
-                horse_list = res_json.get('data', {}).get('simulcastHorse', [])
-                parsed_results = []
+                all_horses = []
                 
-                for horse in horse_list:
-                    # 取得完整編號並提取最後兩位作為馬號 (例如 20260214S10801 -> 1)
-                    brand_raw = horse.get('brandNumber', '')
-                    horse_no = brand_raw[-2:].lstrip('0') if brand_raw else "N/A"
+                for race in races_list:
+                    race_no = race.get('no') # 這是第幾場
+                    runners = race.get('runners', [])
                     
-                    # 取得往績紀錄
-                    records = horse.get('horseFormRecord', [])
-                    if records:
-                        # 我們取第一筆往績來獲得馬名與年齡條件
-                        latest = records[0]
-                        
-                        # 從 winners 欄位中抓取主馬名稱 (通常第一個 winner 就是本馬資訊)
-                        horse_name = "未知馬名"
-                        if latest.get('winners'):
-                            horse_name = latest['winners'][0].get('name', {}).get('chinese', '未知')
-                        
-                        # 抓取馬齡條件 (例如：三歲以上)
-                        horse_age = latest.get('ageCondition', {}).get('chinese', '未知')
-                        
-                        parsed_results.append({
-                            "編號": int(horse_no) if horse_no.isdigit() else horse_no,
-                            "馬名": horse_name,
-                            "馬齡": horse_age
-                        })
-            
-                # 3. 轉換為 DataFrame 並排序
-                df = pd.DataFrame(parsed_results).sort_values("編號").set_index("編號")
-                
-                # 4. 在 Streamlit 顯示
-                st.success("資料抓取成功！")
-                st.table(df)
-            
-            else:
-                st.error(f"連線失敗，錯誤碼：{response.status_code}")
+                    for runner in runners:
+                        # 模仿你原本的判斷邏輯
+                        # 在 JSON 中，我們直接確認 age 鍵是否存在
+                        if "age" in runner:
+                            age_data.append({
+                                "編號": str(runner.get('no', '')),               # 相當於 tds[0]
+                                "馬名": runner.get('horse', {}).get('name_ch', ''), # 相當於 tds[3]
+                                "馬齡": str(runner.get('age', ''))               # 相當於 tds[16]
+                            })
+                    
+                    # 返回 DataFrame 並設定編號為索引
+                    return pd.DataFrame(age_data).set_index("編號")
         except Exception as e:
-            st.error(f"獲取馬齡失敗: {e}")
-            return None  
+            st.error(f"解析發生錯誤: {e}")
 
 def save_odds_data(time_now,odds):
   for method in methodlist:
