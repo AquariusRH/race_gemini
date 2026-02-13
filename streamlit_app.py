@@ -1624,59 +1624,23 @@ def fetch_race_card(date_str, venue):
     payload_oversea = {
     "operationName": "RaceCardProfile",
     "variables": {
-        "date": date_str,
-        "venueCode": venue,
-        "type": "LIEF_TIME",
-        "meetingDate": date_str.replace("-", ""),
+        "date": date_str,                        # "2026-02-14"
+        "venueCode": venue,                      # "S1"
+        "type": "LIEF_TIME",                     # Lifetime stats
+        "meetingDate": date_str.replace("-", ""), # "20260214"
         "raceNumber": "1",
-        "venCode": venue
+        "venCode": venue,
+        "ids": []                                # Leaving this empty is fine
     },
     "query": """
-    fragment runnerDetails on Runner {
-      id
-      no
-      status
-      color
-      handicapWeight
-      barrierDrawNumber
-      age
-      sexNm { chinese english code }
-      last6run
-      internationalRating
-      currentRating
-      gearInfo
-      sire
-      horse { name_en name_ch id }
-      jockey { code name_en name_ch }
-      trainer { code name_en name_ch }
-      stat(type: $type) {
-        statType
-        numStarts
-        numFirst
-        numSecond
-        numThird
-      }
-      damNm { english chinese }
-      ownerNm { english chinese }
-    }
-
-    query RaceCardProfile(
-      $date: String, 
-      $venueCode: String, 
-      $type: STStatType, 
-      $ids: [String!], 
-      $raceNumber: String, 
-      $meetingDate: String
-    ) {
+    query RaceCardProfile($date: String, $venueCode: String, $type: STStatType, $ids: [String!], $raceNumber: String, $meetingDate: String) {
       raceMeetingProfile(date: $date, venueCode: $venueCode) {
-        date
-        venueCode
-        status
         totalNumberOfRace
+        status
         pmPools {
-          oddsType
-          status
           leg { races }
+          status
+          oddsType
         }
         races {
           id
@@ -1686,40 +1650,51 @@ def fetch_race_card(date_str, venue):
           raceName_en
           raceName_ch
           distance
-          go_en
-          raceClass_en
           raceCourse { description_en }
           raceTrack { description_en }
+          go_en
           runners {
-            ...runnerDetails
+            no
+            horse { 
+              name_en 
+              name_ch 
+              id 
+            }
+            jockey { name_en name_ch }
+            trainer { name_en name_ch }
+            barrierDrawNumber
+            handicapWeight
+            last6run
+            stat(type: $type) {
+              numStarts
+              numFirst
+              numSecond
+              numThird
+            }
+            sire
+            damNm { english }
+            ownerNm { english }
           }
         }
       }
-      
-      simulcastHorse(
-        ids: $ids, 
-        raceNumber: $raceNumber, 
-        meetingDate: $meetingDate, 
-        venCode: $venueCode
-      ) {
+      simulcastHorse(ids: $ids, raceNumber: $raceNumber, meetingDate: $meetingDate, venCode: $venueCode) {
         id
         brandNumber
         performanceStats {
-          type
           totalRun
           firstPlace
           secondPlace
           thirdPlace
-          ssn
         }
       }
     }
     """
-    }
+}
     try:
         if venue in ['ST','HV']:
             response = requests.post(url, headers=headers, json=payload, timeout=10)
         else:
+            st.write(payload_oversea)
             response = requests.post(url, headers=headers, json=payload_oversea, timeout=10)
         if response.status_code == 200:
             data = response.json()
@@ -1729,7 +1704,7 @@ def fetch_race_card(date_str, venue):
                 for race in meeting.get('races', []):
                     r_no = race['no']
                     runners = race.get('runners', [])
-                    st.write(runners)
+                    #st.write(runners)
                     # 關鍵修改：過濾後備馬匹 (standbyNo 為空字串或 None)
                     filtered_runners = [r for r in runners if not r.get('standbyNo')]
 
