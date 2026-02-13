@@ -1557,6 +1557,7 @@ def fetch_race_card(date_str, venue):
                 code
               }
               color
+              age
               barrierDrawNumber
               handicapWeight
               currentWeight
