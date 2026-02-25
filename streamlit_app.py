@@ -1375,7 +1375,7 @@ def print_henery_model(gamma=1.18):
     
         with col1:
             st.success("✅ **高價值組合 (Value > 1.1)**")
-            high_df = full_df[full_df["Value"] > 1.1].sort_values("實時Q", ascending=False).head(25)
+            high_df = full_df[full_df["Value"] > 1.1].sort_values("實時Q", ascending=False).head(25).sort_values("Value", ascending=True)
             if not high_df.empty:
                 st.markdown(get_table_html(high_df, 'Greens'), unsafe_allow_html=True)
             else:
@@ -1383,7 +1383,7 @@ def print_henery_model(gamma=1.18):
     
         with col2:
             st.error("🔥 **過熱組合 (Value < 0.9)**")
-            overheated_df = full_df[full_df["Value"] < 0.9].sort_values("實時Q", ascending=True).head(25)
+            overheated_df = full_df[full_df["Value"] < 0.9].sort_values("實時Q", ascending=True).head(25).sort_values("Value", ascending=True)
             if not overheated_df.empty:
                 st.markdown(get_table_html(overheated_df, 'Reds_r'), unsafe_allow_html=True)
             else:
