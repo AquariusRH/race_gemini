@@ -1379,7 +1379,6 @@ def print_henery_model(gamma=1.18):
         selected = st.segmented_control(
             "選擇馬號查看過熱明細",
             options,
-            key=f"switch_r{race_no}{time_now}",
             selection_mode="single"
         )
 
