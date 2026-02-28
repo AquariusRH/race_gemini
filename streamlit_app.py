@@ -1471,6 +1471,7 @@ def print_henery_model(gamma=1.18):
 
         # 佈局設定
         fig.update_layout(
+            dragmode=False,
             updatemenus=[dict(
                 type="buttons", direction="right", active=0,
                 x=0, y=1.25, xanchor="left", # 按鈕左對齊
@@ -1487,7 +1488,7 @@ def print_henery_model(gamma=1.18):
         st.plotly_chart(
             fig, 
             width='stretch', 
-            key=f"dark_left_table_{race_no}", 
+            key=f"dark_left_table_{race_no}_{time_now.strftime('%H%M%S')}", 
             config={'displayModeBar': False}
         )
         return full_df # 最後回傳完整 DataFrame
