@@ -16,6 +16,7 @@ from math import log
 from collections import Counter
 import plotly.express as px
 import itertools
+import matplotlib.colors as mcolors
 simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
 
 # ==================== 0. 頁面與字型設定 ====================
@@ -1400,46 +1401,37 @@ def print_henery_model(gamma=1.18):
         fig = go.Figure()
         buttons = []
 
-        # 漸層顏色函數 (Value 越小越紅)
-        def get_value_color(val):
-            if val <= 0.3: return '#8B0000' # 深紅
-            if val <= 0.5: return '#DC143C' # 鮮紅
-            if val <= 0.7: return '#FF7F50' # 橙紅
-            if val <= 0.8: return '#FFDAB9' # 淺橘
-            return 'rgba(0,0,0,0)'         # 透明（跟隨底色）
-
         for i, h_num in enumerate(all_horse_list):
             mask = ov_df['組合'].apply(lambda x: any(int(part) == h_num for part in x.split('-')))
             sub_df = ov_df[mask].sort_values("Value").reset_index(drop=True)
 
             if not sub_df.empty:
-                # --- 有組合的表格 ---
-                val_colors = sub_df["Value"].apply(get_value_color).tolist()
+                # 🌈 自動生成漸層色 (替代原本的 get_value_color)
+                # 使用 Reds_r 代表越小越紅 (Reverse)
+                val_colors = get_gradient_colors(sub_df["Value"], cmap_name='Reds_r')
+                
                 fig.add_trace(
                     go.Table(
                         header=dict(
                             values=["<b>組合</b>", "<b>馬1獨贏</b>", "<b>馬2獨贏</b>", "<b>實時Q</b>", "<b>理論Q</b>", "<b>Value</b>"],
-                            fill_color='#111111', align='center', 
-                            font=dict(size=14, color='white'), # 表頭固定白色在深色模式很酷
-                            line_color='#333333', height=35
+                            fill_color='#111111', align='center', font=dict(color='white'),
+                            line_color='#333333'
                         ),
                         cells=dict(
                             values=[sub_df["組合"], sub_df["馬1獨贏"], sub_df["馬2獨贏"], 
                                     sub_df["實時Q"], sub_df["理論Q"], sub_df["Value"]],
-                            # 這裡是關鍵：其餘欄位設為半透明黑，Value 欄位動態變色
                             fill_color=[
-                                ['rgba(30,30,30,0.5)']*len(sub_df), 
+                                ['rgba(30,30,30,0.5)']*len(sub_df), # 其他欄位
                                 ['rgba(30,30,30,0.5)']*len(sub_df),
                                 ['rgba(30,30,30,0.5)']*len(sub_df),
                                 ['rgba(30,30,30,0.5)']*len(sub_df),
                                 ['rgba(30,30,30,0.5)']*len(sub_df),
-                                val_colors
+                                val_colors  # ⬅️ 這裡現在是自動漸層色
                             ],
-                            align='center', font=dict(size=13, color='white'), 
-                            line_color='#333333', height=30
+                            align='center', font=dict(color='white'), line_color='#333333'
                         ),
                         visible=(i == 0),
-                        domain=dict(x=[0, 0.75]) # ⬅️ 寬度佔 75% 並靠左
+                        domain=dict(x=[0, 0.75])
                     )
                 )
             else:
@@ -1494,6 +1486,24 @@ def print_henery_model(gamma=1.18):
         return full_df # 最後回傳完整 DataFrame
     
     return pd.DataFrame()
+
+def get_gradient_colors(values, cmap_name='Reds_r'):
+    """
+    根據數值列表自動生成對應的 HEX 顏色列表
+    values: 數值序列 (例如 Value 欄位)
+    cmap_name: Matplotlib 的色彩表名稱
+    """
+    if len(values) == 0: return []
+    
+    # 1. 取得色彩表
+    cmap = plt.get_cmap(cmap_name)
+    
+    # 2. 設定正規化範圍 (假設 0.0 最紅, 1.0 最淡)
+    # 你可以根據需求調整 vmin/vmax
+    norm = mcolors.Normalize(vmin=0.2, vmax=1.0) 
+    
+    # 3. 映射顏色並轉為 HEX 格式
+    return [mcolors.to_hex(cmap(norm(v))) for v in values]
 # ==================== 4. 主介面邏輯 ====================
 
 # --- 輸入區 ---
