@@ -1501,7 +1501,7 @@ def print_henery_model(gamma=1.18):
                     font=dict(color="white", size=15),
                     bordercolor="#555555",
                     borderwidth=1,
-                    pad={"r": 8, "t": 2, "b": 2} 
+                    pad={"r": 8, "t": 2, "b": 0} 
                 ))
         
             fig.update_layout(
