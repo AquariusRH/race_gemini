@@ -1490,7 +1490,7 @@ def print_henery_model(gamma=1.18):
             fig.update_layout(
                 dragmode=False,
                 updatemenus=menu_list,
-                margin=dict(t=50 + (row_count * 30), b=5, l=0, r=0),
+                margin=dict(t=70 + (row_count * 40), b=5, l=0, r=0),
                 height=500 + (len(sub_df) * 35) if not sub_df.empty else 400,
                 paper_bgcolor='rgba(0,0,0,0)',
                 font=dict(color="white")
