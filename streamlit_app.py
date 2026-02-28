@@ -1494,9 +1494,9 @@ def print_henery_model(gamma=1.18):
                     xanchor="left",
                     yanchor="bottom",
                     # y=1.01 幾乎壓在橫線上
-                    y=1.5 + (row_count - 1 - (row_idx // buttons_per_row)) * 0.08, 
+                    y=1.5 + (row_count - 1 - (row_idx // buttons_per_row)) * 0.05, 
                     buttons=row_buttons,
-                    showactive=True,       # ⬅️ 關閉預設的「全白」高亮
+                    showactive=False,       # ⬅️ 關閉預設的「全白」高亮
                     bgcolor="#333333",      # 統一背景色
                     font=dict(color="white", size=15),
                     bordercolor="#555555",
