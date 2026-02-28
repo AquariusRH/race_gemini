@@ -1397,7 +1397,7 @@ def print_henery_model(gamma=1.18):
         
         # 獲取場中所有馬號（即使沒過熱也顯示按鈕）
         all_horse_list = sorted(list(win_probs.keys()))
-        
+        num_horses = len(all_horse_list)
         fig = go.Figure()
         buttons = []
 
