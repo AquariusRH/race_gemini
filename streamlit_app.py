@@ -1389,39 +1389,6 @@ def print_henery_model(gamma=1.18):
                 st.markdown(get_table_html(overheated_df, 'Reds_r'), unsafe_allow_html=True)
             else:
                 st.info("目前無過熱組合")
-        要實作 Plotly 客戶端切換，我們需要將繪圖邏輯整合進 print_henery_model 的末尾。這樣做的好處是：所有馬號的數據都會一次性傳送到瀏覽器，切換時完全由前端 Plotly 引擎處理，頁面不會 Refresh。
-
-以下是完整的整合程式碼：
-
-Python
-import plotly.graph_objects as go
-
-def print_henery_model(gamma=1.18):
-    # ... (前面的時間處理、WIN/QIN 數據處理、Henery 計算邏輯全部保持不變) ...
-    # --- 1 至 5 部分省略，保持你原本的內容 ---
-
-    # --- 6. 渲染雙表格介面 ---
-    if results:
-        full_df = pd.DataFrame(results)
-        full_df = full_df[full_df["實時Q"] < 100]
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            st.success("✅ **高價值組合 (Value > 1.1)**")
-            high_df = full_df[full_df["Value"] > 1.1].sort_values("實時Q", ascending=False).head(25).sort_values("Value", ascending=True)
-            if not high_df.empty:
-                st.markdown(get_table_html(high_df, 'Greens'), unsafe_allow_html=True)
-            else:
-                st.info("目前無符合條件組合")
-
-        with col2:
-            st.error("🔥 **過熱組合 (Value < 0.9)**")
-            overheated_df = full_df[full_df["Value"] < 0.9].sort_values("實時Q", ascending=True).head(25).sort_values("Value", ascending=True)
-            if not overheated_df.empty:
-                st.markdown(get_table_html(overheated_df, 'Reds_r'), unsafe_allow_html=True)
-            else:
-                st.info("目前無過熱組合")
-
         # --- 7. Plotly 客戶端切換按鈕邏輯 (不刷新頁面) ---
         st.write("---")
         st.subheader("📊 馬號過熱快速切換 (Plotly Client-side)")
