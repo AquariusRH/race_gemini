@@ -1388,8 +1388,39 @@ def print_henery_model(gamma=1.18):
                 st.markdown(get_table_html(overheated_df, 'Reds_r'), unsafe_allow_html=True)
             else:
                 st.info("目前無過熱組合")
-    
-            return full_df # 最後回傳完整 DataFrame
+        # --- 7. 新增：馬號篩選按鈕區 ---
+        st.write("---")
+        st.subheader("🏇 按馬號查看過熱組合")
+        
+        # 取得所有馬號並排序
+        all_horses = sorted(list(win_probs.keys()))
+        
+        # 建立按鈕橫列 (使用 columns 讓按鈕排成一排)
+        btn_cols = st.columns(len(all_horses))
+        selected_horse = st.session_state.get('selected_horse', None)
+
+        for i, h_num in enumerate(all_horses):
+            if btn_cols[i].button(str(h_num), key=f"btn_{h_num}"):
+                st.session_state.selected_horse = h_num
+                selected_horse = h_num
+
+        # 如果有選中馬號，顯示該馬號在 overheated_df (Value < 0.9) 中的組合
+        if selected_horse:
+            st.info(f"正在查看 {selected_horse} 號馬的篩選結果：")
+            
+            # 篩選邏輯：組合字串中包含該馬號 (例如 "2-10" 包含 "2")
+            # 這裡用原始數據篩選更精準
+            target_mask = full_df['組合'].apply(lambda x: any(int(n) == selected_horse for n in x.split('-')))
+            horse_df = full_df[target_mask].copy()
+            
+            # 只顯示過熱 (Value < 0.9)
+            horse_overheated = horse_df[horse_df["Value"] < 0.9].sort_values("Value")
+
+            if not horse_overheated.empty:
+                st.markdown(get_table_html(horse_overheated, 'Reds_r'), unsafe_allow_html=True)
+            else:
+                st.success(f"✅ {selected_horse} 號馬目前沒有過熱組合。")
+        return full_df # 最後回傳完整 DataFrame
     
     return pd.DataFrame()
 # ==================== 4. 主介面邏輯 ====================
