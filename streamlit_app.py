@@ -1481,7 +1481,7 @@ def print_henery_model(gamma=1.18):
                 
                 menu_list.append(dict(
                     type="buttons", direction="right", x=0, xanchor="left", yanchor="top",
-                    y=1.45 - (row_idx // buttons_per_row) * 0.15,
+                    y=1.15 - (row_idx // buttons_per_row) * 0.15,
                     buttons=row_buttons, showactive=True,
                     bgcolor="#444444", font=dict(color="white", size=15), pad={"r": 8}
                 ))
@@ -1489,7 +1489,7 @@ def print_henery_model(gamma=1.18):
             fig.update_layout(
                 dragmode=False,
                 updatemenus=menu_list,
-                margin=dict(t=160 + (len(all_horse_list)//buttons_per_row)*40, b=10, l=0, r=0),
+                margin=dict(t=70 + (len(all_horse_list)//buttons_per_row)*35, b=10, l=0, r=0),
                 height=750,
                 paper_bgcolor='rgba(0,0,0,0)',
                 font=dict(color="white")
