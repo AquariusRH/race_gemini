@@ -1436,7 +1436,7 @@ def print_henery_model(gamma=1.18):
                                     ['white']*len(sub_df),
                                     val_font_colors        # ⬅️ Value 字體動態黑白切換
                                 ],
-                                size=13
+                                size=15
                             ),
                             align='center', line_color='#333333'
                         ),
