@@ -1480,17 +1480,26 @@ def print_henery_model(gamma=1.18):
                     ))
                 
                 menu_list.append(dict(
-                    type="buttons", direction="right", x=0, xanchor="left", yanchor="top",
-                    y=1.12 - (row_idx // buttons_per_row) * 0.07,
-                    buttons=row_buttons, showactive=True,
-                    bgcolor="#444444", font=dict(color="white", size=15), pad={"r": 8}
+                    type="buttons",
+                    direction="right",
+                    x=0, 
+                    xanchor="left",
+                    yanchor="bottom", # ⬅️ 改為 bottom 對齊，按鈕會向上撐開，底部更穩
+                    # 1. 將 y 降至 1.02。1.00 是表頭橫線，1.02 留下一點點極細縫隙
+                    y=1.02 + (row_count - 1 - (row_idx // buttons_per_row)) * 0.08, 
+                    buttons=row_buttons,
+                    showactive=True,
+                    bgcolor="#444444",
+                    font=dict(color="white", size=15),
+                    # 2. b 改為 2，徹底消除按鈕下方的佔位空間
+                    pad={"r": 8, "t": 0, "b": 2} 
                 ))
         
             fig.update_layout(
                 dragmode=False,
                 updatemenus=menu_list,
-                margin=dict(t=80 + (len(all_horse_list)//buttons_per_row)*35, b=10, l=0, r=0),
-                height=750,
+                margin=dict(t=30 + (row_count * 40), b=5, l=0, r=0),
+                height=550 + (len(sub_df) * 35) if not sub_df.empty else 450,
                 paper_bgcolor='rgba(0,0,0,0)',
                 font=dict(color="white")
             )
