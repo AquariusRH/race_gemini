@@ -1454,7 +1454,7 @@ def print_henery_model(gamma=1.18):
             )
 
             # 渲染 Plotly 表格
-            st.plotly_chart(fig, use_container_width=True, key=f"plotly_tbl_{race_no}_{time_now.strftime('%H%M%S')}")
+            st.plotly_chart(fig, width='stretch', key=f"plotly_tbl_{race_no}_{time_now.strftime('%H%M%S')}")
         else:
             st.info("💡 目前無過熱組合數據。")
 
