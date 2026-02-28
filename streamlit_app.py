@@ -1486,29 +1486,31 @@ def print_henery_model(gamma=1.18):
                         # 當點擊時，我們更新 Trace 的可見性，並可以順便更新 Layout 標題作為提示
                         args=[{"visible": vis}, {"title": f"<b>正在檢視：{h_btn} 號馬過熱組合</b>"}]
                     ))
-                current_row = row_idx // buttons_per_row
+                current_row_from_bottom = row_count - 1 - (row_idx // buttons_per_row)
                 menu_list.append(dict(
                     type="buttons",
                     direction="right",
                     x=0, 
                     xanchor="left",
                     yanchor="bottom",
-                    # y=1.01 幾乎壓在橫線上
-                    y=1.5 + (row_count - 1 - (row_idx // buttons_per_row)) * 0.15, 
+                    # ⬇️ 這裡改為 1.01，按鈕就會直接坐在表格頂線上
+                    y=1.01 + (current_row_from_bottom * 0.08), 
                     buttons=row_buttons,
-                    showactive=False,       # ⬅️ 關閉預設的「全白」高亮
-                    bgcolor="#333333",      # 統一背景色
+                    showactive=False,
+                    bgcolor="#333333",
                     font=dict(color="white", size=15),
                     bordercolor="#555555",
                     borderwidth=1,
                     pad={"r": 8, "t": 2, "b": 0} 
                 ))
-        
+    
+            # --- 2. 修正 Layout (壓縮頂部空間讓表格上移) ---
             fig.update_layout(
                 dragmode=False,
                 updatemenus=menu_list,
-                # 再次壓縮頂部邊距
-                margin=dict(t=10, b=10, l=0, r=0), 
+                # ⬇️ 關鍵：t 不能太小（否則按鈕會出界），但也不能太大（否則表格會下沉）
+                # 建議設為 30 + (行數 * 35)，這樣能確保按鈕剛好頂到最上方，表格跟著上移
+                margin=dict(t=30 + (row_count * 35), b=10, l=0, r=0), 
                 height=650,
                 paper_bgcolor='rgba(0,0,0,0)',
                 font=dict(color="white", family="Arial")
