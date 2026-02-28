@@ -1405,7 +1405,7 @@ def print_henery_model(gamma=1.18):
             mask = ov_df['組合'].apply(lambda x: any(int(part) == h_num for part in x.split('-')))
             sub_df = ov_df[mask].sort_values("Value").reset_index(drop=True)
 
-           if not sub_df.empty:
+            if not sub_df.empty:
                 # 🌈 同時取得背景與字體顏色
                 val_bg_colors, val_font_colors = get_adaptive_colors(sub_df["Value"])
                 
