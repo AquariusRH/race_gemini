@@ -1367,6 +1367,41 @@ def print_henery_model(gamma=1.18):
             .set_table_attributes('style="width:100%; border-collapse: collapse; white-space: nowrap;"')
             .to_html()
         )
+    @st.fragment
+    def horse_switch_section(df, race_no):
+        st.write("---")
+        # 取得所有馬號並轉換為字串
+        all_horses = sorted(list(set([int(n) for comb in df['組合'] for n in comb.split('-')])))
+        options = [str(h) for h in all_horses]
+
+        # 這裡就是你要的 "Switch" 效果組件
+        # selection_mode="single" 確保它像開關一樣切換
+        selected = st.segmented_control(
+            "選擇馬號查看過熱明細",
+            options,
+            key=f"switch_r{race_no}",
+            selection_mode="single"
+        )
+
+        # 建立一個內容更換區
+        content_area = st.container()
+
+        if selected:
+            with content_area:
+                h = int(selected)
+                st.markdown(f"#### 🎯 {h} 號馬：過熱組合 (Value < 0.9)")
+                
+                # 執行過濾
+                mask = df['組合'].apply(lambda x: any(int(n) == h for n in x.split('-')))
+                filtered_df = df[mask & (df["Value"] < 0.9)].sort_values("Value")
+
+                if not filtered_df.empty:
+                    # 使用你原有的 get_table_html 函數
+                    st.markdown(get_table_html(filtered_df, 'Reds_r'), unsafe_allow_html=True)
+                else:
+                    st.success(f"馬匹 {h} 目前表現正常，無過熱組合。")
+        else:
+            st.info("💡 請從上方 Switch 選擇馬號，內容會即時更新。")    
     # --- 6. 渲染雙表格介面 ---
     if results:
         full_df = pd.DataFrame(results)
@@ -1389,38 +1424,7 @@ def print_henery_model(gamma=1.18):
             else:
                 st.info("目前無過熱組合")
         
-        # --- 7. 改用 Pills 組件 (更換內容、減少跳動感) ---
-        st.write("---")
-        
-        all_horses = sorted(list(win_probs.keys()))
-        options = [str(h) for h in all_horses]
-        
-        # 使用 st.pills 或 st.segmented_control
-        # label_visibility="collapsed" 可以隱藏標題，讓介面更乾淨
-        selected_h_str = st.pills(
-            "選擇馬號查看過熱組合", 
-            options, 
-            key=f"pills_r{race_no}" # 預設不選取
-        )
-
-        if selected_h_str:
-            selected_h = int(selected_h_str)
-            st.markdown(f"#### 🔍 {selected_h} 號馬：過熱組合明細")
-            
-            # 篩選邏輯
-            def check_horse(comb_str, target):
-                return any(int(n) == target for n in comb_str.split('-'))
-
-            horse_mask = full_df['組合'].apply(lambda x: check_horse(x, selected_h))
-            # 這裡篩選出該馬且 Value < 0.9 的數據
-            horse_overheated = full_df[horse_mask & (full_df["Value"] < 0.9)].sort_values("Value")
-
-            if not horse_overheated.empty:
-                st.markdown(get_table_html(horse_overheated, 'Reds_r'), unsafe_allow_html=True)
-            else:
-                st.info(f"✅ {selected_h} 號馬目前沒有過熱組合。")
-        else:
-            st.caption("💡 點擊上方馬號可快速過濾該馬的過熱組合。")
+        horse_switch_section(full_df, race_no)
                 
         return full_df # 最後回傳完整 DataFrame
     
