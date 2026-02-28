@@ -1509,7 +1509,7 @@ def print_henery_model(gamma=1.18):
                 updatemenus=menu_list,
                 # 再次壓縮頂部邊距
                 margin=dict(t=80 + (row_count * 40), b=10, l=0, r=0), 
-                height=500 + (len(sub_df) * 35) if not sub_df.empty else 450,
+                height=1000 + (len(sub_df) * 35) if not sub_df.empty else 450,
                 paper_bgcolor='rgba(0,0,0,0)',
                 font=dict(color="white", family="Arial")
             )
