@@ -1465,17 +1465,23 @@ def print_henery_model(gamma=1.18):
 
             # 按鈕列表
             buttons_per_row = 8
-            row_count = (len(all_horse_list) + buttons_per_row - 1) // buttons_per_row
+            row_count = (num_horses + buttons_per_row - 1) // buttons_per_row
             menu_list = []
-            for row_idx in range(0, len(all_horse_list), buttons_per_row):
+            
+            for row_idx in range(0, num_horses, buttons_per_row):
                 row_horses = all_horse_list[row_idx : row_idx + buttons_per_row]
                 row_buttons = []
+                
                 for h_btn in row_horses:
                     g_idx = all_horse_list.index(h_btn)
-                    vis = [False] * len(all_horse_list)
+                    
+                    # 建立 visibility 陣列：只有點擊的那匹馬對應的 Trace 是 True
+                    # 其餘全部（包含其他行的馬）都是 False
+                    vis = [False] * num_horses
                     vis[g_idx] = True
+                    
                     row_buttons.append(dict(
-                        label=f" <b>{h_btn} 號</b> ",
+                        label=f" {h_btn} 號 ",
                         method="update",
                         args=[{"visible": vis}, {"title": ""}]
                     ))
@@ -1485,15 +1491,17 @@ def print_henery_model(gamma=1.18):
                     direction="right",
                     x=0, 
                     xanchor="left",
-                    yanchor="bottom", # ⬅️ 改為 bottom 對齊，按鈕會向上撐開，底部更穩
-                    # 1. 將 y 降至 1.02。1.00 是表頭橫線，1.02 留下一點點極細縫隙
-                    y=1.02 + (row_count - 1 - (row_idx // buttons_per_row)) * 0.08, 
+                    yanchor="bottom",
+                    y=1.01 + (row_count - 1 - (row_idx // buttons_per_row)) * 0.08, 
                     buttons=row_buttons,
+                    # --- 關鍵修正：美化選中樣式 ---
                     showactive=True,
-                    bgcolor="#444444",
+                    activebgcolor="#FF4B4B", # ⬅️ 改為 Streamlit 紅或自定義深色，避免「太白」
+                    bgcolor="#333333",       # 未選中背景
                     font=dict(color="white", size=15),
-                    # 2. b 改為 2，徹底消除按鈕下方的佔位空間
-                    pad={"r": 8, "t": 0, "b": 2} 
+                    bordercolor="#444444",
+                    borderwidth=1,
+                    pad={"r": 6, "t": 0, "b": 0} 
                 ))
         
             fig.update_layout(
