@@ -1466,6 +1466,7 @@ def print_henery_model(gamma=1.18):
             # 按鈕列表
             buttons_per_row = 8
             menu_list = []
+            row_count = (len(all_horse_list) + buttons_per_row - 1) // buttons_per_row
             for row_idx in range(0, len(all_horse_list), buttons_per_row):
                 row_horses = all_horse_list[row_idx : row_idx + buttons_per_row]
                 row_buttons = []
@@ -1483,14 +1484,14 @@ def print_henery_model(gamma=1.18):
                     type="buttons", direction="right", x=0, xanchor="left", yanchor="top",
                     y=1.12 - (row_idx // buttons_per_row) * 0.07,
                     buttons=row_buttons, showactive=True,
-                    bgcolor="#444444", font=dict(color="white", size=15), pad={"r": 8}
+                    bgcolor="#444444", font=dict(color="white", size=15), pad=pad={"r": 8, "t": 2, "b": 0}
                 ))
         
             fig.update_layout(
                 dragmode=False,
                 updatemenus=menu_list,
-                margin=dict(t=80 + (len(all_horse_list)//buttons_per_row)*35, b=10, l=0, r=0),
-                height=750,
+                margin=dict(t=50 + (row_count * 30), b=5, l=0, r=0),
+                height=500 + (len(sub_df) * 35) if not sub_df.empty else 400,
                 paper_bgcolor='rgba(0,0,0,0)',
                 font=dict(color="white")
             )
