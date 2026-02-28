@@ -1389,72 +1389,74 @@ def print_henery_model(gamma=1.18):
                 st.markdown(get_table_html(overheated_df, 'Reds_r'), unsafe_allow_html=True)
             else:
                 st.info("目前無過熱組合")
-        # --- 7. Plotly 客戶端切換按鈕邏輯 (不刷新頁面) ---
+        # --- 7. Plotly Table 客戶端切換 (完全不刷新) ---
         st.write("---")
-        st.subheader("📊 馬號過熱快速切換 (Plotly Client-side)")
+        st.subheader("📋 馬號過熱組合明細 (Plotly Table)")
 
-        # 只顯示 Value < 0.9 的過熱數據
         ov_df = full_df[full_df["Value"] < 0.9].copy()
         
         if not ov_df.empty:
-            # 獲取過熱名單中出現的所有馬號
+            # 獲取過熱組合中涉及的所有馬號
             unique_horses = sorted(list(set([int(n) for comb in ov_df['組合'] for n in comb.split('-')])))
             
             fig = go.Figure()
             buttons = []
 
             for i, h_num in enumerate(unique_horses):
-                # 篩選出包含該馬號的組合
+                # 篩選包含該馬號的數據
                 mask = ov_df['組合'].apply(lambda x: any(int(part) == h_num for part in x.split('-')))
                 sub_df = ov_df[mask].sort_values("Value")
 
-                # 為每匹馬增加一個 Trace
+                # 為每匹馬建立一個 go.Table 圖層
                 fig.add_trace(
-                    go.Bar(
-                        x=sub_df["組合"],
-                        y=sub_df["Value"],
-                        name=f"{h_num} 號",
-                        marker_color='rgb(220, 50, 50)',
-                        visible=(i == 0),  # 預設只顯示第一匹馬
-                        text=sub_df["Value"],
-                        textposition='auto',
-                        customdata=sub_df["實時Q"],
-                        hovertemplate="組合: %{x}<br>Value: %{y}<br>實時Q: %{customdata}"
+                    go.Table(
+                        header=dict(
+                            values=["組合", "實時Q", "理論Q", "Value"],
+                            fill_color='paleturquoise',
+                            align='left',
+                            font=dict(size=14, color='black')
+                        ),
+                        cells=dict(
+                            values=[sub_df["組合"], sub_df["實時Q"], sub_df["理論Q"], sub_df["Value"]],
+                            fill_color='lavender',
+                            align='left',
+                            font=dict(size=13, color='black'),
+                            height=30
+                        ),
+                        visible=(i == 0) # 預設只顯示第一個馬號
                     )
                 )
 
-                # 計算 Visibility 矩陣 (只有當前 i 為 True，其餘為 False)
+                # 按鈕邏輯：切換 visible 狀態
                 visibility = [False] * len(unique_horses)
                 visibility[i] = True
 
                 buttons.append(dict(
-                    label=f" {h_num} 號 ",
+                    label=f" {h_num} 號馬 ",
                     method="update",
                     args=[{"visible": visibility}, 
-                          {"title": f"{h_num} 號馬 - 過熱組合分析"}]
+                          {"title": f"馬號 {h_num} - 過熱組合詳細表格"}]
                 ))
 
-            # 設定佈局與按鈕組
+            # 配置佈局與按鈕選單
             fig.update_layout(
                 updatemenus=[dict(
-                    type="buttons", # 可改為 "dropdown" 若馬號太多
+                    type="buttons", # 如果馬號超過 8 個，建議改為 "dropdown"
                     direction="right",
                     active=0,
-                    x=0, y=1.2,
-                    showactive=True,
-                    buttons=buttons
+                    x=0, y=1.25,
+                    buttons=buttons,
+                    showactive=True
                 )],
-                height=450,
-                margin=dict(t=80, b=40, l=40, r=40),
-                yaxis=dict(title="Value Score", range=[0, 1]),
-                xaxis=dict(title="組合"),
-                template="plotly_white"
+                title=f"第 {race_no} 場：點擊馬號切換表格內容",
+                margin=dict(t=100, b=20, l=10, r=10),
+                height=400 # 根據數據量調整高度
             )
 
-            # 渲染圖表，使用 race_no 確保 key 唯一
-            st.plotly_chart(fig, use_container_width=True, key=f"henery_plotly_{race_no}_{time_now.strftime('%H%M%S')}")
+            # 渲染 Plotly 表格
+            st.plotly_chart(fig, use_container_width=True, key=f"plotly_tbl_{race_no}_{time_now.strftime('%H%M%S')}")
         else:
-            st.info("💡 目前數據中無過熱馬匹組合，無需顯示圖表。")
+            st.info("💡 目前無過熱組合數據。")
 
         return full_df # 最後回傳完整 DataFrame
     
