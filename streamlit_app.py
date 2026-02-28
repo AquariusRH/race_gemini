@@ -1405,10 +1405,9 @@ def print_henery_model(gamma=1.18):
             mask = ov_df['組合'].apply(lambda x: any(int(part) == h_num for part in x.split('-')))
             sub_df = ov_df[mask].sort_values("Value").reset_index(drop=True)
 
-            if not sub_df.empty:
-                # 🌈 自動生成漸層色 (替代原本的 get_value_color)
-                # 使用 Reds_r 代表越小越紅 (Reverse)
-                val_colors = get_gradient_colors(sub_df["Value"], cmap_name='Reds_r')
+           if not sub_df.empty:
+                # 🌈 同時取得背景與字體顏色
+                val_bg_colors, val_font_colors = get_adaptive_colors(sub_df["Value"])
                 
                 fig.add_trace(
                     go.Table(
@@ -1421,14 +1420,25 @@ def print_henery_model(gamma=1.18):
                             values=[sub_df["組合"], sub_df["馬1獨贏"], sub_df["馬2獨贏"], 
                                     sub_df["實時Q"], sub_df["理論Q"], sub_df["Value"]],
                             fill_color=[
-                                ['rgba(30,30,30,0.5)']*len(sub_df), # 其他欄位
                                 ['rgba(30,30,30,0.5)']*len(sub_df),
                                 ['rgba(30,30,30,0.5)']*len(sub_df),
                                 ['rgba(30,30,30,0.5)']*len(sub_df),
                                 ['rgba(30,30,30,0.5)']*len(sub_df),
-                                val_colors  # ⬅️ 這裡現在是自動漸層色
+                                ['rgba(30,30,30,0.5)']*len(sub_df),
+                                val_bg_colors  # 背景漸層
                             ],
-                            align='center', font=dict(color='white'), line_color='#333333'
+                            font=dict(
+                                color=[
+                                    ['white']*len(sub_df), # 其他欄位固定白字
+                                    ['white']*len(sub_df),
+                                    ['white']*len(sub_df),
+                                    ['white']*len(sub_df),
+                                    ['white']*len(sub_df),
+                                    val_font_colors        # ⬅️ Value 字體動態黑白切換
+                                ],
+                                size=13
+                            ),
+                            align='center', line_color='#333333'
                         ),
                         visible=(i == 0),
                         domain=dict(x=[0, 0.75])
@@ -1486,24 +1496,35 @@ def print_henery_model(gamma=1.18):
         return full_df # 最後回傳完整 DataFrame
     
     return pd.DataFrame()
-
-def get_gradient_colors(values, cmap_name='Reds_r'):
-    """
-    根據數值列表自動生成對應的 HEX 顏色列表
-    values: 數值序列 (例如 Value 欄位)
-    cmap_name: Matplotlib 的色彩表名稱
-    """
-    if len(values) == 0: return []
     
-    # 1. 取得色彩表
+def get_adaptive_colors(values, cmap_name='Reds_r'):
+    """
+    回傳背景色列表與對應的字體顏色列表 (黑或白)
+    """
+    if len(values) == 0: return [], []
+    
     cmap = plt.get_cmap(cmap_name)
-    
-    # 2. 設定正規化範圍 (假設 0.0 最紅, 1.0 最淡)
-    # 你可以根據需求調整 vmin/vmax
     norm = mcolors.Normalize(vmin=0.2, vmax=1.0) 
     
-    # 3. 映射顏色並轉為 HEX 格式
-    return [mcolors.to_hex(cmap(norm(v))) for v in values]
+    bg_colors = []
+    font_colors = []
+    
+    for v in values:
+        # 1. 取得背景 RGBA
+        rgba = cmap(norm(v))
+        bg_hex = mcolors.to_hex(rgba)
+        bg_colors.append(bg_hex)
+        
+        # 2. 計算亮度 (Luminance) 演算法
+        # 公式: 0.299*R + 0.587*G + 0.114*B
+        r, g, b, _ = rgba
+        luminance = 0.299 * r + 0.587 * g + 0.114 * b
+        
+        # 3. 根據亮度決定字體顏色 (閾值通常設為 0.5)
+        font_colors.append('white' if luminance < 0.5 else '#31333F')
+        
+    return bg_colors, font_colors
+
 # ==================== 4. 主介面邏輯 ====================
 
 # --- 輸入區 ---
