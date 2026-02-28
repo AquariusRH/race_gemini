@@ -1463,7 +1463,7 @@ def print_henery_model(gamma=1.18):
                     )
     
                 # 按鈕列表
-                buttons_per_row = 8
+                buttons_per_row = 6
                 row_count = (num_horses + buttons_per_row - 1) // buttons_per_row
                 menu_list = []
                 
@@ -1472,6 +1472,8 @@ def print_henery_model(gamma=1.18):
                     row_buttons = []
                     
                     for h_btn in row_horses:
+                        mask = ov_df['組合'].apply(lambda x: any(int(part) == h_btn for part in x.split('-')))
+                        count = len(ov_df[mask])
                         g_idx = all_horse_list.index(h_btn)
                         
                         # 建立 visibility 陣列：只有點擊的那匹馬對應的 Trace 是 True
@@ -1481,7 +1483,7 @@ def print_henery_model(gamma=1.18):
                         
                         # 這裡我們不依賴系統的 active 顏色
                         row_buttons.append(dict(
-                            label=f" {h_btn} 號 ",
+                            label=f" {h_btn}號 ({count}) ",
                             method="update",
                             # 當點擊時，我們更新 Trace 的可見性，並可以順便更新 Layout 標題作為提示
                             args=[{"visible": vis}, {"title": f"<b>正在檢視：{h_btn} 號馬過熱組合</b>"}]
