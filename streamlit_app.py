@@ -1464,30 +1464,36 @@ def print_henery_model(gamma=1.18):
                 )
 
             # 按鈕列表
-            visibility = [False] * len(all_horse_list)
-            visibility[i] = True
-            buttons.append(dict(
-                label=f" {h_num} 號 ",
-                method="update",
-                args=[{"visible": visibility}, {"title": f"<b>馬號 {h_num} 過熱組合明細</b>"}]
-            ))
-
-        # 佈局設定
-        fig.update_layout(
-            dragmode=False,
-            updatemenus=[dict(
-                type="buttons", direction="right", active=0,
-                x=0, y=1.25, xanchor="left", # 按鈕左對齊
-                buttons=buttons, showactive=True,
-                bgcolor="#333333", font=dict(color="white",size = 18),
-                bordercolor="#444444",
-                pad={"r": 10, "t": 10}
-            )],
-            margin=dict(t=120, b=10, l=5, r=5),
-            height=650,
-            paper_bgcolor='rgba(0,0,0,0)', # 透明背景，完美融合 Streamlit Dark Mode
-            font=dict(color="white")
-        )
+            buttons_per_row = 8
+            menu_list = []
+            for row_idx in range(0, len(all_horse_list), buttons_per_row):
+                row_horses = all_horse_list[row_idx : row_idx + buttons_per_row]
+                row_buttons = []
+                for h_btn in row_horses:
+                    g_idx = all_horse_list.index(h_btn)
+                    vis = [False] * len(all_horse_list)
+                    vis[g_idx] = True
+                    row_buttons.append(dict(
+                        label=f" <b>{h_btn} 號</b> ",
+                        method="update",
+                        args=[{"visible": vis}, {"title": ""}]
+                    ))
+                
+                menu_list.append(dict(
+                    type="buttons", direction="right", x=0, xanchor="left", yanchor="top",
+                    y=1.45 - (row_idx // buttons_per_row) * 0.15,
+                    buttons=row_buttons, showactive=True,
+                    bgcolor="#444444", font=dict(color="white", size=15), pad={"r": 8}
+                ))
+        
+            fig.update_layout(
+                dragmode=False,
+                updatemenus=menu_list,
+                margin=dict(t=160 + (len(all_horse_list)//buttons_per_row)*40, b=10, l=0, r=0),
+                height=750,
+                paper_bgcolor='rgba(0,0,0,0)',
+                font=dict(color="white")
+            )
 
         st.plotly_chart(
             fig, 
