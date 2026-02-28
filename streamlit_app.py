@@ -1465,6 +1465,7 @@ def print_henery_model(gamma=1.18):
 
             # 按鈕列表
             buttons_per_row = 8
+            row_count = (len(all_horse_list) + buttons_per_row - 1) // buttons_per_row
             menu_list = []
             for row_idx in range(0, len(all_horse_list), buttons_per_row):
                 row_horses = all_horse_list[row_idx : row_idx + buttons_per_row]
