@@ -1391,6 +1391,7 @@ def print_henery_model(gamma=1.18):
             else:
                 st.info("目前無過熱組合")
         # --- 7. 最終優化版：支援系統 Dark Mode + 左對齊 ---
+        st.write('---')
         ov_df = full_df[full_df["Value"] < 0.9].copy()
         
         # 獲取場中所有馬號（即使沒過熱也顯示按鈕）
@@ -1493,7 +1494,7 @@ def print_henery_model(gamma=1.18):
                     xanchor="left",
                     yanchor="top",
                     # y=1.01 幾乎壓在橫線上
-                    y=1.25 - (current_row * 0.1), 
+                    y=0.25 - (current_row * 0.1), 
                     buttons=row_buttons,
                     showactive=True,       # ⬅️ 關閉預設的「全白」高亮
                     bgcolor="#333333",      # 統一背景色
