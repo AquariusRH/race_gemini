@@ -1389,72 +1389,98 @@ def print_henery_model(gamma=1.18):
                 st.markdown(get_table_html(overheated_df, 'Reds_r'), unsafe_allow_html=True)
             else:
                 st.info("目前無過熱組合")
-        # --- 7. Plotly Table 客戶端切換 (完全不刷新) ---
+        # --- 7. 深色熱力圖版 Plotly Table (不刷新 + 符合 2026 語法) ---
         st.write("---")
-        st.subheader("📋 馬號過熱組合明細 (Plotly Table)")
-
+        
         ov_df = full_df[full_df["Value"] < 0.9].copy()
         
         if not ov_df.empty:
-            # 獲取過熱組合中涉及的所有馬號
             unique_horses = sorted(list(set([int(n) for comb in ov_df['組合'] for n in comb.split('-')])))
             
             fig = go.Figure()
             buttons = []
 
-            for i, h_num in enumerate(unique_horses):
-                # 篩選包含該馬號的數據
-                mask = ov_df['組合'].apply(lambda x: any(int(part) == h_num for part in x.split('-')))
-                sub_df = ov_df[mask].sort_values("Value")
+            # Value 顏色映射函數 (越小越紅，還原你提供的圖片感)
+            def get_value_color(val):
+                if val <= 0.3: return '#8B0000' # 深紅
+                if val <= 0.5: return '#DC143C' # 鮮紅
+                if val <= 0.7: return '#FF7F50' # 橙紅
+                if val <= 0.8: return '#FFDAB9' # 淺橘
+                return '#1A1A1A'               # 預設深灰黑
 
-                # 為每匹馬建立一個 go.Table 圖層
+            for i, h_num in enumerate(unique_horses):
+                mask = ov_df['組合'].apply(lambda x: any(int(part) == h_num for part in x.split('-')))
+                sub_df = ov_df[mask].sort_values("Value").reset_index(drop=True)
+
+                # 動態計算 Value 欄位的背景色
+                val_colors = sub_df["Value"].apply(get_value_color).tolist()
+                
                 fig.add_trace(
                     go.Table(
                         header=dict(
-                            values=["組合", "實時Q", "理論Q", "Value"],
-                            fill_color='paleturquoise',
-                            align='left',
-                            font=dict(size=14, color='black')
+                            values=["<b>組合</b>", "<b>馬1獨贏</b>", "<b>馬2獨贏</b>", "<b>實時Q</b>", "<b>理論Q</b>", "<b>Value</b>"],
+                            fill_color='#111111', 
+                            align='center',
+                            font=dict(size=14, color='white'),
+                            line_color='#333333',
+                            height=35
                         ),
                         cells=dict(
-                            values=[sub_df["組合"], sub_df["實時Q"], sub_df["理論Q"], sub_df["Value"]],
-                            fill_color='lavender',
-                            align='left',
-                            font=dict(size=13, color='black'),
+                            values=[
+                                sub_df["組合"], sub_df["馬1獨贏"], sub_df["馬2獨贏"], 
+                                sub_df["實時Q"], sub_df["理論Q"], sub_df["Value"]
+                            ],
+                            fill_color=[
+                                ['#1A1A1A'] * len(sub_df), # 其他欄位固定深色
+                                ['#1A1A1A'] * len(sub_df),
+                                ['#1A1A1A'] * len(sub_df),
+                                ['#1A1A1A'] * len(sub_df),
+                                ['#1A1A1A'] * len(sub_df),
+                                val_colors                 # 只有 Value 欄位套用熱力圖顏色
+                            ],
+                            align='center',
+                            font=dict(size=13, color='white'),
+                            line_color='#333333',
                             height=30
                         ),
-                        visible=(i == 0) # 預設只顯示第一個馬號
+                        visible=(i == 0)
                     )
                 )
 
-                # 按鈕邏輯：切換 visible 狀態
                 visibility = [False] * len(unique_horses)
                 visibility[i] = True
-
                 buttons.append(dict(
-                    label=f" {h_num} 號馬 ",
+                    label=f" {h_num} 號 ",
                     method="update",
                     args=[{"visible": visibility}, 
-                          {"title": f"馬號 {h_num} - 過熱組合詳細表格"}]
+                          {"title": f"<b>馬號 {h_num} 過熱組合明細 (深色模式)</b>"}]
                 ))
 
-            # 配置佈局與按鈕選單
             fig.update_layout(
                 updatemenus=[dict(
-                    type="buttons", # 如果馬號超過 8 個，建議改為 "dropdown"
+                    type="buttons",
                     direction="right",
                     active=0,
-                    x=0, y=1.25,
+                    x=0, y=1.2,
                     buttons=buttons,
-                    showactive=True
+                    showactive=True,
+                    bgcolor="#333333",
+                    font=dict(color="white")
                 )],
-                title=f"第 {race_no} 場：點擊馬號切換表格內容",
-                margin=dict(t=100, b=20, l=10, r=10),
-                height=400 # 根據數據量調整高度
+                margin=dict(t=80, b=10, l=0, r=0),
+                height=550,
+                paper_bgcolor='rgba(0,0,0,0)', 
+                font=dict(color="white")
             )
 
-            # 渲染 Plotly 表格
-            st.plotly_chart(fig, width='stretch', key=f"plotly_tbl_{race_no}_{time_now.strftime('%H%M%S')}")
+            # --- 關鍵修正：依照 2026 規範使用 width='stretch' ---
+            st.plotly_chart(
+                fig, 
+                width='stretch', 
+                key=f"dark_heat_table_{race_no}_{time_now.strftime('%H%M%S')}", 
+                config={'displayModeBar': False}
+            )
+
         else:
             st.info("💡 目前無過熱組合數據。")
 
