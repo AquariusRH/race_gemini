@@ -1389,101 +1389,107 @@ def print_henery_model(gamma=1.18):
                 st.markdown(get_table_html(overheated_df, 'Reds_r'), unsafe_allow_html=True)
             else:
                 st.info("目前無過熱組合")
-        # --- 7. 深色熱力圖版 Plotly Table (不刷新 + 符合 2026 語法) ---
+        # --- 7. 最終優化版：支援系統 Dark Mode + 左對齊 ---
         st.write("---")
         
         ov_df = full_df[full_df["Value"] < 0.9].copy()
         
-        if not ov_df.empty:
-            unique_horses = sorted(list(set([int(n) for comb in ov_df['組合'] for n in comb.split('-')])))
-            
-            fig = go.Figure()
-            buttons = []
+        # 獲取場中所有馬號（即使沒過熱也顯示按鈕）
+        all_horse_list = sorted(list(win_probs.keys()))
+        
+        fig = go.Figure()
+        buttons = []
 
-            # Value 顏色映射函數 (越小越紅，還原你提供的圖片感)
-            def get_value_color(val):
-                if val <= 0.3: return '#8B0000' # 深紅
-                if val <= 0.5: return '#DC143C' # 鮮紅
-                if val <= 0.7: return '#FF7F50' # 橙紅
-                if val <= 0.8: return '#FFDAB9' # 淺橘
-                return '#1A1A1A'               # 預設深灰黑
+        # 漸層顏色函數 (Value 越小越紅)
+        def get_value_color(val):
+            if val <= 0.3: return '#8B0000' # 深紅
+            if val <= 0.5: return '#DC143C' # 鮮紅
+            if val <= 0.7: return '#FF7F50' # 橙紅
+            if val <= 0.8: return '#FFDAB9' # 淺橘
+            return 'rgba(0,0,0,0)'         # 透明（跟隨底色）
 
-            for i, h_num in enumerate(unique_horses):
-                mask = ov_df['組合'].apply(lambda x: any(int(part) == h_num for part in x.split('-')))
-                sub_df = ov_df[mask].sort_values("Value").reset_index(drop=True)
+        for i, h_num in enumerate(all_horse_list):
+            mask = ov_df['組合'].apply(lambda x: any(int(part) == h_num for part in x.split('-')))
+            sub_df = ov_df[mask].sort_values("Value").reset_index(drop=True)
 
-                # 動態計算 Value 欄位的背景色
+            if not sub_df.empty:
+                # --- 有組合的表格 ---
                 val_colors = sub_df["Value"].apply(get_value_color).tolist()
-                
                 fig.add_trace(
                     go.Table(
                         header=dict(
                             values=["<b>組合</b>", "<b>馬1獨贏</b>", "<b>馬2獨贏</b>", "<b>實時Q</b>", "<b>理論Q</b>", "<b>Value</b>"],
-                            fill_color='#111111', 
-                            align='center',
-                            font=dict(size=14, color='white'),
-                            line_color='#333333',
-                            height=35
+                            fill_color='#111111', align='center', 
+                            font=dict(size=14, color='white'), # 表頭固定白色在深色模式很酷
+                            line_color='#333333', height=35
                         ),
                         cells=dict(
-                            values=[
-                                sub_df["組合"], sub_df["馬1獨贏"], sub_df["馬2獨贏"], 
-                                sub_df["實時Q"], sub_df["理論Q"], sub_df["Value"]
-                            ],
+                            values=[sub_df["組合"], sub_df["馬1獨贏"], sub_df["馬2獨贏"], 
+                                    sub_df["實時Q"], sub_df["理論Q"], sub_df["Value"]],
+                            # 這裡是關鍵：其餘欄位設為半透明黑，Value 欄位動態變色
                             fill_color=[
-                                ['#1A1A1A'] * len(sub_df), # 其他欄位固定深色
-                                ['#1A1A1A'] * len(sub_df),
-                                ['#1A1A1A'] * len(sub_df),
-                                ['#1A1A1A'] * len(sub_df),
-                                ['#1A1A1A'] * len(sub_df),
-                                val_colors                 # 只有 Value 欄位套用熱力圖顏色
+                                ['rgba(30,30,30,0.5)']*len(sub_df), 
+                                ['rgba(30,30,30,0.5)']*len(sub_df),
+                                ['rgba(30,30,30,0.5)']*len(sub_df),
+                                ['rgba(30,30,30,0.5)']*len(sub_df),
+                                ['rgba(30,30,30,0.5)']*len(sub_df),
+                                val_colors
                             ],
-                            align='center',
-                            font=dict(size=13, color='white'),
-                            line_color='#333333',
-                            height=30
+                            align='center', font=dict(size=13, color='white'), 
+                            line_color='#333333', height=30
                         ),
-                        visible=(i == 0)
+                        visible=(i == 0),
+                        domain=dict(x=[0, 0.75]) # ⬅️ 寬度佔 75% 並靠左
+                    )
+                )
+            else:
+                # --- 無組合的提示表格 ---
+                fig.add_trace(
+                    go.Table(
+                        header=dict(
+                            values=["<b>狀態提示</b>"], 
+                            fill_color='#111111', font=dict(color='white')
+                        ),
+                        cells=dict(
+                            values=[[f"馬匹 {h_num} 目前沒有過熱組合"]], 
+                            fill_color=['rgba(30,30,30,0.5)'], 
+                            font=dict(color='#888888', size=15), height=60
+                        ),
+                        visible=(i == 0),
+                        domain=dict(x=[0, 0.75])
                     )
                 )
 
-                visibility = [False] * len(unique_horses)
-                visibility[i] = True
-                buttons.append(dict(
-                    label=f" {h_num} 號 ",
-                    method="update",
-                    args=[{"visible": visibility}, 
-                          {"title": f"<b>馬號 {h_num} 過熱組合明細 (深色模式)</b>"}]
-                ))
+            # 按鈕列表
+            visibility = [False] * len(all_horse_list)
+            visibility[i] = True
+            buttons.append(dict(
+                label=f" {h_num} 號 ",
+                method="update",
+                args=[{"visible": visibility}, {"title": f"<b>馬號 {h_num} 過熱組合明細</b>"}]
+            ))
 
-            fig.update_layout(
-                updatemenus=[dict(
-                    type="buttons",
-                    direction="right",
-                    active=0,
-                    x=0, y=1.2,
-                    buttons=buttons,
-                    showactive=True,
-                    bgcolor="#333333",
-                    font=dict(color="white")
-                )],
-                margin=dict(t=80, b=10, l=0, r=0),
-                height=550,
-                paper_bgcolor='rgba(0,0,0,0)', 
-                font=dict(color="white")
-            )
+        # 佈局設定
+        fig.update_layout(
+            updatemenus=[dict(
+                type="buttons", direction="right", active=0,
+                x=0, y=1.25, xanchor="left", # 按鈕左對齊
+                buttons=buttons, showactive=True,
+                bgcolor="#333333", font=dict(color="white"),
+                bordercolor="#444444"
+            )],
+            margin=dict(t=100, b=10, l=0, r=0),
+            height=500,
+            paper_bgcolor='rgba(0,0,0,0)', # 透明背景，完美融合 Streamlit Dark Mode
+            font=dict(color="white")
+        )
 
-            # --- 關鍵修正：依照 2026 規範使用 width='stretch' ---
-            st.plotly_chart(
-                fig, 
-                width='stretch', 
-                key=f"dark_heat_table_{race_no}_{time_now.strftime('%H%M%S')}", 
-                config={'displayModeBar': False}
-            )
-
-        else:
-            st.info("💡 目前無過熱組合數據。")
-
+        st.plotly_chart(
+            fig, 
+            width='stretch', 
+            key=f"dark_left_table_{race_no}", 
+            config={'displayModeBar': False}
+        )
         return full_df # 最後回傳完整 DataFrame
     
     return pd.DataFrame()
