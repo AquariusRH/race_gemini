@@ -1452,7 +1452,7 @@ def print_henery_model(gamma=1.18):
             )
 
             # 渲染圖表，使用 race_no 確保 key 唯一
-            st.plotly_chart(fig, use_container_width=True, key=f"henery_plotly_{race_no}_{time_now.strftime("%H%M%S")}")
+            st.plotly_chart(fig, use_container_width=True, key=f"henery_plotly_{race_no}_{time_now.strftime('%H%M%S')}")
         else:
             st.info("💡 目前數據中無過熱馬匹組合，無需顯示圖表。")
 
