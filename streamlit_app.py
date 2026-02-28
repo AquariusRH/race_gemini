@@ -1391,8 +1391,6 @@ def print_henery_model(gamma=1.18):
             else:
                 st.info("目前無過熱組合")
         # --- 7. 最終優化版：支援系統 Dark Mode + 左對齊 ---
-        st.write("---")
-        
         ov_df = full_df[full_df["Value"] < 0.9].copy()
         
         # 獲取場中所有馬號（即使沒過熱也顯示按鈕）
