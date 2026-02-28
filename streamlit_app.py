@@ -1480,10 +1480,12 @@ def print_henery_model(gamma=1.18):
                     vis = [False] * num_horses
                     vis[g_idx] = True
                     
+                    # 這裡我們不依賴系統的 active 顏色
                     row_buttons.append(dict(
                         label=f" {h_btn} 號 ",
                         method="update",
-                        args=[{"visible": vis}, {"title": ""}]
+                        # 當點擊時，我們更新 Trace 的可見性，並可以順便更新 Layout 標題作為提示
+                        args=[{"visible": vis}, {"title": f"<b>正在檢視：{h_btn} 號馬過熱組合</b>"}]
                     ))
                 
                 menu_list.append(dict(
@@ -1492,25 +1494,25 @@ def print_henery_model(gamma=1.18):
                     x=0, 
                     xanchor="left",
                     yanchor="bottom",
+                    # y=1.01 幾乎壓在橫線上
                     y=1.01 + (row_count - 1 - (row_idx // buttons_per_row)) * 0.08, 
                     buttons=row_buttons,
-                    # --- 關鍵修正：美化選中樣式 ---
-                    showactive=True,
-                    activebgcolor="#FF4B4B", # ⬅️ 改為 Streamlit 紅或自定義深色，避免「太白」
-                    bgcolor="#333333",       # 未選中背景
+                    showactive=False,       # ⬅️ 關閉預設的「全白」高亮
+                    bgcolor="#333333",      # 統一背景色
                     font=dict(color="white", size=15),
-                    bordercolor="#444444",
+                    bordercolor="#555555",
                     borderwidth=1,
-                    pad={"r": 6, "t": 0, "b": 0} 
+                    pad={"r": 6, "t": 0, "b": 2} 
                 ))
         
             fig.update_layout(
                 dragmode=False,
                 updatemenus=menu_list,
-                margin=dict(t=30 + (row_count * 40), b=5, l=0, r=0),
+                # 再次壓縮頂部邊距
+                margin=dict(t=40 + (row_count * 40), b=5, l=0, r=0), 
                 height=550 + (len(sub_df) * 35) if not sub_df.empty else 450,
                 paper_bgcolor='rgba(0,0,0,0)',
-                font=dict(color="white")
+                font=dict(color="white", family="Arial")
             )
 
         st.plotly_chart(
