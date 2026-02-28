@@ -1411,6 +1411,7 @@ def print_henery_model(gamma=1.18):
                 
                 fig.add_trace(
                     go.Table(
+                        columnwidth = [100, 80, 80, 80, 80, 100],
                         header=dict(
                             values=["<b>組合</b>", "<b>馬1獨贏</b>", "<b>馬2獨贏</b>", "<b>實時Q</b>", "<b>理論Q</b>", "<b>Value</b>"],
                             fill_color='#111111', align='center', font=dict(color='white'),
@@ -1436,12 +1437,12 @@ def print_henery_model(gamma=1.18):
                                     ['white']*len(sub_df),
                                     val_font_colors        # ⬅️ Value 字體動態黑白切換
                                 ],
-                                size=15
+                                size=18
                             ),
                             align='center', line_color='#333333'
                         ),
                         visible=(i == 0),
-                        domain=dict(x=[0, 0.75])
+                        domain=dict(x=[0, 1.0])
                     )
                 )
             else:
@@ -1455,10 +1456,10 @@ def print_henery_model(gamma=1.18):
                         cells=dict(
                             values=[[f"馬匹 {h_num} 目前沒有過熱組合"]], 
                             fill_color=['rgba(30,30,30,0.5)'], 
-                            font=dict(color='#888888', size=15), height=60
+                            font=dict(color='#888888', size=20), height=60
                         ),
                         visible=(i == 0),
-                        domain=dict(x=[0, 0.75])
+                        domain=dict(x=[0, 1.0])
                     )
                 )
 
@@ -1478,11 +1479,12 @@ def print_henery_model(gamma=1.18):
                 type="buttons", direction="right", active=0,
                 x=0, y=1.25, xanchor="left", # 按鈕左對齊
                 buttons=buttons, showactive=True,
-                bgcolor="#333333", font=dict(color="white"),
-                bordercolor="#444444"
+                bgcolor="#333333", font=dict(color="white",size = 18),
+                bordercolor="#444444",
+                pad={"r": 10, "t": 10}
             )],
-            margin=dict(t=100, b=10, l=0, r=0),
-            height=500,
+            margin=dict(t=120, b=10, l=5, r=5),
+            height=650,
             paper_bgcolor='rgba(0,0,0,0)', # 透明背景，完美融合 Streamlit Dark Mode
             font=dict(color="white")
         )
