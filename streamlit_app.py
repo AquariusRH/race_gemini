@@ -1495,22 +1495,22 @@ def print_henery_model(gamma=1.18):
                     xanchor="left",
                     yanchor="bottom",
                     # y=1.01 幾乎壓在橫線上
-                    y=1.01 + (row_count - 1 - (row_idx // buttons_per_row)) * 0.08, 
+                    y=1.01 + (row_count - 1 - (row_idx // buttons_per_row)) * 0.01, 
                     buttons=row_buttons,
-                    showactive=False,       # ⬅️ 關閉預設的「全白」高亮
+                    showactive=True,       # ⬅️ 關閉預設的「全白」高亮
                     bgcolor="#333333",      # 統一背景色
                     font=dict(color="white", size=15),
                     bordercolor="#555555",
                     borderwidth=1,
-                    pad={"r": 6, "t": 0, "b": 2} 
+                    pad={"r": 10, "t": 2, "b": 2} 
                 ))
         
             fig.update_layout(
                 dragmode=False,
                 updatemenus=menu_list,
                 # 再次壓縮頂部邊距
-                margin=dict(t=40 + (row_count * 40), b=5, l=0, r=0), 
-                height=550 + (len(sub_df) * 35) if not sub_df.empty else 450,
+                margin=dict(t=40 + (row_count * 45), b=5, l=0, r=0), 
+                height=600 + (len(sub_df) * 35) if not sub_df.empty else 450,
                 paper_bgcolor='rgba(0,0,0,0)',
                 font=dict(color="white", family="Arial")
             )
