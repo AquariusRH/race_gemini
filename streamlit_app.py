@@ -1414,7 +1414,7 @@ def print_henery_model(gamma=1.18):
                         columnwidth = [100, 80, 80, 80, 80, 100],
                         header=dict(
                             values=["<b>組合</b>", "<b>馬1獨贏</b>", "<b>馬2獨贏</b>", "<b>實時Q</b>", "<b>理論Q</b>", "<b>Value</b>"],
-                            fill_color='#111111', align='center', font=dict(color='white'),
+                            fill_color='#111111', align='center', font=dict(color='white',size = 18),
                             line_color='#333333'
                         ),
                         cells=dict(
@@ -1437,9 +1437,9 @@ def print_henery_model(gamma=1.18):
                                     ['white']*len(sub_df),
                                     val_font_colors        # ⬅️ Value 字體動態黑白切換
                                 ],
-                                size=18
+                                size=18,
                             ),
-                            align='center', line_color='#333333'
+                            align='center', line_color='#333333',height=45
                         ),
                         visible=(i == 0),
                         domain=dict(x=[0, 1.0])
@@ -1491,7 +1491,7 @@ def print_henery_model(gamma=1.18):
 
         st.plotly_chart(
             fig, 
-            width='stretch', 
+            width='content', 
             key=f"dark_left_table_{race_no}_{time_now.strftime('%H%M%S')}", 
             config={'displayModeBar': False}
         )
