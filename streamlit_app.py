@@ -1375,15 +1375,15 @@ def print_henery_model(gamma=1.18):
         full_df = full_df[full_df["實時Q"] < 100]
         col1, col2 = st.columns(2)
     
-        with col1:
-            st.success("✅ **高價值組合 (Value > 1.1)**")
-            high_df = full_df[full_df["Value"] > 1.1].sort_values("實時Q", ascending=False).head(25).sort_values("Value", ascending=True)
-            if not high_df.empty:
-                st.markdown(get_table_html(high_df, 'Greens'), unsafe_allow_html=True)
-            else:
-                st.info("目前無符合條件組合")
+        #with col1:
+           # st.success("✅ **高價值組合 (Value > 1.1)**")
+           # high_df = full_df[full_df["Value"] > 1.1].sort_values("實時Q", ascending=False).head(25).sort_values("Value", ascending=True)
+            #if not high_df.empty:
+                #st.markdown(get_table_html(high_df, 'Greens'), unsafe_allow_html=True)
+            #else:
+                #st.info("目前無符合條件組合")
     
-        with col2:
+        with col1:
             st.error("🔥 **過熱組合 (Value < 0.9)**")
             overheated_df = full_df[full_df["Value"] < 0.9].sort_values("實時Q", ascending=True).head(25).sort_values("Value", ascending=True)
             if not overheated_df.empty:
@@ -1391,137 +1391,137 @@ def print_henery_model(gamma=1.18):
             else:
                 st.info("目前無過熱組合")
         # --- 7. 最終優化版：支援系統 Dark Mode + 左對齊 ---
-        st.write('---')
-        ov_df = full_df[full_df["Value"] < 0.9].copy()
-        
-        # 獲取場中所有馬號（即使沒過熱也顯示按鈕）
-        all_horse_list = sorted(list(win_probs.keys()))
-        num_horses = len(all_horse_list)
-        fig = go.Figure()
-        buttons = []
-
-        for i, h_num in enumerate(all_horse_list):
-            mask = ov_df['組合'].apply(lambda x: any(int(part) == h_num for part in x.split('-')))
-            sub_df = ov_df[mask].sort_values("Value").reset_index(drop=True)
-
-            if not sub_df.empty:
-                # 🌈 同時取得背景與字體顏色
-                val_bg_colors, val_font_colors = get_adaptive_colors(sub_df["Value"])
-                
-                fig.add_trace(
-                    go.Table(
-                        columnwidth = [100, 80, 80, 80, 80, 100],
-                        header=dict(
-                            values=["<b>組合</b>", "<b>馬1獨贏</b>", "<b>馬2獨贏</b>", "<b>實時Q</b>", "<b>理論Q</b>", "<b>Value</b>"],
-                            fill_color='#111111', align='center', font=dict(color='white',size = 18),
-                            line_color='#333333'
-                        ),
-                        cells=dict(
-                            values=[sub_df["組合"], sub_df["馬1獨贏"], sub_df["馬2獨贏"], 
-                                    sub_df["實時Q"], sub_df["理論Q"], sub_df["Value"]],
-                            fill_color=[
-                                ['rgba(30,30,30,0.5)']*len(sub_df),
-                                ['rgba(30,30,30,0.5)']*len(sub_df),
-                                ['rgba(30,30,30,0.5)']*len(sub_df),
-                                ['rgba(30,30,30,0.5)']*len(sub_df),
-                                ['rgba(30,30,30,0.5)']*len(sub_df),
-                                val_bg_colors  # 背景漸層
-                            ],
-                            font=dict(
-                                color=[
-                                    ['white']*len(sub_df), # 其他欄位固定白字
-                                    ['white']*len(sub_df),
-                                    ['white']*len(sub_df),
-                                    ['white']*len(sub_df),
-                                    ['white']*len(sub_df),
-                                    val_font_colors        # ⬅️ Value 字體動態黑白切換
-                                ],
-                                size=18,
-                            ),
-                            align='center', line_color='#333333',height=45
-                        ),
-                        visible=(i == 0),
-                        domain=dict(x=[0, 1.0])
-                    )
-                )
-            else:
-                # --- 無組合的提示表格 ---
-                fig.add_trace(
-                    go.Table(
-                        header=dict(
-                            values=["<b>狀態提示</b>"], 
-                            fill_color='#111111', font=dict(color='white')
-                        ),
-                        cells=dict(
-                            values=[[f"馬匹 {h_num} 目前沒有過熱組合"]], 
-                            fill_color=['rgba(30,30,30,0.5)'], 
-                            font=dict(color='#888888', size=20), height=60
-                        ),
-                        visible=(i == 0),
-                        domain=dict(x=[0, 1.0])
-                    )
-                )
-
-            # 按鈕列表
-            buttons_per_row = 8
-            row_count = (num_horses + buttons_per_row - 1) // buttons_per_row
-            menu_list = []
+        with col2:
+            ov_df = full_df[full_df["Value"] < 0.9].copy()
             
-            for row_idx in range(0, num_horses, buttons_per_row):
-                row_horses = all_horse_list[row_idx : row_idx + buttons_per_row]
-                row_buttons = []
-                
-                for h_btn in row_horses:
-                    g_idx = all_horse_list.index(h_btn)
-                    
-                    # 建立 visibility 陣列：只有點擊的那匹馬對應的 Trace 是 True
-                    # 其餘全部（包含其他行的馬）都是 False
-                    vis = [False] * num_horses
-                    vis[g_idx] = True
-                    
-                    # 這裡我們不依賴系統的 active 顏色
-                    row_buttons.append(dict(
-                        label=f" {h_btn} 號 ",
-                        method="update",
-                        # 當點擊時，我們更新 Trace 的可見性，並可以順便更新 Layout 標題作為提示
-                        args=[{"visible": vis}, {"title": f"<b>正在檢視：{h_btn} 號馬過熱組合</b>"}]
-                    ))
-                current_row_from_bottom = row_count - 1 - (row_idx // buttons_per_row)
-                menu_list.append(dict(
-                    type="buttons",
-                    direction="right",
-                    x=0, 
-                    xanchor="left",
-                    yanchor="bottom",
-                    # ⬇️ 這裡改為 1.01，按鈕就會直接坐在表格頂線上
-                    y=1.01 + (current_row_from_bottom * 0.08), 
-                    buttons=row_buttons,
-                    showactive=False,
-                    bgcolor="#333333",
-                    font=dict(color="white", size=15),
-                    bordercolor="#555555",
-                    borderwidth=1,
-                    pad={"r": 8, "t": 2, "b": 0} 
-                ))
+            # 獲取場中所有馬號（即使沒過熱也顯示按鈕）
+            all_horse_list = sorted(list(win_probs.keys()))
+            num_horses = len(all_horse_list)
+            fig = go.Figure()
+            buttons = []
     
-            # --- 2. 修正 Layout (壓縮頂部空間讓表格上移) ---
-            fig.update_layout(
-                dragmode=False,
-                updatemenus=menu_list,
-                # ⬇️ 關鍵：t 不能太小（否則按鈕會出界），但也不能太大（否則表格會下沉）
-                # 建議設為 30 + (行數 * 35)，這樣能確保按鈕剛好頂到最上方，表格跟著上移
-                margin=dict(t=30 + (row_count * 35), b=10, l=0, r=0), 
-                height=650,
-                paper_bgcolor='rgba(0,0,0,0)',
-                font=dict(color="white", family="Arial")
+            for i, h_num in enumerate(all_horse_list):
+                mask = ov_df['組合'].apply(lambda x: any(int(part) == h_num for part in x.split('-')))
+                sub_df = ov_df[mask].sort_values("Value").reset_index(drop=True)
+    
+                if not sub_df.empty:
+                    # 🌈 同時取得背景與字體顏色
+                    val_bg_colors, val_font_colors = get_adaptive_colors(sub_df["Value"])
+                    
+                    fig.add_trace(
+                        go.Table(
+                            columnwidth = [100, 80, 80, 80, 80, 100],
+                            header=dict(
+                                values=["<b>組合</b>", "<b>馬1獨贏</b>", "<b>馬2獨贏</b>", "<b>實時Q</b>", "<b>理論Q</b>", "<b>Value</b>"],
+                                fill_color='#111111', align='center', font=dict(color='white',size = 18),
+                                line_color='#333333'
+                            ),
+                            cells=dict(
+                                values=[sub_df["組合"], sub_df["馬1獨贏"], sub_df["馬2獨贏"], 
+                                        sub_df["實時Q"], sub_df["理論Q"], sub_df["Value"]],
+                                fill_color=[
+                                    ['rgba(30,30,30,0.5)']*len(sub_df),
+                                    ['rgba(30,30,30,0.5)']*len(sub_df),
+                                    ['rgba(30,30,30,0.5)']*len(sub_df),
+                                    ['rgba(30,30,30,0.5)']*len(sub_df),
+                                    ['rgba(30,30,30,0.5)']*len(sub_df),
+                                    val_bg_colors  # 背景漸層
+                                ],
+                                font=dict(
+                                    color=[
+                                        ['white']*len(sub_df), # 其他欄位固定白字
+                                        ['white']*len(sub_df),
+                                        ['white']*len(sub_df),
+                                        ['white']*len(sub_df),
+                                        ['white']*len(sub_df),
+                                        val_font_colors        # ⬅️ Value 字體動態黑白切換
+                                    ],
+                                    size=18,
+                                ),
+                                align='center', line_color='#333333',height=45
+                            ),
+                            visible=(i == 0),
+                            domain=dict(x=[0, 1.0])
+                        )
+                    )
+                else:
+                    # --- 無組合的提示表格 ---
+                    fig.add_trace(
+                        go.Table(
+                            header=dict(
+                                values=["<b>狀態提示</b>"], 
+                                fill_color='#111111', font=dict(color='white')
+                            ),
+                            cells=dict(
+                                values=[[f"馬匹 {h_num} 目前沒有過熱組合"]], 
+                                fill_color=['rgba(30,30,30,0.5)'], 
+                                font=dict(color='#888888', size=20), height=60
+                            ),
+                            visible=(i == 0),
+                            domain=dict(x=[0, 1.0])
+                        )
+                    )
+    
+                # 按鈕列表
+                buttons_per_row = 8
+                row_count = (num_horses + buttons_per_row - 1) // buttons_per_row
+                menu_list = []
+                
+                for row_idx in range(0, num_horses, buttons_per_row):
+                    row_horses = all_horse_list[row_idx : row_idx + buttons_per_row]
+                    row_buttons = []
+                    
+                    for h_btn in row_horses:
+                        g_idx = all_horse_list.index(h_btn)
+                        
+                        # 建立 visibility 陣列：只有點擊的那匹馬對應的 Trace 是 True
+                        # 其餘全部（包含其他行的馬）都是 False
+                        vis = [False] * num_horses
+                        vis[g_idx] = True
+                        
+                        # 這裡我們不依賴系統的 active 顏色
+                        row_buttons.append(dict(
+                            label=f" {h_btn} 號 ",
+                            method="update",
+                            # 當點擊時，我們更新 Trace 的可見性，並可以順便更新 Layout 標題作為提示
+                            args=[{"visible": vis}, {"title": f"<b>正在檢視：{h_btn} 號馬過熱組合</b>"}]
+                        ))
+                    current_row_from_bottom = row_count - 1 - (row_idx // buttons_per_row)
+                    menu_list.append(dict(
+                        type="buttons",
+                        direction="right",
+                        x=0, 
+                        xanchor="left",
+                        yanchor="bottom",
+                        # ⬇️ 這裡改為 1.01，按鈕就會直接坐在表格頂線上
+                        y=1.01 + (current_row_from_bottom * 0.08), 
+                        buttons=row_buttons,
+                        showactive=False,
+                        bgcolor="#333333",
+                        font=dict(color="white", size=15),
+                        bordercolor="#555555",
+                        borderwidth=1,
+                        pad={"r": 8, "t": 2, "b": 0} 
+                    ))
+        
+                # --- 2. 修正 Layout (壓縮頂部空間讓表格上移) ---
+                fig.update_layout(
+                    dragmode=False,
+                    updatemenus=menu_list,
+                    # ⬇️ 關鍵：t 不能太小（否則按鈕會出界），但也不能太大（否則表格會下沉）
+                    # 建議設為 30 + (行數 * 35)，這樣能確保按鈕剛好頂到最上方，表格跟著上移
+                    margin=dict(t=30 + (row_count * 35), b=10, l=0, r=0), 
+                    height=650,
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    font=dict(color="white", family="Arial")
+                )
+    
+            st.plotly_chart(
+                fig, 
+                width='content', 
+                key=f"dark_left_table_{race_no}_{time_now.strftime('%H%M%S')}", 
+                config={'displayModeBar': False}
             )
-
-        st.plotly_chart(
-            fig, 
-            width='content', 
-            key=f"dark_left_table_{race_no}_{time_now.strftime('%H%M%S')}", 
-            config={'displayModeBar': False}
-        )
         return full_df # 最後回傳完整 DataFrame
     
     return pd.DataFrame()
