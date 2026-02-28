@@ -1388,38 +1388,45 @@ def print_henery_model(gamma=1.18):
                 st.markdown(get_table_html(overheated_df, 'Reds_r'), unsafe_allow_html=True)
             else:
                 st.info("目前無過熱組合")
-        # --- 7. 新增：馬號篩選按鈕區 ---
+        # --- 7. 新增：馬號篩選按鈕區 (解決 Key 重複問題) ---
         st.write("---")
-        st.subheader("🏇 按馬號查看過熱組合")
+        st.subheader("🏇 按馬號查看該馬過熱組合 (Value < 0.9)")
         
-        # 取得所有馬號並排序
         all_horses = sorted(list(win_probs.keys()))
         
-        # 建立按鈕橫列 (使用 columns 讓按鈕排成一排)
-        btn_cols = st.columns(len(all_horses))
-        selected_horse = st.session_state.get('selected_horse', None)
+        # 使用 columns 讓按鈕橫向排列，若馬匹多可分兩行
+        # 為了避免 Key 重複，我們加上 race_no (場次) 作為前綴
+        cols = st.columns(len(all_horses))
+        
+        # 初始化 session_state 用於儲存當前場次選中的馬號
+        filter_key = f"selected_h_race_{race_no}"
+        if filter_key not in st.session_state:
+            st.session_state[filter_key] = None
 
         for i, h_num in enumerate(all_horses):
-            if btn_cols[i].button(str(h_num), key=f"btn_{h_num}"):
-                st.session_state.selected_horse = h_num
-                selected_horse = h_num
+            # 關鍵：key 使用了場次 + 馬號，確保唯一性
+            if cols[i].button(str(h_num), key=f"btn_r{race_no}_h{h_num}"):
+                st.session_state[filter_key] = h_num
 
-        # 如果有選中馬號，顯示該馬號在 overheated_df (Value < 0.9) 中的組合
-        if selected_horse:
-            st.info(f"正在查看 {selected_horse} 號馬的篩選結果：")
+        # 顯示篩選結果
+        current_selected = st.session_state[filter_key]
+        if current_selected:
+            st.markdown(f"🔍 正在顯示 **{current_selected} 號馬** 的結果：")
             
-            # 篩選邏輯：組合字串中包含該馬號 (例如 "2-10" 包含 "2")
-            # 這裡用原始數據篩選更精準
-            target_mask = full_df['組合'].apply(lambda x: any(int(n) == selected_horse for n in x.split('-')))
-            horse_df = full_df[target_mask].copy()
-            
-            # 只顯示過熱 (Value < 0.9)
-            horse_overheated = horse_df[horse_df["Value"] < 0.9].sort_values("Value")
+            # 篩選邏輯：從 full_df 找出包含該馬號且 Value < 0.9 的組合
+            # 我們解析 "1-2" 這種字串來比對
+            def is_horse_in_comb(comb_str, target_h):
+                parts = comb_str.split('-')
+                return any(int(p) == target_h for p in parts)
 
-            if not horse_overheated.empty:
-                st.markdown(get_table_html(horse_overheated, 'Reds_r'), unsafe_allow_html=True)
+            horse_mask = full_df['組合'].apply(lambda x: is_horse_in_comb(x, current_selected))
+            specific_overheated = full_df[horse_mask & (full_df["Value"] < 0.9)].sort_values("Value")
+
+            if not specific_overheated.empty:
+                st.markdown(get_table_html(specific_overheated, 'Reds_r'), unsafe_allow_html=True)
             else:
-                st.success(f"✅ {selected_horse} 號馬目前沒有過熱組合。")
+                st.success(f"✅ {current_selected} 號馬目前沒有過熱組合。")
+            
         return full_df # 最後回傳完整 DataFrame
     
     return pd.DataFrame()
