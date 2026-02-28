@@ -1508,8 +1508,8 @@ def print_henery_model(gamma=1.18):
                 dragmode=False,
                 updatemenus=menu_list,
                 # 再次壓縮頂部邊距
-                margin=dict(t=(row_count * 40), b=10, l=0, r=0), 
-                height=500,
+                margin=dict(t=10, b=10, l=0, r=0), 
+                height=650,
                 paper_bgcolor='rgba(0,0,0,0)',
                 font=dict(color="white", family="Arial")
             )
