@@ -1400,8 +1400,7 @@ def print_henery_model(gamma=1.18):
         selected_h_str = st.pills(
             "選擇馬號查看過熱組合", 
             options, 
-            key=f"pills_r{race_no}",
-            index=None  # 預設不選取
+            key=f"pills_r{race_no}" # 預設不選取
         )
 
         if selected_h_str:
