@@ -1400,7 +1400,7 @@ def print_henery_model(gamma=1.18):
             selected_h_str = st.pills(
                 "選擇馬號：", 
                 options, 
-                key=f"fragment_pills_{race_no}"
+                key=f"fragment_pills_{race_no}{time_now}"
             )
 
             # 建立一個固定的佔位空間
