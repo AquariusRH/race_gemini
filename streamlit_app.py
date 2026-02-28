@@ -1388,49 +1388,40 @@ def print_henery_model(gamma=1.18):
                 st.markdown(get_table_html(overheated_df, 'Reds_r'), unsafe_allow_html=True)
             else:
                 st.info("目前無過熱組合")
-        # --- 7. 新增：動態切換馬號區 ---
+        # --- 7. 改用 Pills 組件 (更換內容、減少跳動感) ---
         st.write("---")
-        st.subheader("🏇 快速篩選：查看特定馬匹的過熱組合")
-
-        # 取得所有馬號並排序
-        all_horses = sorted(list(win_probs.keys()))
         
-        # 建立按鈕橫列 (每列最多 7 個，避免太擠)
-        row_size = 7
-        for i in range(0, len(all_horses), row_size):
-            row_horses = all_horses[i : i + row_size]
-            cols = st.columns(len(row_horses))
-            for idx, h_num in enumerate(row_horses):
-                # 使用 race_no + horse_num 確保 Key 唯一
-                if cols[idx].button(f"{h_num}", key=f"btn_r{race_no}_h{h_num}_{time_str}", use_container_width=True):
-                    st.session_state[f"filter_h_{race_no}"] = h_num
+        all_horses = sorted(list(win_probs.keys()))
+        options = [str(h) for h in all_horses]
+        
+        # 使用 st.pills 或 st.segmented_control
+        # label_visibility="collapsed" 可以隱藏標題，讓介面更乾淨
+        selected_h_str = st.pills(
+            "選擇馬號查看過熱組合", 
+            options, 
+            key=f"pills_r{race_no}",
+            index=None  # 預設不選取
+        )
 
-        # 建立一個動態容器，專門用來「更換」顯示內容
-        display_container = st.container()
-
-        # 檢查 Session State 中是否有選中的馬號
-        selected_h = st.session_state.get(f"filter_h_{race_no}")
-
-        if selected_h:
-            with display_container:
-                st.markdown(f"#### 🔍 正在顯示: **{selected_h} 號馬** 的過熱清單")
-                
-                # 精確匹配馬號 (處理 1 號不會誤抓 10, 11 號)
-                def check_horse(comb_str, target):
-                    return any(int(n) == target for n in comb_str.split('-'))
-
-                # 篩選出包含該馬號 且 Value < 0.9 的 overheated 組合
-                horse_mask = full_df['組合'].apply(lambda x: check_horse(x, selected_h))
-                horse_overheated = full_df[horse_mask & (full_df["Value"] < 0.9)].sort_values("Value")
-
-                if not horse_overheated.empty:
-                    # 這裡直接呼叫你定義好的 get_table_html
-                    st.markdown(get_table_html(horse_overheated, 'Reds_r'), unsafe_allow_html=True)
-                else:
-                    st.info(f"✨ {selected_h} 號馬目前在 Overheated 名單中沒有組合。")
-                
-                
+        if selected_h_str:
+            selected_h = int(selected_h_str)
+            st.markdown(f"#### 🔍 {selected_h} 號馬：過熱組合明細")
             
+            # 篩選邏輯
+            def check_horse(comb_str, target):
+                return any(int(n) == target for n in comb_str.split('-'))
+
+            horse_mask = full_df['組合'].apply(lambda x: check_horse(x, selected_h))
+            # 這裡篩選出該馬且 Value < 0.9 的數據
+            horse_overheated = full_df[horse_mask & (full_df["Value"] < 0.9)].sort_values("Value")
+
+            if not horse_overheated.empty:
+                st.markdown(get_table_html(horse_overheated, 'Reds_r'), unsafe_allow_html=True)
+            else:
+                st.info(f"✅ {selected_h} 號馬目前沒有過熱組合。")
+        else:
+            st.caption("💡 點擊上方馬號可快速過濾該馬的過熱組合。")
+                
         return full_df # 最後回傳完整 DataFrame
     
     return pd.DataFrame()
