@@ -1481,7 +1481,7 @@ def print_henery_model(gamma=1.18):
                 
                 menu_list.append(dict(
                     type="buttons", direction="right", x=0, xanchor="left", yanchor="top",
-                    y=1.15 - (row_idx // buttons_per_row) * 0.15,
+                    y=1.12 - (row_idx // buttons_per_row) * 0.07,
                     buttons=row_buttons, showactive=True,
                     bgcolor="#444444", font=dict(color="white", size=15), pad={"r": 8}
                 ))
