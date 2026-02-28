@@ -1367,6 +1367,7 @@ def print_henery_model(gamma=1.18):
             .set_table_attributes('style="width:100%; border-collapse: collapse; white-space: nowrap;"')
             .to_html()
         )
+    @st.fragment
     def horse_switch_section(df, race_no):
         st.write("---")
         # 取得所有馬號並轉換為字串
