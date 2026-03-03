@@ -1581,7 +1581,7 @@ with st.sidebar:
     show_bar = st.toggle("📊 顯示長條圖", key="show_bar", value=False)
     show_move_bar = st.toggle("📊 顯示移動長條圖", key="show_move_bar", value=True)
     show_top = st.toggle("🏆 顯示連贏賠率排名", key="show_top", value=True)
-    show_henery = st.toggle("🚀 顯示Henery Model 預測", key="show_henery", value=False)
+    show_henery = st.toggle("🚀 顯示Henery Model 預測", key="show_henery", value=True)
 # --- 賽事資料加載 ---
 @st.cache_data(ttl=3600)
 def fetch_race_card(date_str, venue):
