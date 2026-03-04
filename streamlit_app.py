@@ -1428,7 +1428,7 @@ def print_henery_model(gamma=1.18):
     if results:
         full_df = pd.DataFrame(results)
         full_df = pd.merge(full_df, plus_df_clean, on='組合', how='left')
-        full_df = full_df[['組合', '最初排名', '上一次排名','實時Q','理論Q','Value']
+        full_df = full_df[['組合', '最初排名', '上一次排名','實時Q','理論Q','Value']]
         full_df = full_df[full_df["實時Q"] < 100]
         col1, col2 = st.columns(2)
     
