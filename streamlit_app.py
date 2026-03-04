@@ -1102,10 +1102,9 @@ def top(method_odds_df, method_investment_df, method):
             '三分鐘投注': '{:.2f}k'
         }).bar(subset=['一分鐘投注', '三分鐘投注'], color='rgba(173, 216, 230, 0.5)').map(highlight_change, subset=['最初排名', '上一次排名']).hide(axis='index')
           # Display the styled DataFrame
-        if method == "QIN":
-            result["main_table"] = styled_df
-            result["plus_table"] = styled_rows_with_plus  
-            result["plus_df"] = final_df
+        result["main_table"] = styled_df
+        result["plus_table"] = styled_rows_with_plus  
+        result["plus_df"] = final_df
       #st.write(styled_df.to_html(), unsafe_allow_html=True)
         notice_df = None  
         if method in ["QIN","QPL","FCT","TRI","FF"]:
@@ -1402,7 +1401,7 @@ def print_henery_model(gamma=1.18):
                 "Value": round(val_score, 2)
             })
 
-    tables = top(st.session_state.odds_dict[method], st.session_state.investment_dict[method], method)
+    tables = top(st.session_state.odds_dict["QIN"], st.session_state.investment_dict["QIN"], "QIN")
     plus_df = tables.get("plus_df")
     st.write(plus_df)
     plus_df_clean = plus_df.copy()
