@@ -1104,7 +1104,7 @@ def top(method_odds_df, method_investment_df, method):
           # Display the styled DataFrame
         result["main_table"] = styled_df
         result["plus_table"] = styled_rows_with_plus  
-        result["plus_df"] = target_df
+        result["plus_df"] = styled_df
       #st.write(styled_df.to_html(), unsafe_allow_html=True)
         notice_df = None  
         if method in ["QIN","QPL","FCT","TRI","FF"]:
