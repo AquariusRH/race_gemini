@@ -1454,12 +1454,12 @@ def print_henery_model(gamma=1.18):
                         go.Table(
                             columnwidth = [100, 80, 80, 80, 80, 100],
                             header=dict(
-                                values=["<b>組合</b>", "<b>馬1獨贏</b>", "<b>馬2獨贏</b>", "<b>實時Q</b>", "<b>理論Q</b>", "<b>Value</b>"],
+                                values=["<b>組合</b>", "<b>最初排名</b>", "<b>上一次排名</b>", "<b>實時Q</b>", "<b>理論Q</b>", "<b>Value</b>"],
                                 fill_color='#111111', align='center', font=dict(color='white',size = 18),
                                 line_color='#333333'
                             ),
                             cells=dict(
-                                values=[sub_df["組合"], sub_df["馬1獨贏"], sub_df["馬2獨贏"], 
+                                values=[sub_df["組合"], sub_df["最初排名"], sub_df["上一次排名"], 
                                         sub_df["實時Q"], sub_df["理論Q"], sub_df["Value"]],
                                 fill_color=[
                                     ['rgba(30,30,30,0.5)']*len(sub_df),
