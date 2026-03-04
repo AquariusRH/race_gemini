@@ -1387,7 +1387,7 @@ def print_henery_model(gamma=1.18):
     tables = top(st.session_state.odds_dict[method], st.session_state.investment_dict[method], method)
     plus_df = tables.get("plus_df")
     plus_df_clean = plus_df[['組合', '最初排名', '上一次排名']]
-    #st.write(plus_df_clean)
+    st.write(plus_df_clean)
     def get_table_html(df, cmap_name):
         return (
             df.style.background_gradient(subset=['Value'], cmap=cmap_name)
