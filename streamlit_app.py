@@ -962,6 +962,7 @@ def top(method_odds_df, method_investment_df, method):
     result = {
         "main_table": None,
         "plus_table": None,
+        "plus_df": None,
         "notice_table": None
     }
     # Extract the first row from odds DataFrame
@@ -1051,70 +1052,72 @@ def top(method_odds_df, method_investment_df, method):
     final_df = final_df.merge(third_last_row_investment_df[['Combination', 'Previous_Investment_Change']], on='Combination', how='left')
 
     if method in ['WIN','PLA']:
-      final_df.columns = ['馬匹', '賠率', '最初賠率', '排名', '最初排名', '上一次排名', '投注變化', '投注', '一分鐘投注','三分鐘投注']
-      target_df = final_df
-      rows_with_plus = target_df[
-          target_df['最初排名'].astype(str).str.contains('\+') |
-          target_df['上一次排名'].astype(str).str.contains('\+')
-      ][['馬匹', '賠率', '最初排名', '上一次排名']]
-      # Apply the conditional formatting to the 初始排名 and 前一排名 columns and add a bar to the 投資變化 column
-      styled_df = final_df.style.format({
-        '賠率': '{:.1f}',
-        '最初賠率': '{:.1f}',
-        '投注變化': '{:.2f}k',
-        '投注': '{:.2f}k',
-        '一分鐘投注': '{:.2f}k',
-        '三分鐘投注': '{:.2f}k'
-      }).map(highlight_change, subset=['最初排名', '上一次排名']).bar(subset=['投注變化', '一分鐘投注','三分鐘投注'], color='rgba(173, 216, 230, 0.5)').hide(axis='index')
-      styled_rows_with_plus = rows_with_plus.style.format({'賠率': '{:.1f}'}).map(highlight_change, subset=['最初排名', '上一次排名']).hide(axis='index')
-      # Display the styled DataFrame
-      result["main_table"] = styled_df
-      result["plus_table"] = styled_rows_with_plus 
+        final_df.columns = ['馬匹', '賠率', '最初賠率', '排名', '最初排名', '上一次排名', '投注變化', '投注', '一分鐘投注','三分鐘投注']
+        target_df = final_df
+        rows_with_plus = target_df[
+              target_df['最初排名'].astype(str).str.contains('\+') |
+              target_df['上一次排名'].astype(str).str.contains('\+')
+        ][['馬匹', '賠率', '最初排名', '上一次排名']]
+          # Apply the conditional formatting to the 初始排名 and 前一排名 columns and add a bar to the 投資變化 column
+        styled_df = final_df.style.format({
+            '賠率': '{:.1f}',
+            '最初賠率': '{:.1f}',
+            '投注變化': '{:.2f}k',
+            '投注': '{:.2f}k',
+            '一分鐘投注': '{:.2f}k',
+            '三分鐘投注': '{:.2f}k'
+          }).map(highlight_change, subset=['最初排名', '上一次排名']).bar(subset=['投注變化', '一分鐘投注','三分鐘投注'], color='rgba(173, 216, 230, 0.5)').hide(axis='index')
+        styled_rows_with_plus = rows_with_plus.style.format({'賠率': '{:.1f}'}).map(highlight_change, subset=['最初排名', '上一次排名']).hide(axis='index')
+          # Display the styled DataFrame
+        result["main_table"] = styled_df
+        result["plus_table"] = styled_rows_with_plus 
+        result["plus_df"] = rows_with_plus
       #st.write(styled_df.to_html(), unsafe_allow_html=True)
       #st.write(styled_rows_with_plus.to_html(), unsafe_allow_html=True)
 
 
     else:
-      final_df.columns = ['組合', '賠率', '最初賠率', '排名', '最初排名', '上一次排名', '投注變化', '投注', '一分鐘投注','三分鐘投注']
-      target_df = final_df.head(25)
-      target_special_df = final_df.head(50)
-      rows_with_plus = target_special_df[
-          target_special_df['最初排名'].astype(str).str.contains('\+') |
-          target_special_df['上一次排名'].astype(str).str.contains('\+')
-      ][['組合', '賠率', '最初排名', '上一次排名', '一分鐘投注','三分鐘投注']]
+        final_df.columns = ['組合', '賠率', '最初賠率', '排名', '最初排名', '上一次排名', '投注變化', '投注', '一分鐘投注','三分鐘投注']
+        target_df = final_df.head(25)
+        target_special_df = final_df.head(50)
+        rows_with_plus = target_special_df[
+              target_special_df['最初排名'].astype(str).str.contains('\+') |
+              target_special_df['上一次排名'].astype(str).str.contains('\+')
+        ][['組合', '賠率', '最初排名', '上一次排名', '一分鐘投注','三分鐘投注']]
+        
     
-
-      # Apply the conditional formatting to the 初始排名 and 前一排名 columns and add a bar to the 投資變化 column
-      styled_df = target_df.style.format({
-        '賠率': '{:.1f}',
-        '最初賠率': '{:.1f}',
-        '投注變化': '{:.2f}k',
-        '投注': '{:.2f}k',
-        '一分鐘投注': '{:.2f}k',
-        '三分鐘投注': '{:.2f}k'
-      }).map(highlight_change, subset=['最初排名', '上一次排名']).bar(subset=['投注變化', '一分鐘投注','三分鐘投注'], color='rgba(173, 216, 230, 0.5)').hide(axis='index')
-      styled_rows_with_plus = rows_with_plus.style.format({
-        '賠率': '{:.1f}',
-        '一分鐘投注': '{:.2f}k',
-        '三分鐘投注': '{:.2f}k'
+          # Apply the conditional formatting to the 初始排名 and 前一排名 columns and add a bar to the 投資變化 column
+        styled_df = target_df.style.format({
+            '賠率': '{:.1f}',
+            '最初賠率': '{:.1f}',
+            '投注變化': '{:.2f}k',
+            '投注': '{:.2f}k',
+            '一分鐘投注': '{:.2f}k',
+            '三分鐘投注': '{:.2f}k'
+        }).map(highlight_change, subset=['最初排名', '上一次排名']).bar(subset=['投注變化', '一分鐘投注','三分鐘投注'], color='rgba(173, 216, 230, 0.5)').hide(axis='index')
+        styled_rows_with_plus = rows_with_plus.style.format({
+            '賠率': '{:.1f}',
+            '一分鐘投注': '{:.2f}k',
+            '三分鐘投注': '{:.2f}k'
         }).bar(subset=['一分鐘投注', '三分鐘投注'], color='rgba(173, 216, 230, 0.5)').map(highlight_change, subset=['最初排名', '上一次排名']).hide(axis='index')
-      # Display the styled DataFrame
-      result["main_table"] = styled_df
-      result["plus_table"] = styled_rows_with_plus  
+          # Display the styled DataFrame
+        result["main_table"] = styled_df
+        result["plus_table"] = styled_rows_with_plus  
+        result["plus_df"] = rows_with_plus
       #st.write(styled_df.to_html(), unsafe_allow_html=True)
-      notice_df = None  
-      if method in ["QIN","QPL","FCT","TRI","FF"]:
-        if method in ["QIN"]:
-          notice_df = final_df[(final_df['一分鐘投注'] >= 100) | (final_df['三分鐘投注'] >= 300)][['組合', '賠率', '一分鐘投注', '三分鐘投注']]
-        elif method in ["QPL"]:
-          notice_df = final_df[(final_df['一分鐘投注'] >= 200) | (final_df['三分鐘投注'] >= 600)][['組合', '賠率', '一分鐘投注', '三分鐘投注']]
-        elif method in ["FCT"]:
-          notice_df = final_df[(final_df['一分鐘投注'] >= 10) | (final_df['三分鐘投注'] >= 30)][['組合', '賠率', '一分鐘投注', '三分鐘投注']]
-        else:
-          notice_df = final_df[(final_df['一分鐘投注'] >= 5) | (final_df['三分鐘投注'] >= 15)][['組合', '賠率', '一分鐘投注', '三分鐘投注']]
-      if notice_df is not None:
-        styled_notice_df = notice_df.style.format({'賠率': '{:.1f}','一分鐘投注': '{:.2f}k','三分鐘投注': '{:.2f}k'}).bar(subset=['一分鐘投注','三分鐘投注'], color='rgba(173, 216, 230, 0.5)').hide(axis='index')
-      result["notice_table"] = styled_notice_df  
+        notice_df = None  
+        if method in ["QIN","QPL","FCT","TRI","FF"]:
+            if method in ["QIN"]:
+              notice_df = final_df[(final_df['一分鐘投注'] >= 100) | (final_df['三分鐘投注'] >= 300)][['組合', '賠率', '一分鐘投注', '三分鐘投注']]
+            elif method in ["QPL"]:
+              notice_df = final_df[(final_df['一分鐘投注'] >= 200) | (final_df['三分鐘投注'] >= 600)][['組合', '賠率', '一分鐘投注', '三分鐘投注']]
+            elif method in ["FCT"]:
+              notice_df = final_df[(final_df['一分鐘投注'] >= 10) | (final_df['三分鐘投注'] >= 30)][['組合', '賠率', '一分鐘投注', '三分鐘投注']]
+            else:
+              notice_df = final_df[(final_df['一分鐘投注'] >= 5) | (final_df['三分鐘投注'] >= 15)][['組合', '賠率', '一分鐘投注', '三分鐘投注']]
+        if notice_df is not None:
+            styled_notice_df = notice_df.style.format({'賠率': '{:.1f}','一分鐘投注': '{:.2f}k','三分鐘投注': '{:.2f}k'}).bar(subset=['一分鐘投注','三分鐘投注'], color='rgba(173, 216, 230, 0.5)').hide(axis='index')
+        result["notice_table"] = styled_notice_df  
 
     return result
       #col1, col2 = st.columns(2)
@@ -1374,16 +1377,20 @@ def print_henery_model(gamma=1.18):
             val_score = a_odds / theo_odds
             results.append({
                 "組合": f"{h1}-{h2}",
-                "馬1獨贏": win_odds_map[h1],
-                "馬2獨贏": win_odds_map[h2],
+                #"馬1獨贏": win_odds_map[h1],
+                #"馬2獨贏": win_odds_map[h2],
                 "實時Q": a_odds,
                 "理論Q": round(theo_odds, 1),
                 "Value": round(val_score, 2)
             })
+
+    tables = top(st.session_state.odds_dict[method], st.session_state.investment_dict[method], method)
+    plus_df = tables.get("plus_df")
+    plus_df_clean = plus_df[['組合', '最初排名', '上一次排名']]
     def get_table_html(df, cmap_name):
         return (
             df.style.background_gradient(subset=['Value'], cmap=cmap_name)
-            .format({"馬1獨贏": "{:.1f}", "馬2獨贏": "{:.1f}", "實時Q": "{:.1f}", "理論Q": "{:.1f}", "Value": "{:.2f}"})
+            .format({"實時Q": "{:.1f}", "理論Q": "{:.1f}", "Value": "{:.2f}"})#.map(highlight_change, subset=['最初排名', '上一次排名'])
             .hide(axis='index')
             # This CSS ensures headers don't wrap and the table fills the width
             .set_table_attributes('style="width:100%; border-collapse: collapse; white-space: nowrap;"')
@@ -1393,6 +1400,7 @@ def print_henery_model(gamma=1.18):
     # --- 6. 渲染雙表格介面 ---
     if results:
         full_df = pd.DataFrame(results)
+        final_merged_df = pd.merge(full_df, plus_df_clean, on='組合', how='left')
         full_df = full_df[full_df["實時Q"] < 100]
         col1, col2 = st.columns(2)
     
