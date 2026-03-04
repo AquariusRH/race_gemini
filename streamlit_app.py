@@ -1403,7 +1403,7 @@ def print_henery_model(gamma=1.18):
     tables = top(st.session_state.odds_dict[method], st.session_state.investment_dict[method], method)
     plus_df = tables.get("plus_df")
     plus_df_clean = plus_df.copy()
-    plus_df_clean = plus_df_clean[['組合', '最初排名', '上一次排名']]
+    plus_df_clean = plus_df_clean[['組合', '排名','最初排名', '上一次排名']]
     if plus_df_clean is not None and not plus_df_clean.empty:
         # --- 關鍵步驟：格式化 plus_df 的組合名稱 ---
         # 假設 plus_df['組合'] 是 "01,02" 或 "1, 2"，統一轉成 "1-2"
@@ -1428,7 +1428,7 @@ def print_henery_model(gamma=1.18):
     if results:
         full_df = pd.DataFrame(results)
         full_df = pd.merge(full_df, plus_df_clean, on='組合', how='left')
-        full_df = full_df[['組合', '最初排名', '上一次排名','實時Q','理論Q','Value']]
+        full_df = full_df[['組合', '排名','最初排名', '上一次排名','實時Q','理論Q','Value']]
         full_df = full_df[full_df["實時Q"] < 100]
         col1, col2 = st.columns(2)
     
@@ -1471,12 +1471,12 @@ def print_henery_model(gamma=1.18):
                         go.Table(
                             columnwidth = [100, 80, 80, 80, 80, 100],
                             header=dict(
-                                values=["<b>組合</b>", "<b>最初</b>", "<b>上一次</b>", "<b>實時Q</b>", "<b>理論Q</b>", "<b>Value</b>"],
+                                values=["<b>組合</b>", "<b>排名</b>","<b>最初</b>", "<b>上一次</b>", "<b>實時Q</b>", "<b>理論Q</b>", "<b>Value</b>"],
                                 fill_color='#111111', align='center', font=dict(color='white',size = 18),
                                 line_color='#333333'
                             ),
                             cells=dict(
-                                values=[sub_df["組合"], sub_df["最初排名"], sub_df["上一次排名"], 
+                                values=[sub_df["組合"],sub_df["排名"], sub_df["最初排名"], sub_df["上一次排名"], 
                                         sub_df["實時Q"], sub_df["理論Q"], sub_df["Value"]],
                                 fill_color=[
                                     ['rgba(30,30,30,0.5)']*len(sub_df),
@@ -1489,6 +1489,7 @@ def print_henery_model(gamma=1.18):
                                 font=dict(
                                     color=[
                                         ['white']*len(sub_df), # 其他欄位固定白字
+                                        ['white']*len(sub_df),
                                         init_font_colors,
                                         prev_font_colors,
                                         ['white']*len(sub_df),
