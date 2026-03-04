@@ -965,6 +965,7 @@ def top(method_odds_df, method_investment_df, method):
         "plus_df": None,
         "notice_table": None
     }
+    method_odds_df = method_odds_df.apply(pd.to_numeric, errors='coerce').round(1)
     # Extract the first row from odds DataFrame
     first_row_odds = method_odds_df.iloc[0]
     first_row_odds_df = first_row_odds.to_frame(name='Odds').reset_index()
