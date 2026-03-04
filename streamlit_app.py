@@ -1398,7 +1398,6 @@ def print_henery_model(gamma=1.18):
                 return f"{n1}-{n2}"
             return comb_str
     plus_df_clean['組合'] = plus_df_clean['組合'].apply(normalize_comb)
-    st.write(plus_df_clean)
     def get_table_html(df, cmap_name):
         return (
             df.style.background_gradient(subset=['Value'], cmap=cmap_name)
@@ -1454,7 +1453,7 @@ def print_henery_model(gamma=1.18):
                         go.Table(
                             columnwidth = [100, 80, 80, 80, 80, 100],
                             header=dict(
-                                values=["<b>組合</b>", "<b>最初排名</b>", "<b>上一次排名</b>", "<b>實時Q</b>", "<b>理論Q</b>", "<b>Value</b>"],
+                                values=["<b>組合</b>", "<b>最初</b>", "<b>上一次</b>", "<b>實時Q</b>", "<b>理論Q</b>", "<b>Value</b>"],
                                 fill_color='#111111', align='center', font=dict(color='white',size = 18),
                                 line_color='#333333'
                             ),
