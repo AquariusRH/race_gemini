@@ -1405,6 +1405,7 @@ def print_henery_model(gamma=1.18):
     plus_df = tables.get("plus_df")
     plus_df_clean = plus_df.copy()
     plus_df_clean = plus_df_clean[['組合', '排名','最初排名', '上一次排名']]
+    st.write(plus_df_clean)
     if plus_df_clean is not None and not plus_df_clean.empty:
         # --- 關鍵步驟：格式化 plus_df 的組合名稱 ---
         # 假設 plus_df['組合'] 是 "01,02" 或 "1, 2"，統一轉成 "1-2"
