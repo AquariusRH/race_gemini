@@ -1485,6 +1485,7 @@ def print_henery_model(gamma=1.18):
                                     ['rgba(30,30,30,0.5)']*len(sub_df),
                                     ['rgba(30,30,30,0.5)']*len(sub_df),
                                     ['rgba(30,30,30,0.5)']*len(sub_df),
+                                    ['rgba(30,30,30,0.5)']*len(sub_df),
                                     val_bg_colors  # 背景漸層
                                 ],
                                 font=dict(
