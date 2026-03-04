@@ -1105,7 +1105,6 @@ def top(method_odds_df, method_investment_df, method):
         result["main_table"] = styled_df
         result["plus_table"] = styled_rows_with_plus  
         result["plus_df"] = final_df
-        st.write(final_df)
       #st.write(styled_df.to_html(), unsafe_allow_html=True)
         notice_df = None  
         if method in ["QIN","QPL","FCT","TRI","FF"]:
@@ -1404,6 +1403,7 @@ def print_henery_model(gamma=1.18):
 
     tables = top(st.session_state.odds_dict[method], st.session_state.investment_dict[method], method)
     plus_df = tables.get("plus_df")
+    st.write(plus_df)
     plus_df_clean = plus_df.copy()
     plus_df_clean = plus_df_clean[['組合', '排名','最初排名', '上一次排名']]
     st.write(plus_df_clean)
