@@ -959,6 +959,11 @@ def print_bubble(race_no, print_list):
         except Exception as e:
             st.error(f"Bubble Chart Error: {e}")
 def top(method_odds_df, method_investment_df, method):
+    result = {
+        "main_table": None,
+        "plus_table": None,
+        "notice_table": None
+    }
     # Extract the first row from odds DataFrame
     first_row_odds = method_odds_df.iloc[0]
     first_row_odds_df = first_row_odds.to_frame(name='Odds').reset_index()
@@ -1063,8 +1068,10 @@ def top(method_odds_df, method_investment_df, method):
       }).map(highlight_change, subset=['最初排名', '上一次排名']).bar(subset=['投注變化', '一分鐘投注','三分鐘投注'], color='rgba(173, 216, 230, 0.5)').hide(axis='index')
       styled_rows_with_plus = rows_with_plus.style.format({'賠率': '{:.1f}'}).map(highlight_change, subset=['最初排名', '上一次排名']).hide(axis='index')
       # Display the styled DataFrame
-      st.write(styled_df.to_html(), unsafe_allow_html=True)
-      st.write(styled_rows_with_plus.to_html(), unsafe_allow_html=True)
+      result["main_table"] = styled_df
+      result["plus_table"] = styled_rows_with_plus 
+      #st.write(styled_df.to_html(), unsafe_allow_html=True)
+      #st.write(styled_rows_with_plus.to_html(), unsafe_allow_html=True)
 
 
     else:
@@ -1092,8 +1099,9 @@ def top(method_odds_df, method_investment_df, method):
         '三分鐘投注': '{:.2f}k'
         }).bar(subset=['一分鐘投注', '三分鐘投注'], color='rgba(173, 216, 230, 0.5)').map(highlight_change, subset=['最初排名', '上一次排名']).hide(axis='index')
       # Display the styled DataFrame
-      st.write(styled_df.to_html(), unsafe_allow_html=True)
-
+      result["main_table"] = styled_df
+      #st.write(styled_df.to_html(), unsafe_allow_html=True)
+      notice_df = None  
       if method in ["QIN","QPL","FCT","TRI","FF"]:
         if method in ["QIN"]:
           notice_df = final_df[(final_df['一分鐘投注'] >= 100) | (final_df['三分鐘投注'] >= 300)][['組合', '賠率', '一分鐘投注', '三分鐘投注']]
@@ -1103,19 +1111,31 @@ def top(method_odds_df, method_investment_df, method):
           notice_df = final_df[(final_df['一分鐘投注'] >= 10) | (final_df['三分鐘投注'] >= 30)][['組合', '賠率', '一分鐘投注', '三分鐘投注']]
         else:
           notice_df = final_df[(final_df['一分鐘投注'] >= 5) | (final_df['三分鐘投注'] >= 15)][['組合', '賠率', '一分鐘投注', '三分鐘投注']]
+      if notice_df is not None:
         styled_notice_df = notice_df.style.format({'賠率': '{:.1f}','一分鐘投注': '{:.2f}k','三分鐘投注': '{:.2f}k'}).bar(subset=['一分鐘投注','三分鐘投注'], color='rgba(173, 216, 230, 0.5)').hide(axis='index')
-        
+      result["notice_table"] = styled_notice_df  
 
-      col1, col2 = st.columns(2)
-      with col1:
-        st.write(styled_rows_with_plus.to_html(), unsafe_allow_html=True)
-      with col2:
-        st.write(styled_notice_df.to_html(), unsafe_allow_html=True)
+    return result
+      #col1, col2 = st.columns(2)
+      #with col1:
+        #st.write(styled_rows_with_plus.to_html(), unsafe_allow_html=True)
+      #with col2:
+        #st.write(styled_notice_df.to_html(), unsafe_allow_html=True)
 
 def print_top():
   for method in top_list:
-          top(st.session_state.odds_dict[method], st.session_state.investment_dict[method], method)
-      
+        tables = top(st.session_state.odds_dict[method], st.session_state.investment_dict[method], method)
+        if tables["main_table"]:
+            st.write(tables["main_table"].to_html(), unsafe_allow_html=True)
+        if tables["plus_table"] or tables["notice_table"]:
+            col1, col2 = st.columns(2)
+            with col1:
+                if tables["plus_table"]:
+                    st.write(tables["plus_table"].to_html(), unsafe_allow_html=True)
+            with col2:
+                if tables["notice_table"]:
+                    st.write(tables["notice_table"].to_html(), unsafe_allow_html=True)
+                    
 def highlight_change(val):
     color = 'limegreen' if '+' in val else 'crimson' if '-' in val else ''
     return f'color: {color}'
