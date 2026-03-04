@@ -1397,7 +1397,8 @@ def print_henery_model(gamma=1.18):
             return comb_str
     plus_df_clean = plus_df.copy()
     plus_df_clean['組合'] = plus_df_clean['組合'].apply(normalize_comb)
-    #st.write(plus_df_clean)
+    plus_df_clean = plus_df_clean[['組合', '最初排名', '上一次排名']]
+    st.write(plus_df_clean)
     def get_table_html(df, cmap_name):
         return (
             df.style.background_gradient(subset=['Value'], cmap=cmap_name)
