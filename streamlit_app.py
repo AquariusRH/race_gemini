@@ -1291,7 +1291,23 @@ def print_plotly_advanced_bar(race_no, method): # 建議傳入 method 區分
         # 5. 使用 use_container_width=True 讓圖表隨網頁寬度自動撐滿
         latest_ts = all_ts[-1].strftime("%H%M%S")
         st.plotly_chart(fig, width='stretch', key=f"fluent_{race_no}_{method}_{latest_ts}")
-
+def get_rank_font_colors(series):
+    """
+    對應原本的 highlight_change 邏輯：
+    '+' -> limegreen (綠色)
+    '-' -> crimson (紅色)
+    其餘 -> white (白色)
+    """
+    colors = []
+    for val in series:
+        val_str = str(val)
+        if '+' in val_str:
+            colors.append('limegreen')
+        elif '-' in val_str:
+            colors.append('crimson')
+        else:
+            colors.append('white') # 預設顏色
+    return colors
 def print_henery_model(gamma=1.18):
     """
     Henery Model 完整實作版
@@ -1448,7 +1464,8 @@ def print_henery_model(gamma=1.18):
                 if not sub_df.empty:
                     # 🌈 同時取得背景與字體顏色
                     val_bg_colors, val_font_colors = get_adaptive_colors(sub_df["Value"])
-                    
+                    init_font_colors = get_rank_font_colors(sub_df["最初排名"])
+                    prev_font_colors = get_rank_font_colors(sub_df["上一次排名"])
                     fig.add_trace(
                         go.Table(
                             columnwidth = [100, 80, 80, 80, 80, 100],
@@ -1471,8 +1488,8 @@ def print_henery_model(gamma=1.18):
                                 font=dict(
                                     color=[
                                         ['white']*len(sub_df), # 其他欄位固定白字
-                                        ['white']*len(sub_df),
-                                        ['white']*len(sub_df),
+                                        init_font_colors,
+                                        prev_font_colors,
                                         ['white']*len(sub_df),
                                         ['white']*len(sub_df),
                                         val_font_colors        # ⬅️ Value 字體動態黑白切換
