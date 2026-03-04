@@ -1403,7 +1403,7 @@ def print_henery_model(gamma=1.18):
         return (
             df.style.background_gradient(subset=['Value'], cmap=cmap_name)
             .format({"實時Q": "{:.1f}", "理論Q": "{:.1f}", "Value": "{:.2f}"})
-            .hide(axis='index')
+            .hide(axis='index').map(highlight_change, subset=['最初排名', '上一次排名'])
             # This CSS ensures headers don't wrap and the table fills the width
             .set_table_attributes('style="width:100%; border-collapse: collapse; white-space: nowrap;"')
             .to_html()
