@@ -1402,7 +1402,7 @@ def print_henery_model(gamma=1.18):
     if results:
         full_df = pd.DataFrame(results)
         full_df = pd.merge(full_df, plus_df_clean, on='組合', how='left')
-        full_df = full_df[final_merged_df["實時Q"] < 100]
+        full_df = full_df[full_df["實時Q"] < 100]
         col1, col2 = st.columns(2)
     
         #with col1:
