@@ -1387,10 +1387,11 @@ def print_henery_model(gamma=1.18):
     tables = top(st.session_state.odds_dict[method], st.session_state.investment_dict[method], method)
     plus_df = tables.get("plus_df")
     plus_df_clean = plus_df[['組合', '最初排名', '上一次排名']]
+    #st.write(plus_df_clean)
     def get_table_html(df, cmap_name):
         return (
             df.style.background_gradient(subset=['Value'], cmap=cmap_name)
-            .format({"實時Q": "{:.1f}", "理論Q": "{:.1f}", "Value": "{:.2f}"})#.map(highlight_change, subset=['最初排名', '上一次排名'])
+            .format({"實時Q": "{:.1f}", "理論Q": "{:.1f}", "Value": "{:.2f}"})
             .hide(axis='index')
             # This CSS ensures headers don't wrap and the table fills the width
             .set_table_attributes('style="width:100%; border-collapse: collapse; white-space: nowrap;"')
@@ -1400,8 +1401,8 @@ def print_henery_model(gamma=1.18):
     # --- 6. 渲染雙表格介面 ---
     if results:
         full_df = pd.DataFrame(results)
-        final_merged_df = pd.merge(full_df, plus_df_clean, on='組合', how='left')
-        full_df = full_df[full_df["實時Q"] < 100]
+        full_df = pd.merge(full_df, plus_df_clean, on='組合', how='left')
+        full_df = full_df[final_merged_df["實時Q"] < 100]
         col1, col2 = st.columns(2)
     
         #with col1:
