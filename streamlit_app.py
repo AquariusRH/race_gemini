@@ -1634,6 +1634,8 @@ def print_henery_model(gamma=1.18):
                     z=plot_df.values,
                     x=plot_df.columns,
                     y=[f"{h}號" for h in plot_df.index],
+                    xgap=1.5,  # X軸格子間隙 (像素)，露出深色背景形成框線
+                    ygap=1.5,
                     colorscale=colorscale_thresholds, # 深黑到鮮紅
                     showscale=True,
                     colorbar=dict(title="過熱數")
@@ -1644,6 +1646,7 @@ def print_henery_model(gamma=1.18):
                     margin=dict(t=10, b=10, l=10, r=10),
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
+                    dragmode=False,
                     font=dict(color="white"),
                     xaxis=dict(showgrid=False, tickangle=-45,fixedrange=True),
                     yaxis=dict(showgrid=False, title="馬號",fixedrange=True)
