@@ -1621,12 +1621,21 @@ def print_henery_model(gamma=1.18):
             if active_cols:
                 plot_df = plot_data[active_cols].T # 轉置讓 Y 軸是馬號
                 plot_df = plot_df.iloc[::-1]
-                
+                colorscale_thresholds = [
+                    [0, '#FFFFFF'],       # 0: 純白 (背景)
+                    [0.1, '#FFEEEE'],     # 1: 極淡粉紅
+                    [0.2, '#FFFF99'],     # 2: 淺黃
+                    [0.4, '#FFFF00'],     # 3-4: 亮黃
+                    [0.6, '#FF9999'],     # 5-6: 淺紅
+                    [0.8, '#FF0000'],     # 7-9: 正紅
+                    [1.0, '#330066']      # 10+: 深紫 (焦點)
+                ]
                 fig_heat = go.Figure(data=go.Heatmap(
                     z=plot_df.values,
                     x=plot_df.columns,
                     y=[f"{h}號" for h in plot_df.index],
-                    colorscale=[[0, '#FFFFFF'], [0.1, '#FFCCCC'], [1, '#FF0000']], # 深黑到鮮紅
+                    zsmooth='best',
+                    colorscale=colorscale_thresholds, # 深黑到鮮紅
                     showscale=True,
                     colorbar=dict(title="過熱數")
                 ))
