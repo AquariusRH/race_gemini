@@ -1634,7 +1634,6 @@ def print_henery_model(gamma=1.18):
                     z=plot_df.values,
                     x=plot_df.columns,
                     y=[f"{h}號" for h in plot_df.index],
-                    zsmooth='best',
                     colorscale=colorscale_thresholds, # 深黑到鮮紅
                     showscale=True,
                     colorbar=dict(title="過熱數")
