@@ -66,6 +66,7 @@ def init_session_state():
         'numbered_list_dict': {},
         'race_dataframes': {},
         'ucb_dict': {},
+        'count_history' = {},
         'api_called': False,
         'last_update': None,
         'jockey_ranking_df': pd.DataFrame(),
@@ -1585,6 +1586,60 @@ def print_henery_model(gamma=1.18):
                 key=f"dark_left_table_{race_no}_{time_now.strftime('%H%M%S')}", 
                 config={'displayModeBar': False}
             )
+        
+        # --- 8. 新增：全寬熱力圖趨勢 ---
+        st.markdown("---") # 分割線
+        st.subheader("🔥 歷史熱度掃描 (Heatmap)")
+        
+        # 確保 session_state 存在
+        if 'horse_count_history' not in st.session_state:
+            st.session_state.horse_count_history = {}
+        
+        # 這裡放入前面討論的數據採集與繪圖代碼
+        current_time = datetime.now(HK_TZ).strftime('%H:%M:%S')
+        current_horse_counts = {str(h): 0 for h in all_horse_list}
+        
+        for h_num in all_horse_list:
+            mask = ov_df['組合'].apply(lambda x: any(int(part) == h_num for part in x.split('-')))
+            current_horse_counts[str(h_num)] = len(ov_df[mask])
+    
+        if race_no not in st.session_state.horse_count_history:
+            st.session_state.horse_count_history[race_no] = pd.DataFrame()
+    
+        hist_df = st.session_state.horse_count_history[race_no]
+        new_entry = pd.DataFrame([current_horse_counts], index=[current_time])
+        
+        if hist_df.empty or current_time != hist_df.index[-1]:
+            st.session_state.horse_count_history[race_no] = pd.concat([hist_df, new_entry])
+    
+        # 渲染圖表
+        plot_data = st.session_state.horse_count_history[race_no]
+        if not plot_data.empty:
+            # 只顯示有過熱記錄的馬，避免 14 匹馬太多空白
+            active_cols = [c for c in plot_data.columns if plot_data[c].sum() > 0]
+            if active_cols:
+                plot_df = plot_data[active_cols].T # 轉置讓 Y 軸是馬號
+                
+                fig_heat = go.Figure(data=go.Heatmap(
+                    z=plot_df.values,
+                    x=plot_df.columns,
+                    y=plot_df.index,
+                    colorscale=[[0, '#1a1a1a'], [0.1, '#550000'], [1, '#FF0000']], # 深黑到鮮紅
+                    showscale=True,
+                    colorbar=dict(title="過熱數")
+                ))
+                
+                fig_heat.update_layout(
+                    height=300 + (len(active_cols) * 20), # 動態高度
+                    margin=dict(t=10, b=10, l=10, r=10),
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    font=dict(color="white"),
+                    xaxis=dict(showgrid=False, tickangle=-45),
+                    yaxis=dict(showgrid=False, title="馬號")
+                )
+                st.plotly_chart(fig_heat, use_container_width=True)
+        
         return full_df # 最後回傳完整 DataFrame
     
     return pd.DataFrame()
