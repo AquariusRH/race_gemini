@@ -1638,7 +1638,7 @@ def print_henery_model(gamma=1.18):
                     xaxis=dict(showgrid=False, tickangle=-45,fixedrange=True),
                     yaxis=dict(showgrid=False, title="馬號",fixedrange=True)
                 )
-                st.plotly_chart(fig_heat, `width='content'`)
+                st.plotly_chart(fig_heat, width='content')
         
         return full_df # 最後回傳完整 DataFrame
     
