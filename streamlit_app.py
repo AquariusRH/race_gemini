@@ -1623,8 +1623,8 @@ def print_henery_model(gamma=1.18):
                 fig_heat = go.Figure(data=go.Heatmap(
                     z=plot_df.values,
                     x=plot_df.columns,
-                    y=plot_df.index,
-                    colorscale=[[0, '#1a1a1a'], [0.1, '#550000'], [1, '#FF0000']], # 深黑到鮮紅
+                    y=[f"{h}號" for h in plot_df.index],
+                    colorscale=[[0, '#FFFFFF'], [0.1, '#FFCCCC'], [1, '#FF0000']], # 深黑到鮮紅
                     showscale=True,
                     colorbar=dict(title="過熱數")
                 ))
@@ -1635,10 +1635,10 @@ def print_henery_model(gamma=1.18):
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
                     font=dict(color="white"),
-                    xaxis=dict(showgrid=False, tickangle=-45),
-                    yaxis=dict(showgrid=False, title="馬號")
+                    xaxis=dict(showgrid=False, tickangle=-45,fixedrange=True),
+                    yaxis=dict(showgrid=False, title="馬號",fixedrange=True)
                 )
-                st.plotly_chart(fig_heat, use_container_width=True)
+                st.plotly_chart(fig_heat, `width='content'`)
         
         return full_df # 最後回傳完整 DataFrame
     
