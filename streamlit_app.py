@@ -1619,6 +1619,7 @@ def print_henery_model(gamma=1.18):
             active_cols = [c for c in plot_data.columns if plot_data[c].sum() > 0]
             if active_cols:
                 plot_df = plot_data[active_cols].T # 轉置讓 Y 軸是馬號
+                plot_df = plot_df.iloc[::-1]
                 
                 fig_heat = go.Figure(data=go.Heatmap(
                     z=plot_df.values,
