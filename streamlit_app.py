@@ -66,7 +66,7 @@ def init_session_state():
         'numbered_list_dict': {},
         'race_dataframes': {},
         'ucb_dict': {},
-        'count_history' = {},
+        'count_history' : {},
         'api_called': False,
         'last_update': None,
         'jockey_ranking_df': pd.DataFrame(),
