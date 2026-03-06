@@ -1610,7 +1610,8 @@ def print_henery_model(gamma=1.18):
         new_entry = pd.DataFrame([current_horse_counts], index=[current_time])
         
         if hist_df.empty or current_time != hist_df.index[-1]:
-            st.session_state.horse_count_history[race_no] = pd.concat([hist_df, new_entry])
+            updated_hist = pd.concat([hist_df, new_entry]).tail(40)
+            st.session_state.horse_count_history[race_no] = updated_hist
     
         # 渲染圖表
         plot_data = st.session_state.horse_count_history[race_no]
