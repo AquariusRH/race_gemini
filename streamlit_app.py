@@ -1634,7 +1634,6 @@ def print_henery_model(gamma=1.18):
                     z=plot_df.values,
                     x=plot_df.columns,
                     y=[f"{h}號" for h in plot_df.index],
-                    xgap=1.5,  # X軸格子間隙 (像素)，露出深色背景形成框線
                     ygap=1.5,
                     colorscale=colorscale_thresholds, # 深黑到鮮紅
                     showscale=True,
