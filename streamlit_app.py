@@ -1616,10 +1616,10 @@ def print_henery_model(gamma=1.18):
                     diff_color = "#00ff00" if diff < 0 else "#ff4b4b" if diff > 0 else "#888"
                     label = (
                     f"<b>{int(h_str):02d} 號</b><br>"
-                    f"<span style='color:#fff'>{curr_o:.1f}</span> "
-                    f"<span style='color:{diff_color}; font-size:10px'>{arrow}{abs(diff):.1f}</span>")
+                    f"<span style='color:#fff'>{curr_o:.1f}</span> <span style='color:#888; font-size:10px'>({prev_o:.1f})</span><br>"
+                    f"<span style='color:{diff_color}; font-size:11px'><b>{arrow} {abs(diff):.1f}</b></span>")
                 else:
-                    label = f"<b>{int(h_str):02d} 號</b><br>-"
+                    label = f"<b>{int(h_str):02d} 號</b><br>-<br>-"
                 y_labels_rich.append(label)
         # 這裡放入前面討論的數據採集與繪圖代碼
         current_time = datetime.now(HK_TZ).strftime('%H:%M:%S')
@@ -1661,12 +1661,12 @@ def print_henery_model(gamma=1.18):
                     z=plot_df.values,
                     x=plot_df.columns,
                     y=y_labels_rich,
-                    ygap=2,
+                    ygap=2.5,
                     colorscale=colorscale_thresholds, # 深黑到鮮紅
                     showscale=True,
                     colorbar=dict(title="過熱數")
                 ))
-                dynamic_height = 250 + (len(full_horse_list) * 35)
+                dynamic_height = 150 + (len(full_horse_list) * 55)
                 fig_heat.update_layout(
                     height=dynamic_height, # 動態高度
                     margin=dict(t=10, b=10, l=100, r=10),
@@ -1676,7 +1676,7 @@ def print_henery_model(gamma=1.18):
                     font=dict(color="white"),
                     xaxis=dict(showticklabels=False, showgrid=False,zeroline=False, fixedrange=True),
                     #xaxis=dict(showgrid=False, tickangle=-45,fixedrange=True),
-                    yaxis=dict(showgrid=False, title="馬號",fixedrange=True,tickfont=dict(size=11))
+                    yaxis=dict(showgrid=False, title="馬號",fixedrange=True,tickfont=dict(size=14))
                 )
                 st.plotly_chart(fig_heat, width='content')
         
