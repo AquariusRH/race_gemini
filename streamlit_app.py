@@ -1603,7 +1603,7 @@ def print_henery_model(gamma=1.18):
         y_labels_rich = []
         if win_df is not None and len(win_df) >= 1:
             latest_win = win_df.iloc[-1]
-            prev_win = win_df.iloc[-2] if len(win_df) >= 2 else latest_win
+            prev_win = win_df.iloc[-4] if len(win_df) >= 4 else latest_win
             
             for h_str in full_horse_list:
                 col_key = int(h_str) if int(h_str) in win_df.columns else h_str
@@ -1611,13 +1611,13 @@ def print_henery_model(gamma=1.18):
                 prev_o = pd.to_numeric(prev_win.get(col_key), errors='coerce')
     
                 if not pd.isna(curr_o) and curr_o > 0:
-                    diff = curr_o - prev_o
+                    diff =  prev_o- curr_o
                     arrow = "▼" if diff < 0 else "▲" if diff > 0 else ""
                     diff_color = "#00ff00" if diff < 0 else "#ff4b4b" if diff > 0 else "#888"
                     label = (
                     f"<b>{int(h_str):02d} 號</b><br>"
-                    f"<span style='color:#fff'>{curr_o:.1f}</span> <span style='color:#888; font-size:10px'>({prev_o:.1f})</span><br>"
-                    f"<span style='color:{diff_color}; font-size:11px'><b>{arrow} {abs(diff):.1f}</b></span>")
+                    f"<span style='color:#fff'>{curr_o:.1f}</span> <span style='color:#888; font-size:12px'>({prev_o:.1f})</span><br>"
+                    f"<span style='color:{diff_color}; font-size:12px'><b>{arrow} {abs(diff):.1f}</b></span>")
                 else:
                     label = f"<b>{int(h_str):02d} 號</b><br>-<br>-"
                 y_labels_rich.append(label)
