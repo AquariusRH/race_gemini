@@ -1603,7 +1603,7 @@ def print_henery_model(gamma=1.18):
         y_labels_rich = []
         if win_df is not None and len(win_df) >= 1:
             latest_win = win_df.iloc[-1]
-            prev_win = win_df.iloc[-4] if len(win_df) >= 4 else latest_win
+            prev_win = win_df.iloc[-4] if len(win_df) >= 4 else win_df.iloc[0]
             
             for h_str in full_horse_list:
                 col_key = int(h_str) if int(h_str) in win_df.columns else h_str
