@@ -1672,7 +1672,7 @@ def print_henery_model(gamma=1.18):
                     showscale=True,
                     colorbar=dict(title="過熱數")
                 ))
-                dynamic_height = 150 + (len(full_horse_list) * 35)
+                dynamic_height = 150 + (len(full_horse_list) * 45)
                 fig_heat.update_layout(
                     height=dynamic_height, # 動態高度
                     margin=dict(t=10, b=10, l=100, r=10),
