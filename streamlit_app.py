@@ -1600,27 +1600,8 @@ def print_henery_model(gamma=1.18):
         if 'horse_count_history' not in st.session_state:
             st.session_state.horse_count_history = {}
        
-        y_labels_rich = []
-        if win_df is not None and len(win_df) >= 1:
-            latest_win = win_df.iloc[-1]
-            prev_win = win_df.iloc[-4] if len(win_df) >= 4 else win_df.iloc[0]
-            
-            for h_str in full_horse_list:
-                col_key = int(h_str) if int(h_str) in win_df.columns else h_str
-                curr_o = pd.to_numeric(latest_win.get(col_key), errors='coerce')
-                prev_o = pd.to_numeric(prev_win.get(col_key), errors='coerce')
-    
-                if not pd.isna(curr_o) and curr_o > 0:
-                    diff =  prev_o- curr_o
-                    arrow = "▼" if diff < 0 else "▲" if diff > 0 else ""
-                    diff_color = "#00ff00" if diff > 0 else "#ff4b4b" if diff < 0 else "#888"
-                    label = (
-                    f"<b>{int(h_str):02d} 號</b><br>"
-                    f"<span style='color:#fff'>{curr_o:.1f}</span> <span style='color:#888; font-size:12px'>({prev_o:.1f})</span><br>"
-                    f"<span style='color:{diff_color}; font-size:12px'><b>{arrow} {abs(diff):.1f}</b></span>")
-                else:
-                    label = f"<b>{int(h_str):02d} 號</b><br>-<br>-"
-                y_labels_rich.append(label)
+        y_labels_filtered = []
+        
         # 這裡放入前面討論的數據採集與繪圖代碼
         current_time = datetime.now(HK_TZ).strftime('%H:%M:%S')
         current_horse_counts = {str(h): 0 for h in all_horse_list}
@@ -1643,11 +1624,36 @@ def print_henery_model(gamma=1.18):
         plot_data = st.session_state.horse_count_history[race_no]
         if not plot_data.empty:
             # 只顯示有過熱記錄的馬，避免 14 匹馬太多空白
-            active_cols = [c for c in plot_data.columns if plot_data[c].iloc[-1] >-1]
+            active_cols = [c for c in plot_data.columns if plot_data[c].iloc[-1] >0]
+            
             if active_cols:
+                active_cols = sorted(active_cols, key=lambda x: int(x))
                 plot_df = plot_data[active_cols].T # 轉置讓 Y 軸是馬號
+                y_labels_filtered = []
+                latest_win = win_df.iloc[-1] if win_df is not None else None
+                prev_win = (win_df.iloc[-4] if len(win_df) >= 4 else win_df.iloc[0]) if win_df is not None else None
+    
+                for h_str in active_cols:
+                    col_key = int(h_str) if win_df is not None and int(h_str) in win_df.columns else h_str
+                    
+                    if latest_win is not None and col_key in latest_win:
+                        curr_o = pd.to_numeric(latest_win[col_key], errors='coerce')
+                        prev_o = pd.to_numeric(prev_win[col_key], errors='coerce')
+                        diff =  prev_o - curr_o
+                        arrow = "▼" if diff < 0 else "▲" if diff > 0 else ""
+                        diff_color = "#00ff00" if diff > 0 else "#ff4b4b" if diff < 0 else "#888"
+                        
+                        label = (
+                            f"<b>{int(h_str):02d} 號</b><br>"
+                            f"<span style='color:#fff'>{curr_o:.1f}</span> <span style='color:#888; font-size:12px'>({prev_o:.1f})</span><br>"
+                            f"<span style='color:{diff_color}; font-size:12px'><b>{arrow} {abs(diff):.1f}</b></span>"
+                        )
+                    else:
+                        label = f"<b>{int(h_str):02d} 號</b><br>-<br>-"
+                    y_labels_filtered.append(label)
+                
                 plot_df = plot_df.iloc[::-1]
-                y_labels_rich = y_labels_rich[::-1]
+                y_labels_rich = y_labels_filtered[::-1]
                 colorscale_thresholds = [
                     [0, '#FFFFFF'],       # 0: 純白 (背景)
                     [0.1, '#FFEEEE'],     # 1: 極淡粉紅
