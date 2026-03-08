@@ -1645,8 +1645,8 @@ def print_henery_model(gamma=1.18):
                         
                         label = (
                             f"<b>{int(h_str):02d} 號</b><br>"
-                            f"<span style='color:#fff'>{curr_o:.1f}</span> <span style='color:#888; font-size:12px'>({prev_o:.1f})</span><br>"
-                            f"<span style='color:{diff_color}; font-size:12px'><b>{arrow} {abs(diff):.1f}</b></span>"
+                            f"<span style='color:#fff'>{curr_o:.1f}</span> <span style='color:#888; font-size:14px'>({prev_o:.1f})</span><br>"
+                            f"<span style='color:{diff_color}; font-size:14px'><b>{arrow} {abs(diff):.1f}</b></span>"
                         )
                     else:
                         label = f"<b>{int(h_str):02d} 號</b><br>-<br>-"
@@ -1672,7 +1672,7 @@ def print_henery_model(gamma=1.18):
                     showscale=True,
                     colorbar=dict(title="過熱數")
                 ))
-                dynamic_height = 150 + (len(full_horse_list) * 55)
+                dynamic_height = 150 + (len(full_horse_list) * 35)
                 fig_heat.update_layout(
                     height=dynamic_height, # 動態高度
                     margin=dict(t=10, b=10, l=100, r=10),
@@ -1682,7 +1682,7 @@ def print_henery_model(gamma=1.18):
                     font=dict(color="white"),
                     xaxis=dict(showticklabels=False, showgrid=False,zeroline=False, fixedrange=True),
                     #xaxis=dict(showgrid=False, tickangle=-45,fixedrange=True),
-                    yaxis=dict(showgrid=False, title="馬號",fixedrange=True,tickfont=dict(size=14))
+                    yaxis=dict(showgrid=False, title="馬號",fixedrange=True,tickfont=dict(size=18))
                 )
                 st.plotly_chart(fig_heat, width='content')
         
