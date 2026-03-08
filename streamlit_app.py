@@ -1614,9 +1614,12 @@ def print_henery_model(gamma=1.18):
                     diff = curr_o - prev_o
                     arrow = "▼" if diff < 0 else "▲" if diff > 0 else ""
                     diff_color = "#00ff00" if diff < 0 else "#ff4b4b" if diff > 0 else "#888"
-                    label = f"<b>{int(h_str):02d}</b> <span style='color:#fff'>{curr_o:.1f}</span> <span style='color:{diff_color}; font-size:10px'>{arrow}{abs(diff):.1f}</span>"
+                    label = (
+                    f"<b>{int(h_str):02d} 號</b><br>"
+                    f"<span style='color:#fff'>{curr_o:.1f}</span> "
+                    f"<span style='color:{diff_color}; font-size:10px'>{arrow}{abs(diff):.1f}</span>")
                 else:
-                    label = f"<b>{int(h_str):02d}</b> -"
+                    label = f"<b>{int(h_str):02d} 號</b><br>-"
                 y_labels_rich.append(label)
         # 這裡放入前面討論的數據採集與繪圖代碼
         current_time = datetime.now(HK_TZ).strftime('%H:%M:%S')
@@ -1663,17 +1666,17 @@ def print_henery_model(gamma=1.18):
                     showscale=True,
                     colorbar=dict(title="過熱數")
                 ))
-                
+                dynamic_height = 250 + (len(full_horse_list) * 35)
                 fig_heat.update_layout(
-                    height=300 + (len(active_cols) * 20), # 動態高度
-                    margin=dict(t=10, b=10, l=10, r=10),
+                    height=dynamic_height, # 動態高度
+                    margin=dict(t=10, b=10, l=100, r=10),
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
                     dragmode=False,
                     font=dict(color="white"),
                     xaxis=dict(showticklabels=False, showgrid=False,zeroline=False, fixedrange=True),
                     #xaxis=dict(showgrid=False, tickangle=-45,fixedrange=True),
-                    yaxis=dict(showgrid=False, title="馬號",fixedrange=True)
+                    yaxis=dict(showgrid=False, title="馬號",fixedrange=True,tickfont=dict(size=11))
                 )
                 st.plotly_chart(fig_heat, width='content')
         
