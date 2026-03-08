@@ -1613,7 +1613,7 @@ def print_henery_model(gamma=1.18):
                 if not pd.isna(curr_o) and curr_o > 0:
                     diff =  prev_o- curr_o
                     arrow = "▼" if diff < 0 else "▲" if diff > 0 else ""
-                    diff_color = "#00ff00" if diff < 0 else "#ff4b4b" if diff > 0 else "#888"
+                    diff_color = "#00ff00" if diff > 0 else "#ff4b4b" if diff < 0 else "#888"
                     label = (
                     f"<b>{int(h_str):02d} 號</b><br>"
                     f"<span style='color:#fff'>{curr_o:.1f}</span> <span style='color:#888; font-size:12px'>({prev_o:.1f})</span><br>"
