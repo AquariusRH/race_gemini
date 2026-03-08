@@ -1590,11 +1590,34 @@ def print_henery_model(gamma=1.18):
         # --- 8. 新增：全寬熱力圖趨勢 ---
         st.markdown("---") # 分割線
         st.subheader("🔥 歷史熱度掃描 (Heatmap)")
-        
+        if win_df is not None:
+            # 排除非馬號的 column (如果有)，並排序
+            current_horses = sorted([c for c in win_df.columns if str(c).isdigit()], key=lambda x: int(x))
+            full_horse_list = [str(h) for h in current_horses]
+        else:
+            full_horse_list = [str(h) for h in sorted(win_probs.keys())]
         # 確保 session_state 存在
         if 'horse_count_history' not in st.session_state:
             st.session_state.horse_count_history = {}
-        
+       
+        y_labels_rich = []
+        if win_df is not None and len(win_df) >= 1:
+            latest_win = win_df.iloc[-1]
+            prev_win = win_df.iloc[-2] if len(win_df) >= 2 else latest_win
+            
+            for h_str in full_horse_list:
+                col_key = int(h_str) if int(h_str) in win_df.columns else h_str
+                curr_o = pd.to_numeric(latest_win.get(col_key), errors='coerce')
+                prev_o = pd.to_numeric(prev_win.get(col_key), errors='coerce')
+    
+                if not pd.isna(curr_o) and curr_o > 0:
+                    diff = curr_o - prev_o
+                    arrow = "▼" if diff < 0 else "▲" if diff > 0 else ""
+                    diff_color = "#00ff00" if diff < 0 else "#ff4b4b" if diff > 0 else "#888"
+                    label = f"<b>{int(h_str):02d}</b> <span style='color:#fff'>{curr_o:.1f}</span> <span style='color:{diff_color}; font-size:10px'>{arrow}{abs(diff):.1f}</span>"
+                else:
+                    label = f"<b>{int(h_str):02d}</b> -"
+                y_labels_rich.append(label)
         # 這裡放入前面討論的數據採集與繪圖代碼
         current_time = datetime.now(HK_TZ).strftime('%H:%M:%S')
         current_horse_counts = {str(h): 0 for h in all_horse_list}
@@ -1621,6 +1644,7 @@ def print_henery_model(gamma=1.18):
             if active_cols:
                 plot_df = plot_data[active_cols].T # 轉置讓 Y 軸是馬號
                 plot_df = plot_df.iloc[::-1]
+                y_labels_rich = y_labels_rich[::-1]
                 colorscale_thresholds = [
                     [0, '#FFFFFF'],       # 0: 純白 (背景)
                     [0.1, '#FFEEEE'],     # 1: 極淡粉紅
@@ -1633,7 +1657,7 @@ def print_henery_model(gamma=1.18):
                 fig_heat = go.Figure(data=go.Heatmap(
                     z=plot_df.values,
                     x=plot_df.columns,
-                    y=[f"{h}號" for h in plot_df.index],
+                    y=y_labels_rich,
                     ygap=2,
                     colorscale=colorscale_thresholds, # 深黑到鮮紅
                     showscale=True,
