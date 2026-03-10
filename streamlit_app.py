@@ -1637,7 +1637,21 @@ def print_henery_model(gamma=1.18):
                 # reindex 會自動處理時間對齊，若 win_df 漏了某秒會補 NaN
                 odds_sub_df = win_df[win_col_keys].reindex(z_df.columns).T.iloc[::-1]
                 # 將 NaN 轉為 0 方便顯示，並轉為 values 給 Plotly
-                odds_matrix = odds_sub_df.fillna(0).values
+                raw_matrix = odds_sub_df.fillna(0).values
+                clean_text_matrix = []
+                for row in raw_matrix:
+                    new_row = []
+                    last_val = None
+                    for i, val in enumerate(row):
+                        # 邏輯：如果是第一格，或者數值跟上一格不同，就顯示數字
+                        if i == 0 or val != last_val:
+                            new_row.append(f"{val:.1f}")
+                        else:
+                            # 數值相同則留空，減少視覺壓力
+                            new_row.append("")
+                        last_val = val
+                    clean_text_matrix.append(new_row)
+                    
                 y_labels_filtered = []
                 latest_win = win_df.iloc[-1] if win_df is not None else None
                 prev_win = (win_df.iloc[-4] if len(win_df) >= 4 else win_df.iloc[0]) if win_df is not None else None
@@ -1674,7 +1688,7 @@ def print_henery_model(gamma=1.18):
                     z=z_df.values,
                     x=z_df.columns,
                     y=y_labels_rich,
-                    text=odds_matrix,
+                    text=clean_text_matrix,
                     texttemplate="%{text:.1f}",
                     textfont={"size": 14},
                     ygap=2.5,
