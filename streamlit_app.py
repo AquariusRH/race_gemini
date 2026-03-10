@@ -1582,7 +1582,7 @@ def print_henery_model(gamma=1.18):
     
             st.plotly_chart(
                 fig, 
-                width='content', 
+                width='stretch', 
                 key=f"dark_left_table_{race_no}_{time_now.strftime('%H%M%S')}", 
                 config={'displayModeBar': False}
             )
