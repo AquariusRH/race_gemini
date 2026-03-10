@@ -1594,6 +1594,7 @@ def print_henery_model(gamma=1.18):
             # 排除非馬號的 column (如果有)，並排序
             current_horses = sorted([c for c in win_df.columns if str(c).isdigit()], key=lambda x: int(x))
             full_horse_list = [str(h) for h in current_horses]
+            sync_time = win_df.index[-1]
         else:
             full_horse_list = [str(h) for h in sorted(win_probs.keys())]
         # 確保 session_state 存在
@@ -1614,7 +1615,7 @@ def print_henery_model(gamma=1.18):
             st.session_state.horse_count_history[race_no] = pd.DataFrame()
     
         hist_df = st.session_state.horse_count_history[race_no]
-        new_entry = pd.DataFrame([current_horse_counts], index=[current_time])
+        new_entry = pd.DataFrame([current_horse_counts], index=[sync_time])
         
         if hist_df.empty or current_time != hist_df.index[-1]:
             updated_hist = pd.concat([hist_df, new_entry]).tail(40)
@@ -1628,18 +1629,17 @@ def print_henery_model(gamma=1.18):
             
             if active_cols:
                 active_cols = sorted(active_cols, key=lambda x: int(x))
-                plot_df = plot_data[active_cols].T # 轉置讓 Y 軸是馬號
+                z_values = plot_data[active_cols].T.iloc[::-1] # 轉置讓 Y 軸是馬號
                 odds_matrix = []
-                for h_str in plot_df.index: # 對於每一匹馬
+                for h_str in z_values.index: # 對於每一匹馬
                     h_odds_row = []
                     col_key = int(h_str) if int(h_str) in win_df.columns else h_str
-                    for t_idx in plot_df.columns: # 對於每一個時間點
-                        # 在 win_df 中找尋最接近該時間點的賠率 (通常 index 是完全對應的)
+                    for t_idx in z_values.columns:
                         try:
+                            # 因為 Index 完全同步，這裡一定能取到值
                             val = win_df.loc[t_idx, col_key]
                             h_odds_row.append(float(val))
                         except:
-                            # 如果時間點對不上，取 win_df 當時最新的值
                             h_odds_row.append(0.0)
                     odds_matrix.append(h_odds_row)
                 st.write(odds_matrix)
@@ -1666,7 +1666,7 @@ def print_henery_model(gamma=1.18):
                         label = f"<b>{int(h_str):02d} 號</b><br>-<br>-"
                     y_labels_filtered.append(label)
                 
-                plot_df = plot_df.iloc[::-1]
+                z_values = z_values.iloc[::-1]
                 y_labels_rich = y_labels_filtered[::-1]
                 colorscale_thresholds = [
                     [0, '#FFFFFF'],       # 0: 純白 (背景)
@@ -1678,8 +1678,8 @@ def print_henery_model(gamma=1.18):
                     [1.0, '#330066']      # 10+: 深紫 (焦點)
                 ]
                 fig_heat = go.Figure(data=go.Heatmap(
-                    z=plot_df.values,
-                    x=plot_df.columns,
+                    z=z_values.values,
+                    x=z_values.columns,
                     y=y_labels_rich,
                     text=odds_matrix,
                     ygap=2.5,
