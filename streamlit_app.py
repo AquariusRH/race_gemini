@@ -1642,6 +1642,7 @@ def print_henery_model(gamma=1.18):
                             # 如果時間點對不上，取 win_df 當時最新的值
                             h_odds_row.append(0.0)
                     odds_matrix.append(h_odds_row)
+                st.write(odds_matrix)
                 y_labels_filtered = []
                 latest_win = win_df.iloc[-1] if win_df is not None else None
                 prev_win = (win_df.iloc[-4] if len(win_df) >= 4 else win_df.iloc[0]) if win_df is not None else None
