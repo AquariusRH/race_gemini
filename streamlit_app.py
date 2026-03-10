@@ -1699,7 +1699,7 @@ def print_henery_model(gamma=1.18):
                 dynamic_height = 150 + (len(full_horse_list) * 45)
                 fig_heat.update_layout(
                     height=dynamic_height, # 動態高度
-                    width = 500,
+                    width = 1500,
                     margin=dict(t=10, b=10, l=100, r=10),
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
