@@ -1629,6 +1629,19 @@ def print_henery_model(gamma=1.18):
             if active_cols:
                 active_cols = sorted(active_cols, key=lambda x: int(x))
                 plot_df = plot_data[active_cols].T # 轉置讓 Y 軸是馬號
+                odds_matrix = []
+                for h_str in plot_df.index: # 對於每一匹馬
+                    h_odds_row = []
+                    col_key = int(h_str) if int(h_str) in win_df.columns else h_str
+                    for t_idx in plot_df.columns: # 對於每一個時間點
+                        # 在 win_df 中找尋最接近該時間點的賠率 (通常 index 是完全對應的)
+                        try:
+                            val = win_df.loc[t_idx, col_key]
+                            h_odds_row.append(float(val))
+                        except:
+                            # 如果時間點對不上，取 win_df 當時最新的值
+                            h_odds_row.append(0.0)
+                    odds_matrix.append(h_odds_row)
                 y_labels_filtered = []
                 latest_win = win_df.iloc[-1] if win_df is not None else None
                 prev_win = (win_df.iloc[-4] if len(win_df) >= 4 else win_df.iloc[0]) if win_df is not None else None
@@ -1667,6 +1680,7 @@ def print_henery_model(gamma=1.18):
                     z=plot_df.values,
                     x=plot_df.columns,
                     y=y_labels_rich,
+                    text=odds_matrix,
                     ygap=2.5,
                     colorscale=colorscale_thresholds, # 深黑到鮮紅
                     showscale=True,
