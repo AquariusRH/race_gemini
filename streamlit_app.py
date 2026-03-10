@@ -1662,17 +1662,17 @@ def print_henery_model(gamma=1.18):
                     if latest_win is not None and col_key in latest_win:
                         curr_o = pd.to_numeric(latest_win[col_key], errors='coerce')
                         prev_o = pd.to_numeric(prev_win[col_key], errors='coerce')
-                        diff =  prev_o - curr_o
-                        arrow = "▼" if diff < 0 else "▲" if diff > 0 else ""
-                        diff_color = "#00ff00" if diff > 0 else "#ff4b4b" if diff < 0 else "#888"
+                        #diff =  prev_o - curr_o
+                        #arrow = "▼" if diff < 0 else "▲" if diff > 0 else ""
+                        #diff_color = "#00ff00" if diff > 0 else "#ff4b4b" if diff < 0 else "#888"
                         
                         label = (
                             f"<b>{int(h_str):02d} 號</b><br>"
-                            f"<span style='color:#fff'>{curr_o:.1f}</span> <span style='color:#888; font-size:14px'>({prev_o:.1f})</span><br>"
-                            f"<span style='color:{diff_color}; font-size:14px'><b>{arrow} {abs(diff):.1f}</b></span>"
+                            f"<span style='color:#fff'>{curr_o:.1f}</span> <span style='color:#888; font-size:24px'>({prev_o:.1f})</span><br>"
+                            #f"<span style='color:{diff_color}; font-size:14px'><b>{arrow} {abs(diff):.1f}</b></span>"
                         )
                     else:
-                        label = f"<b>{int(h_str):02d} 號</b><br>-<br>-"
+                        label = f"<b>{int(h_str):02d} 號</b><br>-" #<br>-"
                     y_labels_filtered.append(label)
                 y_labels_rich = y_labels_filtered[::-1]
                 colorscale_thresholds = [
@@ -1690,7 +1690,7 @@ def print_henery_model(gamma=1.18):
                     y=y_labels_rich,
                     text=clean_text_matrix,
                     texttemplate="%{text:.1f}",
-                    textfont={"size": 24},
+                    textfont={"size": 30},
                     ygap=2.5,
                     colorscale=colorscale_thresholds, # 深黑到鮮紅
                     showscale=True,
@@ -1707,7 +1707,7 @@ def print_henery_model(gamma=1.18):
                     font=dict(color="white"),
                     xaxis=dict(showticklabels=False, showgrid=False,zeroline=False, fixedrange=True),
                     #xaxis=dict(showgrid=False, tickangle=-45,fixedrange=True),
-                    yaxis=dict(showgrid=False, title="馬號",fixedrange=True,tickfont=dict(size=18))
+                    yaxis=dict(showgrid=False, title="馬號",fixedrange=True,tickfont=dict(size=30))
                 )
                 st.plotly_chart(fig_heat, width='content')
         
