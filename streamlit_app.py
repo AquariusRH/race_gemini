@@ -1629,20 +1629,15 @@ def print_henery_model(gamma=1.18):
             
             if active_cols:
                 active_cols = sorted(active_cols, key=lambda x: int(x))
-                z_values = plot_data[active_cols].T.iloc[::-1] # 轉置讓 Y 軸是馬號
-                odds_matrix = []
-                for h_str in z_values.index: # 對於每一匹馬
-                    h_odds_row = []
-                    col_key = int(h_str) if int(h_str) in win_df.columns else h_str
-                    for t_idx in z_values.columns:
-                        try:
-                            # 因為 Index 完全同步，這裡一定能取到值
-                            val = win_df.loc[t_idx, col_key]
-                            h_odds_row.append(float(val))
-                        except:
-                            h_odds_row.append(0.0)
-                    odds_matrix.append(h_odds_row)
-                st.write(odds_matrix)
+                z_df = plot_data[active_cols].T.iloc[::-1] # 轉置讓 Y 軸是馬號
+                # 3. 從 win_df 抽取對應的賠率矩陣 (Text 軸)
+                # 確保 win_df 的 columns 與 active_cols 格式一致 (處理 int/str 差異)
+                win_col_keys = [int(c) if int(c) in win_df.columns else str(c) for c in active_cols]
+                # 直接抽取這幾匹馬的所有歷史賠率，並對齊熱力圖的時間點 (z_df.columns)
+                # reindex 會自動處理時間對齊，若 win_df 漏了某秒會補 NaN
+                odds_sub_df = win_df[win_col_keys].reindex(z_df.columns).T.iloc[::-1]
+                # 將 NaN 轉為 0 方便顯示，並轉為 values 給 Plotly
+                odds_matrix = odds_sub_df.fillna(0).values
                 y_labels_filtered = []
                 latest_win = win_df.iloc[-1] if win_df is not None else None
                 prev_win = (win_df.iloc[-4] if len(win_df) >= 4 else win_df.iloc[0]) if win_df is not None else None
@@ -1665,8 +1660,6 @@ def print_henery_model(gamma=1.18):
                     else:
                         label = f"<b>{int(h_str):02d} 號</b><br>-<br>-"
                     y_labels_filtered.append(label)
-                
-                z_values = z_values.iloc[::-1]
                 y_labels_rich = y_labels_filtered[::-1]
                 colorscale_thresholds = [
                     [0, '#FFFFFF'],       # 0: 純白 (背景)
@@ -1678,10 +1671,12 @@ def print_henery_model(gamma=1.18):
                     [1.0, '#330066']      # 10+: 深紫 (焦點)
                 ]
                 fig_heat = go.Figure(data=go.Heatmap(
-                    z=z_values.values,
-                    x=z_values.columns,
+                    z=z_df.values,
+                    x=z_df.columns,
                     y=y_labels_rich,
                     text=odds_matrix,
+                    texttemplate="%{text:.1f}",
+                    textfont={"size": 9, "color": "black"},
                     ygap=2.5,
                     colorscale=colorscale_thresholds, # 深黑到鮮紅
                     showscale=True,
