@@ -1707,7 +1707,7 @@ def print_henery_model(gamma=1.18):
                     font=dict(color="white"),
                     xaxis=dict(showticklabels=False, showgrid=False,zeroline=False, fixedrange=True),
                     #xaxis=dict(showgrid=False, tickangle=-45,fixedrange=True),
-                    yaxis=dict(showgrid=False, title="馬號",fixedrange=True,tickfont=dict(size=30))
+                    yaxis=dict(showgrid=False, title="馬號",fixedrange=True,tickfont=dict(size=24))
                 )
                 st.plotly_chart(fig_heat, width='content')
         
