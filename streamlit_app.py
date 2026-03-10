@@ -1668,9 +1668,9 @@ def print_henery_model(gamma=1.18):
                         
                         label = (
                             f"<b>{int(h_str):02d} 號</b><br>"
-                            f"<span style='color:#fff'>{curr_o:.1f}</span> <span style='color:#888; font-size:24px'>({prev_o:.1f})</span></b>"
+                            f"<span>{curr_o:.1f}</span> <span style='color:#888; font-size:24px'>({prev_o:.1f})</span></b>"
                             #f"<span style='color:{diff_color}; font-size:14px'><b>{arrow} {abs(diff):.1f}</b></span>"
-                        )
+                        )#style='color:#fff'
                     else:
                         label = f"<b>{int(h_str):02d} 號</b><br>-" #<br>-"
                     y_labels_filtered.append(label)
