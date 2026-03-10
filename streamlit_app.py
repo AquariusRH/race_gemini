@@ -1668,7 +1668,7 @@ def print_henery_model(gamma=1.18):
                         
                         label = (
                             f"<b>{int(h_str):02d} 號</b><br>"
-                            f"<span>{curr_o:.1f}</span> <span style='color:#888; font-size:24px'>({prev_o:.1f})</span></b>"
+                            f"<span>{curr_o:.1f}</span> <span style='color:#888; font-size:20px'>({prev_o:.1f})</span></b>"
                             #f"<span style='color:{diff_color}; font-size:14px'><b>{arrow} {abs(diff):.1f}</b></span>"
                         )#style='color:#fff'
                     else:
@@ -1707,7 +1707,7 @@ def print_henery_model(gamma=1.18):
                     font=dict(color="white"),
                     xaxis=dict(showticklabels=False, showgrid=False,zeroline=False, fixedrange=True),
                     #xaxis=dict(showgrid=False, tickangle=-45,fixedrange=True),
-                    yaxis=dict(showgrid=False, title="馬號",fixedrange=True,tickfont=dict(size=24))
+                    yaxis=dict(showgrid=False, title="馬號",fixedrange=True,tickfont=dict(size=20))
                 )
                 st.plotly_chart(fig_heat, width='content')
         
