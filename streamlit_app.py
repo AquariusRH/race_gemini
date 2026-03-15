@@ -1678,11 +1678,8 @@ def print_henery_model(gamma=1.18):
                 colorscale_thresholds = [
                     [0.0, '#FFFFFF'], # 0% - 白色
                     [0.2, '#FFFFFF'], # 20% 以下保持白色 (過濾 1-2 個組合的雜訊)
-                    [0.2, '#00CED1'], # 20% 開始變青色
                     [0.5, '#00CED1'], 
-                    [0.5, '#FF9900'], # 50% 跳轉橙色
-                    [0.8, '#FF9900'], 
-                    [0.8, '#700080'], # 80% 以上直接變深紫
+                    [0.8, '#FF9900'],
                     [1.0, '#700080']
                 ]
                 fig_heat = go.Figure(data=go.Heatmap(
