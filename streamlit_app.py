@@ -1673,7 +1673,7 @@ def print_henery_model(gamma=1.18):
                         label = f"<b>{int(h_str):02d} 號</b><br>-" #<br>-"
                     y_labels_filtered.append(label)
                 y_labels_rich = y_labels_filtered[::-1]
-                fixed_zmin = 3
+                fixed_zmin = 2
                 #fixed_zmax = z_df.values.max()
                 colorscale_thresholds = [
                     [0, '#FFFFFF'],       # 0: 純白 (背景)
