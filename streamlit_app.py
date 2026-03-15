@@ -1674,7 +1674,7 @@ def print_henery_model(gamma=1.18):
                     y_labels_filtered.append(label)
                 y_labels_rich = y_labels_filtered[::-1]
                 fixed_zmin = 0
-                fixed_zmax = 10
+                fixed_zmax = z_df.values.max()
                 colorscale_thresholds = [
                     [0, '#FFFFFF'],       # 0: 純白 (背景)
                     [0.1, '#FFEEEE'],     # 1: 極淡粉紅
