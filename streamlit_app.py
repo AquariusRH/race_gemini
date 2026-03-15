@@ -1692,7 +1692,12 @@ def print_henery_model(gamma=1.18):
                     ygap=2.5,
                     colorscale=colorscale_thresholds, # 深黑到鮮紅
                     showscale=True,
-                    colorbar=dict(title="過熱數")
+                    zauto=False,
+                    colorbar=dict(
+                        title="過熱數",
+                        tickvals=[0, 1, 2, 4, 6, 8, 10],
+                        ticktext=['0', '1', '2', '4', '6', '8', '10+']
+                    )
                 ))
                 dynamic_height = 150 + (len(full_horse_list) * 45)
                 fig_heat.update_layout(
