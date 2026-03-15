@@ -1674,14 +1674,15 @@ def print_henery_model(gamma=1.18):
                     y_labels_filtered.append(label)
                 y_labels_rich = y_labels_filtered[::-1]
                 fixed_zmin = 0
-                fixed_zmax = z_df.values.max()
+                #fixed_zmax = z_df.values.max()
                 colorscale_thresholds = [
-                    [0.0, '#FFFFFF'], # 0: 白 (冷靜)
-                    [0.2, '#00CED1'], # 1.6: 青綠 (有動靜) - 與橙色形成強烈補色
-                    [0.4, '#FFFF00'], # 3.2: 鮮黃 (警示) - 亮度最高，最亮眼
-                    [0.6, '#FF8C00'], # 4.8: 深橙 (過熱) 
-                    [0.8, '#FF0000'], # 6.4: 正紅 (重倉) - 開始變深
-                    [1.0, '#4B0082']  # 8.0: 靛紫 (頂點) - 極深色
+                    [0, '#FFFFFF'],       # 0: 純白 (背景)
+                    [0.1, '#FFEEEE'],     # 1: 極淡粉紅
+                    [0.2, '#FFFF99'],     # 2: 淺黃
+                    [0.4, '#FFFF00'],     # 3-4: 亮黃
+                    [0.6, '#FF9999'],     # 5-6: 淺紅
+                    [0.8, '#FF0000'],     # 7-9: 正紅
+                    [1.0, '#330066']      # 10+: 深紫 (焦點)
                 ]
                 fig_heat = go.Figure(data=go.Heatmap(
                     z=z_df.values,
@@ -1692,7 +1693,7 @@ def print_henery_model(gamma=1.18):
                     textfont={"size": 20},
                     ygap=2.5,
                     zmin=fixed_zmin,      
-                    zmax=fixed_zmax,
+                    #zmax=fixed_zmax,
                     colorscale=colorscale_thresholds, # 深黑到鮮紅
                     showscale=True,
                     zauto=False,
