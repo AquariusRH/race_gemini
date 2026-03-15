@@ -1675,12 +1675,13 @@ def print_henery_model(gamma=1.18):
                 y_labels_rich = y_labels_filtered[::-1]
                 fixed_zmin = 0
                 fixed_zmax = z_df.values.max()
-                colorscale_thresholds = [
-                    [0.0, '#FFFFFF'], # 0% - 白色
-                    [0.2, '#FFFFFF'], # 20% 以下保持白色 (過濾 1-2 個組合的雜訊)
-                    [0.5, '#00CED1'], 
-                    [0.8, '#FF9900'],
-                    [1.0, '#700080']
+                    colorscale_thresholds = [
+                    [0.0, '#FFFFFF'], # 0.0: 純白 (底色)
+                    [0.2, '#00CED1'], # 0.2: 青綠 (有動作 - 1.6)
+                    [0.4, '#FFFF00'], # 0.4: 鮮黃 (已過熱 - 3.2)
+                    [0.6, '#FF8C00'], # 0.6: 深橙 (主力區 - 4.8)
+                    [0.8, '#FF0000'], # 0.8: 正紅 (大戶區 - 6.4)
+                    [1.0, '#4B0082']  # 1.0: 靛紫 (頂點 - 8.0)
                 ]
                 fig_heat = go.Figure(data=go.Heatmap(
                     z=z_df.values,
