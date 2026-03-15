@@ -1623,7 +1623,7 @@ def print_henery_model(gamma=1.18):
         plot_data = st.session_state.horse_count_history[race_no]
         if not plot_data.empty:
             # 只顯示有過熱記錄的馬，避免 14 匹馬太多空白
-            active_cols = [c for c in plot_data.columns if plot_data[c].iloc[-1] >0]
+            active_cols = [c for c in plot_data.columns if plot_data[c].iloc[-1] >2]
             
             if active_cols:
                 active_cols = sorted(active_cols, key=lambda x: int(x))
