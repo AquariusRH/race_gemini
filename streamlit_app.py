@@ -1673,6 +1673,8 @@ def print_henery_model(gamma=1.18):
                         label = f"<b>{int(h_str):02d} 號</b><br>-" #<br>-"
                     y_labels_filtered.append(label)
                 y_labels_rich = y_labels_filtered[::-1]
+                fixed_zmin = 0
+                fixed_zmax = 10
                 colorscale_thresholds = [
                     [0, '#FFFFFF'],       # 0: 純白 (背景)
                     [0.1, '#FFEEEE'],     # 1: 極淡粉紅
@@ -1690,6 +1692,8 @@ def print_henery_model(gamma=1.18):
                     texttemplate="%{text:.1f}",
                     textfont={"size": 20},
                     ygap=2.5,
+                    zmin=fixed_zmin,      
+                    zmax=fixed_zmax,
                     colorscale=colorscale_thresholds, # 深黑到鮮紅
                     showscale=True,
                     zauto=False,
