@@ -1630,25 +1630,25 @@ def print_henery_model(gamma=1.18):
                 z_df = plot_data[active_cols].T.iloc[::-1] # 轉置讓 Y 軸是馬號
                 # 3. 從 win_df 抽取對應的賠率矩陣 (Text 軸)
                 # 確保 win_df 的 columns 與 active_cols 格式一致 (處理 int/str 差異)
-                win_col_keys = [int(c) if int(c) in win_df.columns else str(c) for c in active_cols]
+                # win_col_keys = [int(c) if int(c) in win_df.columns else str(c) for c in active_cols]
                 # 直接抽取這幾匹馬的所有歷史賠率，並對齊熱力圖的時間點 (z_df.columns)
                 # reindex 會自動處理時間對齊，若 win_df 漏了某秒會補 NaN
-                odds_sub_df = win_df[win_col_keys].reindex(z_df.columns).T.iloc[::-1]
+                # odds_sub_df = win_df[win_col_keys].reindex(z_df.columns).T.iloc[::-1]
                 # 將 NaN 轉為 0 方便顯示，並轉為 values 給 Plotly
-                raw_matrix = odds_sub_df.fillna(0).values
-                clean_text_matrix = []
-                for row in raw_matrix:
-                    new_row = []
-                    last_val = None
-                    for i, val in enumerate(row):
+                # raw_matrix = odds_sub_df.fillna(0).values
+                # clean_text_matrix = []
+                # for row in raw_matrix:
+                    # new_row = []
+                    # last_val = None
+                    # for i, val in enumerate(row):
                         # 邏輯：如果是第一格，或者數值跟上一格不同，就顯示數字
-                        if i == 0 or val != last_val:
-                            new_row.append(f"{val:.1f}")
-                        else:
+                        # if i == 0 or val != last_val:
+                            # new_row.append(f"{val:.1f}")
+                        # else:
                             # 數值相同則留空，減少視覺壓力
-                            new_row.append("")
-                        last_val = val
-                    clean_text_matrix.append(new_row)
+                            # new_row.append("")
+                        # last_val = val
+                    # clean_text_matrix.append(new_row)
                     
                 y_labels_filtered = []
                 latest_win = win_df.iloc[-1] if win_df is not None else None
@@ -1688,9 +1688,9 @@ def print_henery_model(gamma=1.18):
                     z=z_df.values,
                     x=z_df.columns,
                     y=y_labels_rich,
-                    text=clean_text_matrix,
-                    texttemplate="%{text:.1f}",
-                    textfont={"size": 20},
+                    # text=clean_text_matrix,
+                    # texttemplate="%{text:.1f}",
+                    # textfont={"size": 20},
                     ygap=2.5,
                     zmin=fixed_zmin,      
                     #zmax=fixed_zmax,
