@@ -1666,8 +1666,8 @@ def print_henery_model(gamma=1.18):
                         #diff_color = "#00ff00" if diff > 0 else "#ff4b4b" if diff < 0 else "#888"
                         
                         label = (
-                            f"<b>{int(h_str):02d} 號</b><br>"
-                            f"<span>{curr_o:.1f}</span> <span style='color:#888; font-size:20px'>({prev_o:.1f})</span> <span style='color:#888; font-size:20px'>(({prev_3_o:.1f}))</span></b>"
+                            f"<b>{int(h_str):02d} 號</b> <span>{curr_o:.1f}</span> <br>"
+                            f"<span style='color:#888; font-size:20px'>({prev_o:.1f})</span> <span style='color:#888; font-size:20px'>(({prev_3_o:.1f}))</span></b>"
                             #f"<span style='color:{diff_color}; font-size:14px'><b>{arrow} {abs(diff):.1f}</b></span>"
                         )#style='color:#fff'
                     else:
