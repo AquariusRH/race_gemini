@@ -1653,20 +1653,21 @@ def print_henery_model(gamma=1.18):
                 y_labels_filtered = []
                 latest_win = win_df.iloc[-1] if win_df is not None else None
                 prev_win = (win_df.iloc[-4] if len(win_df) >= 4 else win_df.iloc[0]) if win_df is not None else None
-    
+                prev_3_win = (win_df.iloc[-10] if len(win_df) >= 10 else win_df.iloc[0]) if win_df is not None else None
                 for h_str in active_cols:
                     col_key = int(h_str) if win_df is not None and int(h_str) in win_df.columns else h_str
                     
                     if latest_win is not None and col_key in latest_win:
                         curr_o = pd.to_numeric(latest_win[col_key], errors='coerce')
                         prev_o = pd.to_numeric(prev_win[col_key], errors='coerce')
+                        prev_3_o = pd.to_numeric(prev_3_win[col_key], errors='coerce')
                         #diff =  prev_o - curr_o
                         #arrow = "▼" if diff < 0 else "▲" if diff > 0 else ""
                         #diff_color = "#00ff00" if diff > 0 else "#ff4b4b" if diff < 0 else "#888"
                         
                         label = (
                             f"<b>{int(h_str):02d} 號</b><br>"
-                            f"<span>{curr_o:.1f}</span> <span style='color:#888; font-size:20px'>({prev_o:.1f})</span></b>"
+                            f"<span>{curr_o:.1f}</span> <span style='color:#888; font-size:20px'>({prev_o:.1f})</span> <span style='color:#888; font-size:20px'>(({prev_3_o:.1f}))</span></b>"
                             #f"<span style='color:{diff_color}; font-size:14px'><b>{arrow} {abs(diff):.1f}</b></span>"
                         )#style='color:#fff'
                     else:
