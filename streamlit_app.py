@@ -1812,8 +1812,7 @@ def create_odds_chart():
         
         # 圖例設定
         legend=dict(
-            itemclick="toggle", 
-            traceorder="normal"
+            itemclick="toggle"
         ),
         
         height=600,
@@ -1856,8 +1855,8 @@ def plot_investment_trend():
         fig.add_trace(go.Scatter(
             x=df_invest.index,
             y=df_invest[item],
-            name=f"{item}",
-            mode='lines',
+            name=f"{item} 號",
+            mode=lines+markers',
             visible=True if is_top_6 else "legendonly",
             line=dict(
                 width=3 if is_top_6 else 1.5,
@@ -1881,7 +1880,7 @@ def plot_investment_trend():
         ),
         dragmode=False,
         hovermode="x",
-        legend=dict(itemclick="toggle", itemdoubleclick="toggleothers"),
+        legend=dict(itemclick="toggle"),
         height=500,
         margin=dict(t=50, b=50, l=50, r=60)
     )
