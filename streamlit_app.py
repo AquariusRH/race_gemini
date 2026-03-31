@@ -1821,6 +1821,73 @@ def create_odds_chart():
     )
     
     st.plotly_chart(fig, width='stretch',config={'displayModeBar': False})
+
+def plot_investment_trend():
+    """
+    pool_type: 'WIN' 或 'QIN'
+    從 st.session_state.overall_investment_dict 提取數據繪圖
+    """
+    # 1. 檢查數據是否存在
+    if 'overall_investment_dict' not in st.session_state:
+        st.warning("尚未偵測到投注量數據")
+        return
+
+    # 假設數據結構是一個 DataFrame，Columns 是馬號或組合，Index 是時間
+    # 如果你的數據是 Dict，請先轉換： df = pd.DataFrame(st.session_state.overall_investment_dict[pool_type])
+    df_invest = pd.DataFrame(st.session_state.overall_investment_dict["WIN"] + st.session_state.overall_investment_dict["QIN"])
+    
+    if df_invest.empty:
+        st.info(f"目前 {pool_type} 池暫無數據")
+        return
+
+    # 2. 排序邏輯：按「投注金額」從大到小排序 (金額越高 = 越熱門)
+    latest_invest = df_invest.iloc[-1].sort_values(ascending=False)
+    sorted_items = latest_odds.index.tolist()
+    top_6_items = sorted_items[:6]
+    
+    fig = go.Figure()
+    colors = px.colors.qualitative.Alphabet
+
+    # 3. 添加 Trace
+    for i, item in enumerate(sorted_items):
+        is_top_6 = item in top_6_items
+        
+        # 投注量圖不需要反轉 Y 軸邏輯，金額越高線條越往上
+        fig.add_trace(go.Scatter(
+            x=df_invest.index,
+            y=df_invest[item],
+            name=f"{item}",
+            mode='lines',
+            visible=True if is_top_6 else "legendonly",
+            line=dict(
+                width=3 if is_top_6 else 1.5,
+                color=colors[i % len(colors)]
+            ),
+            # 懸浮窗顯示金額 (加個 $ 或單位)
+            hovertemplate=f"金額: %{{y:,.0f}}<extra></extra>"
+        ))
+
+    # 4. 圖表佈局 (針對金額調整)
+    fig.update_layout(
+        title=f"💰 {pool_type} 投注量即時變動 (熱門在前)",
+        template="plotly_dark",
+        xaxis=dict(title="時間", showgrid=True, gridcolor='rgba(255,255,255,0.05)'),
+        yaxis=dict(
+            title="金額 ($)", 
+            # 投注量通常建議用線性軸，或者 Log 軸看「增長率」
+            type='linear', 
+            side='right', # 金額建議放右邊，與賠率圖區分
+            gridcolor='rgba(255,255,255,0.1)',
+            tickformat=",.0f" # 加入千分位
+        ),
+        dragmode=False,
+        hovermode="x unified",
+        legend=dict(itemclick="toggle", itemdoubleclick="toggleothers"),
+        height=500,
+        margin=dict(t=50, b=50, l=50, r=60)
+    )
+
+    st.plotly_chart(fig, width='stretch',config={'displayModeBar': False})
 # ==================== 4. 主介面邏輯 ====================
 
 # --- 輸入區 ---
@@ -2660,6 +2727,7 @@ if monitoring_on:
             if show_move_bar:
                 print_plotly_advanced_bar(race_no,print_list)
             create_odds_chart()
+            plot_investment_trend()
             # B. 實時預測排名
             st.markdown("### 🤖 實時資金流綜合預測排名")
             prediction_df = calculate_smart_score(race_no)
