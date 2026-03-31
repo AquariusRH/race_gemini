@@ -1842,7 +1842,7 @@ def plot_investment_trend():
 
     # 2. 排序邏輯：按「投注金額」從大到小排序 (金額越高 = 越熱門)
     latest_invest = df_invest.iloc[-1].sort_values(ascending=False)
-    sorted_items = latest_odds.index.tolist()
+    sorted_items = latest_invest.index.tolist()
     top_6_items = sorted_items[:6]
     
     fig = go.Figure()
@@ -1876,12 +1876,11 @@ def plot_investment_trend():
             title="金額 ($)", 
             # 投注量通常建議用線性軸，或者 Log 軸看「增長率」
             type='linear', 
-            side='right', # 金額建議放右邊，與賠率圖區分
             gridcolor='rgba(255,255,255,0.1)',
             tickformat=",.0f" # 加入千分位
         ),
         dragmode=False,
-        hovermode="x unified",
+        hovermode="x",
         legend=dict(itemclick="toggle", itemdoubleclick="toggleothers"),
         height=500,
         margin=dict(t=50, b=50, l=50, r=60)
