@@ -1808,11 +1808,14 @@ def create_odds_chart():
         
         # 懸停模式：垂直線對齊所有顯示中的馬匹
         hovermode="x unified",
+        hoverlabel=dict(
+            namelength=-1, # 顯示完整名稱
+            categoryarray=sorted_horse_names # 強制排序順序
+        ),
         
         # 圖例設定
         legend=dict(
             itemclick="toggle", 
-            itemdoubleclick="toggleothers",
             traceorder="normal"
         ),
         
