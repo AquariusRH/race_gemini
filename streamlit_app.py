@@ -1758,39 +1758,53 @@ def create_odds_chart():
     latest_odds = df_odds.iloc[-1].sort_values()
     top_6_horses = latest_odds.index[:6].tolist()
     
-    # 2. 遍歷所有馬匹繪圖
-    for horse in df_odds.columns:
+    # 準備顏色序列 (頭 6 匹用鮮艷色，其餘用灰色)
+    colors = px.colors.qualitative.Plotly  # 內建的高對比色盤
+    
+    for i, horse in enumerate(df_odds.columns):
         is_top_6 = horse in top_6_horses
+        
+        # 尋找該馬在頭 6 名中的索引以分配顏色，否則給予灰色
+        line_color = colors[top_6_horses.index(horse)] if is_top_6 else "#A9A9A9" # DarkGray
         
         fig.add_trace(go.Scatter(
             x=df_odds.index,
             y=df_odds[horse],
             name=f"{horse} 號",
-            mode='lines+markers',
+            mode='lines',
             # --- 核心邏輯 ---
-            # 如果是頭 6 名，直接顯示；否則只留在標籤欄位(Legend)供點選
             visible=True if is_top_6 else "legendonly",
-            # 設定線條粗細：熱門馬加粗，其餘細線
-            line=dict(width=3 if is_top_6 else 1.5),
+            line=dict(
+                width=3 if is_top_6 else 1.5,
+                color=line_color,
+                dash='solid' if is_top_6 else 'dot' # 冷門馬用虛線增加區別
+            ),
+            # 懸停顯示
             hovertemplate=f"馬號 {horse}<br>賠率: %{{y}}<br>時間: %{{x}}<extra></extra>"
         ))
 
-    # 3. 圖表樣式設定
+    # 2. 圖表佈局與修正後的 Legend 設定
     fig.update_layout(
-        title="獨贏賠率走勢圖 (頭 6 名預設顯示，其餘可於右側標籤開啟)",
+        title="獨贏賠率走勢 (頭 6 名預設顯示)",
         xaxis_title="時間",
         yaxis=dict(
-            title="賠率",
-            type='log', # 再次強烈建議用 Log 軸，否則熱門馬的變動看不出來
+            title="賠率 (Log 軸)",
+            type='log',  # 對數軸能讓熱門馬的微小變動更明顯
+            dtick=0.301, # 約等於 2 倍一個間隔，視需求調整
             gridcolor='rgba(255,255,255,0.1)'
         ),
         hovermode="x unified",
         legend=dict(
-            itemclick="toggle",      # 點擊切換單隻
-            itemdoubleclick="show",   # 雙擊只看該隻
-            groupclick="togglegroup"
+            itemclick="toggle",          # 單擊：切換顯示/隱藏
+            itemdoubleclick="toggleothers", # 修正：雙擊會隱藏其他，只看這隻馬
+            orientation="v",             # 垂直排列
+            yanchor="top",
+            y=1,
+            xanchor="left",
+            x=1.02
         ),
-        template="plotly_dark" # 深色背景更專業
+        template="plotly_dark",
+        margin=dict(r=150) # 給右邊 Legend 留空間
     )
     
     return fig
