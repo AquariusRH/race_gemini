@@ -1845,9 +1845,9 @@ def plot_racing_monitor_dashboard():
     # ---------------------------------------------------------
     # 5. Streamlit Layout 併排顯示
     # ---------------------------------------------------------
-    c1, c2 = st.columns(2)
-    with c1:
-        st.plotly_chart(fig_odds, width='stretch', config={'displayModeBar': False})
+    #c1, c2 = st.columns(2)
+    #with c1:
+    st.plotly_chart(fig_odds, width='content', config={'displayModeBar': False})
     #with c2:
         #st.plotly_chart(fig_inv, width='stretch', config={'displayModeBar': False})
 # ==================== 4. 主介面邏輯 ====================
