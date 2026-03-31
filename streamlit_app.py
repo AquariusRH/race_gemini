@@ -1791,6 +1791,7 @@ def create_odds_chart():
             title="賠率 (Log 軸)",
             type='log',  # 對數軸能讓熱門馬的微小變動更明顯
             dtick=0.301, # 約等於 2 倍一個間隔，視需求調整
+            autorange='reversed',
             gridcolor='rgba(255,255,255,0.1)'
         ),
         hovermode="x unified",
@@ -1804,6 +1805,7 @@ def create_odds_chart():
             x=1.02
         ),
         template="plotly_dark",
+        dragmode=False,
         margin=dict(r=150) # 給右邊 Legend 留空間
     )
     
