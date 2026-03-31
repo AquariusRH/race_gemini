@@ -1800,7 +1800,7 @@ def plot_racing_monitor_dashboard():
     fig_odds.update_layout(
         title="📉 獨贏賠率 (熱門在上)",
         template="plotly_dark",
-        yaxis=dict(type='log', autorange='reversed', tickformat=".1f", dtick=0.301, gridcolor='rgba(255,255,255,0.1)'),
+        yaxis=dict(type='log',  tickformat=".1f", dtick=0.301, gridcolor='rgba(255,255,255,0.1)'), #autorange='reversed',
         xaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.05)'),
         dragmode=False, hovermode="x unified",
         legend=dict(itemclick="toggle", itemdoubleclick="toggleothers", traceorder="normal"),
