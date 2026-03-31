@@ -1807,7 +1807,7 @@ def create_odds_chart():
         margin=dict(r=150) # 給右邊 Legend 留空間
     )
     
-    fig.show()
+    st.plotly_chart(fig, width='content')
 # ==================== 4. 主介面邏輯 ====================
 
 # --- 輸入區 ---
