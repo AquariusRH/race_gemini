@@ -1748,6 +1748,52 @@ def get_adaptive_colors(values, cmap_name='Reds_r'):
         
     return bg_colors, font_colors
 
+def create_odds_chart():
+    """
+    df_odds: Index 為時間, Columns 為馬號 (如 '01', '02'...)
+    """
+    fig = go.Figure()
+    df_odds = st.session_state.odds_dict['WIN']
+    # 1. 取得最新一筆賠率並排序，找出頭 6 熱門
+    latest_odds = df_odds.iloc[-1].sort_values()
+    top_6_horses = latest_odds.index[:6].tolist()
+    
+    # 2. 遍歷所有馬匹繪圖
+    for horse in df_odds.columns:
+        is_top_6 = horse in top_6_horses
+        
+        fig.add_trace(go.Scatter(
+            x=df_odds.index,
+            y=df_odds[horse],
+            name=f"{horse} 號",
+            mode='lines+markers',
+            # --- 核心邏輯 ---
+            # 如果是頭 6 名，直接顯示；否則只留在標籤欄位(Legend)供點選
+            visible=True if is_top_6 else "legendonly",
+            # 設定線條粗細：熱門馬加粗，其餘細線
+            line=dict(width=3 if is_top_6 else 1.5),
+            hovertemplate=f"馬號 {horse}<br>賠率: %{{y}}<br>時間: %{{x}}<extra></extra>"
+        ))
+
+    # 3. 圖表樣式設定
+    fig.update_layout(
+        title="獨贏賠率走勢圖 (頭 6 名預設顯示，其餘可於右側標籤開啟)",
+        xaxis_title="時間",
+        yaxis=dict(
+            title="賠率",
+            type='log', # 再次強烈建議用 Log 軸，否則熱門馬的變動看不出來
+            gridcolor='rgba(255,255,255,0.1)'
+        ),
+        hovermode="x unified",
+        legend=dict(
+            itemclick="toggle",      # 點擊切換單隻
+            itemdoubleclick="show",   # 雙擊只看該隻
+            groupclick="togglegroup"
+        ),
+        template="plotly_dark" # 深色背景更專業
+    )
+    
+    return fig
 # ==================== 4. 主介面邏輯 ====================
 
 # --- 輸入區 ---
@@ -2586,6 +2632,7 @@ if monitoring_on:
                 print_bar_chart(time_now)
             if show_move_bar:
                 print_plotly_advanced_bar(race_no,print_list)
+            create_odds_chart()
             # B. 實時預測排名
             st.markdown("### 🤖 實時資金流綜合預測排名")
             prediction_df = calculate_smart_score(race_no)
