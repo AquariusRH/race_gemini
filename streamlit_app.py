@@ -1756,7 +1756,7 @@ def create_odds_chart():
     df_odds = st.session_state.odds_dict['WIN']
     # 1. 取得最新一筆賠率並排序，找出頭 6 熱門
     latest_odds = df_odds.iloc[-1].sort_values()
-    sorted_horse_names = latest_series.index.tolist()
+    sorted_horse_names = latest_odds.index.tolist()
     top_6_horses = latest_odds.index[:6].tolist()
     
     # 準備顏色序列 (頭 6 匹用鮮艷色，其餘用灰色)
