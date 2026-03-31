@@ -1807,7 +1807,7 @@ def create_odds_chart():
         margin=dict(r=150) # 給右邊 Legend 留空間
     )
     
-    return fig
+    fig.show()
 # ==================== 4. 主介面邏輯 ====================
 
 # --- 輸入區 ---
