@@ -1803,18 +1803,14 @@ def create_odds_chart():
             tickformat=".1f",
             dtick=0.301 # 每格代表 2 倍變化 (e.g., 2, 4, 8, 16)
         ),
-        
         # 關閉拖拽模式，確保圖表座標軸固定
         dragmode=False, 
-        
         # 懸停模式：垂直線對齊所有顯示中的馬匹
         hovermode="x",
-        
         # 圖例設定
         legend=dict(
             itemclick="toggle"
         ),
-        
         height=600,
         margin=dict(t=80, b=50, l=60, r=50)
     )
@@ -1863,7 +1859,7 @@ def plot_investment_trend():
                 color=colors[i % len(colors)]
             ),
             # 懸浮窗顯示金額 (加個 $ 或單位)
-            hovertemplate=f"金額: %{{y:,.0f}}<extra></extra>"
+            hovertemplate=f"馬號 {item}<br>金額: %{{y:,.0f}}<extra></extra>"
         ))
 
     # 4. 圖表佈局 (針對金額調整)
