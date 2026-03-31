@@ -1869,7 +1869,7 @@ def plot_investment_trend():
 
     # 4. 圖表佈局 (針對金額調整)
     fig.update_layout(
-        title=f"💰 {pool_type} 投注量即時變動 (熱門在前)",
+        title=f"💰 投注量即時變動 (熱門在前)",
         template="plotly_dark",
         xaxis=dict(title="時間", showgrid=True, gridcolor='rgba(255,255,255,0.05)'),
         yaxis=dict(
