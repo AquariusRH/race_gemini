@@ -1759,54 +1759,65 @@ def create_odds_chart():
     top_6_horses = latest_odds.index[:6].tolist()
     
     # 準備顏色序列 (頭 6 匹用鮮艷色，其餘用灰色)
-    colors = px.colors.qualitative.Plotly  # 內建的高對比色盤
+    colors = px.colors.qualitative.Dark24  # 內建的高對比色盤
     
     for i, horse in enumerate(df_odds.columns):
         is_top_6 = horse in top_6_horses
         
-        # 尋找該馬在頭 6 名中的索引以分配顏色，否則給予灰色
-        line_color = colors[top_6_horses.index(horse)] if is_top_6 else "#A9A9A9" # DarkGray
+        # 每匹馬分配一個固定顏色 (不論是否預設顯示)
+        color_idx = i % len(colors)
         
         fig.add_trace(go.Scatter(
             x=df_odds.index,
             y=df_odds[horse],
             name=f"{horse} 號",
-            mode='lines',
-            # --- 核心邏輯 ---
-            visible=True if is_top_6 else "legendonly",
+            mode='lines+markers', # 增加點標記，方便看清數據更新點
+            marker=dict(size=4),
+            
+            # --- 核心邏輯：頭 6 名顯示，其餘完全不畫出 (Legendonly) ---
+            visible=True if is_top_6 else "legendonly", 
+            
             line=dict(
-                width=3 if is_top_6 else 1.5,
-                color=line_color,
-                dash='solid' if is_top_6 else 'dot' # 冷門馬用虛線增加區別
+                width=3 if is_top_6 else 2,
+                color=colors[color_idx],
+                dash='solid' # 全部用實線，因為隱藏的馬點開後就是為了看清楚
             ),
-            # 懸停顯示
-            hovertemplate=f"馬號 {horse}<br>賠率: %{{y}}<br>時間: %{{x}}<extra></extra>"
+            hovertemplate=f"馬號 {horse}<br>賠率: %{{y:.1f}}<extra></extra>"
         ))
 
-    # 2. 圖表佈局與修正後的 Legend 設定
+    # 3. 圖表佈局設定
     fig.update_layout(
-        title="獨贏賠率走勢 (頭 6 名預設顯示)",
-        xaxis_title="時間",
-        yaxis=dict(
-            title="賠率 (Log 軸)",
-            type='log',  # 對數軸能讓熱門馬的微小變動更明顯
-            dtick=0.301, # 約等於 2 倍一個間隔，視需求調整
-            autorange='reversed',
-            gridcolor='rgba(255,255,255,0.1)'
-        ),
-        hovermode="x unified",
-        legend=dict(
-            itemclick="toggle",          # 單擊：切換顯示/隱藏
-            itemdoubleclick="toggleothers", # 修正：雙擊會隱藏其他，只看這隻馬
-            orientation="v",             # 垂直排列
-            yanchor="top",
-            y=1,
-            xanchor="left",
-            x=1.02
-        ),
+        title="📊 獨贏賠率監控 (頭 6 名預設，其餘點擊標籤開啟)",
         template="plotly_dark",
-        dragmode=False,
-        margin=dict(r=150) # 給右邊 Legend 留空間
+        xaxis=dict(
+            title="時間",
+            showgrid=True,
+            gridcolor='rgba(255,255,255,0.05)'
+        ),
+        yaxis=dict(
+            title="賠率 (對數軸 - 反轉)", 
+            type='log', 
+            autorange='reversed', # 賠率小 (熱門) 在上方
+            gridcolor='rgba(255,255,255,0.1)',
+            tickformat=".1f",
+            dtick=0.301 # 每格代表 2 倍變化 (e.g., 2, 4, 8, 16)
+        ),
+        
+        # 關閉拖拽模式，確保圖表座標軸固定
+        dragmode=False, 
+        
+        # 懸停模式：垂直線對齊所有顯示中的馬匹
+        hovermode="x unified",
+        
+        # 圖例設定
+        legend=dict(
+            itemclick="toggle", 
+            itemdoubleclick="toggleothers",
+            traceorder="normal"
+        ),
+        
+        height=600,
+        margin=dict(t=80, b=50, l=60, r=50)
     )
     
     st.plotly_chart(fig, width='content')
