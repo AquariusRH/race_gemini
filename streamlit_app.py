@@ -1762,7 +1762,7 @@ def create_odds_chart():
     # 準備顏色序列 (頭 6 匹用鮮艷色，其餘用灰色)
     colors = px.colors.qualitative.Dark24  # 內建的高對比色盤
     
-    for i, horse in enumerate(sorted_horse_names.columns):
+    for i, horse in enumerate(sorted_horse_names):
         is_top_6 = horse in top_6_horses
         
         # 每匹馬分配一個固定顏色 (不論是否預設顯示)
