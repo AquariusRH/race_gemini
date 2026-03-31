@@ -1747,141 +1747,109 @@ def get_adaptive_colors(values, cmap_name='Reds_r'):
         font_colors.append('white' if luminance < 0.5 else '#31333F')
         
     return bg_colors, font_colors
+    
+def plot_racing_monitor_dashboard():
+    """
+    整合賠率與投注量監控，併排顯示兩張獨立圖表
+    """
+    # 1. 檢查數據來源
+    if 'odds_dict' not in st.session_state or 'overall_investment_dict' not in st.session_state:
+        st.warning("數據加載中，請稍候...")
+        return
 
-def create_odds_chart():
-    """
-    df_odds: Index 為時間, Columns 為馬號 (如 '01', '02'...)
-    """
-    fig = go.Figure()
-    df_odds = st.session_state.odds_dict['WIN']
-    # 1. 取得最新一筆賠率並排序，找出頭 6 熱門
+    # 取得數據
+    df_odds = st.session_state.odds_dict.get('WIN', pd.DataFrame())
+    inv_dict = st.session_state.overall_investment_dict
+    
+    if df_odds.empty:
+        st.info("暫無賠率數據")
+        return
+
+    # ---------------------------------------------------------
+    # 2. 核心排序邏輯 (兩圖統一按賠率排序)
+    # ---------------------------------------------------------
     latest_odds = df_odds.iloc[-1].sort_values()
-    sorted_horse_names = latest_odds.index.tolist()
-    top_6_horses = latest_odds.index[:6].tolist()
+    sorted_horses = latest_odds.index.tolist()
+    top_6_horses = sorted_horses[:6]
     
-    # 準備顏色序列 (頭 6 匹用鮮艷色，其餘用灰色)
-    colors = px.colors.qualitative.Dark24  # 內建的高對比色盤
-    
-    for i, horse in enumerate(sorted_horse_names):
+    # 統一顏色序列
+    colors = px.colors.qualitative.Dark24
+    def get_horse_color(horse_name):
+        # 根據馬號固定顏色，避免排名變動時顏色亂跳
+        try:
+            return colors[int(horse_name) % len(colors)]
+        except:
+            return "#FFFFFF"
+
+    # ---------------------------------------------------------
+    # 3. 繪製賠率圖 (Odds Chart)
+    # ---------------------------------------------------------
+    fig_odds = go.Figure()
+    for horse in sorted_horses:
         is_top_6 = horse in top_6_horses
-        
-        # 每匹馬分配一個固定顏色 (不論是否預設顯示)
-        color_idx = i % len(colors)
-        
-        fig.add_trace(go.Scatter(
-            x=df_odds.index,
-            y=df_odds[horse],
+        fig_odds.add_trace(go.Scatter(
+            x=df_odds.index, y=df_odds[horse],
             name=f"{horse} 號",
-            mode='lines+markers', # 增加點標記，方便看清數據更新點
+            mode='lines+markers',
             marker=dict(size=4),
-            
-            # --- 核心邏輯：頭 6 名顯示，其餘完全不畫出 (Legendonly) ---
-            visible=True if is_top_6 else "legendonly", 
-            
-            line=dict(
-                width=3 if is_top_6 else 2,
-                color=colors[color_idx],
-                dash='solid' # 全部用實線，因為隱藏的馬點開後就是為了看清楚
-            ),
+            visible=True if is_top_6 else "legendonly",
+            line=dict(width=3 if is_top_6 else 2, color=get_horse_color(horse)),
             hovertemplate=f"馬號 {horse}<br>賠率: %{{y:.1f}}<extra></extra>"
         ))
 
-    # 3. 圖表佈局設定
-    fig.update_layout(
-        title="📊 獨贏賠率監控 (頭 6 名預設，其餘點擊標籤開啟)",
+    fig_odds.update_layout(
+        title="📉 獨贏賠率 (熱門在上)",
         template="plotly_dark",
-        xaxis=dict(
-            title="時間",
-            showgrid=True,
-            gridcolor='rgba(255,255,255,0.05)'
-        ),
-        yaxis=dict(
-            title="賠率 (對數軸 - 反轉)", 
-            type='log', 
-            autorange='reversed', # 賠率小 (熱門) 在上方
-            gridcolor='rgba(255,255,255,0.1)',
-            tickformat=".1f",
-            dtick=0.301 # 每格代表 2 倍變化 (e.g., 2, 4, 8, 16)
-        ),
-        # 關閉拖拽模式，確保圖表座標軸固定
-        dragmode=False, 
-        # 懸停模式：垂直線對齊所有顯示中的馬匹
-        hovermode="x",
-        # 圖例設定
-        legend=dict(
-            itemclick="toggle"
-        ),
-        height=600,
-        margin=dict(t=80, b=50, l=60, r=50)
+        yaxis=dict(type='log', autorange='reversed', tickformat=".1f", dtick=0.301, gridcolor='rgba(255,255,255,0.1)'),
+        xaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.05)'),
+        dragmode=False, hovermode="x unified",
+        legend=dict(itemclick="toggle", itemdoubleclick="toggleothers", traceorder="normal"),
+        height=600, margin=dict(t=80, b=50, l=60, r=20)
     )
-    
-    st.plotly_chart(fig, width='stretch',config={'displayModeBar': False})
 
-def plot_investment_trend():
-    """
-    pool_type: 'WIN' 或 'QIN'
-    從 st.session_state.overall_investment_dict 提取數據繪圖
-    """
-    # 1. 檢查數據是否存在
-    if 'overall_investment_dict' not in st.session_state:
-        st.warning("尚未偵測到投注量數據")
-        return
+    # ---------------------------------------------------------
+    # 4. 繪製金額圖 (Investment Chart)
+    # ---------------------------------------------------------
+    # 合併 WIN 與 QIN 投注額 (假設馬號是相同的 Index)
+    df_win_inv = pd.DataFrame(inv_dict.get("WIN", {}))
+    df_qin_inv = pd.DataFrame(inv_dict.get("QIN", {}))
+    # 這裡假設你是想加總同一隻馬在不同池的表現，或者是對比
+    df_total_inv = df_win_inv.add(df_qin_inv, fill_value=0) if not df_win_inv.empty else df_qin_inv
 
-    # 假設數據結構是一個 DataFrame，Columns 是馬號或組合，Index 是時間
-    # 如果你的數據是 Dict，請先轉換： df = pd.DataFrame(st.session_state.overall_investment_dict[pool_type])
-    df_invest = pd.DataFrame(st.session_state.overall_investment_dict["WIN"] + st.session_state.overall_investment_dict["QIN"])
-    
-    if df_invest.empty:
-        st.info(f"目前暫無數據")
-        return
-
-    # 2. 排序邏輯：按「投注金額」從大到小排序 (金額越高 = 越熱門)
-    latest_invest = df_invest.iloc[-1].sort_values(ascending=False)
-    sorted_items = latest_invest.index.tolist()
-    top_6_items = sorted_items[:6]
-    
-    fig = go.Figure()
-    colors = px.colors.qualitative.Alphabet
-
-    # 3. 添加 Trace
-    for i, item in enumerate(sorted_items):
-        is_top_6 = item in top_6_items
+    fig_inv = go.Figure()
+    # 保持與賠率圖「完全相同」的馬匹順序添加 Trace，讓 Legend 對齊
+    for horse in sorted_horses:
+        if horse not in df_total_inv.columns: continue
+        is_top_6 = horse in top_6_horses
         
-        # 投注量圖不需要反轉 Y 軸邏輯，金額越高線條越往上
-        fig.add_trace(go.Scatter(
-            x=df_invest.index,
-            y=df_invest[item],
-            name=f"{item} 號",
+        fig_inv.add_trace(go.Scatter(
+            x=df_total_inv.index, y=df_total_inv[horse],
+            name=f"{horse} 號",
             mode='lines+markers',
+            marker=dict(size=4),
             visible=True if is_top_6 else "legendonly",
-            line=dict(
-                width=3 if is_top_6 else 1.5,
-                color=colors[i % len(colors)]
-            ),
-            # 懸浮窗顯示金額 (加個 $ 或單位)
-            hovertemplate=f"馬號 {item}<br>金額: %{{y:,.0f}}<extra></extra>"
+            line=dict(width=3 if is_top_6 else 1.5, color=get_horse_color(horse)),
+            hovertemplate=f"馬號 {horse}<br>金額: %{{y:,.0f}}<extra></extra>"
         ))
 
-    # 4. 圖表佈局 (針對金額調整)
-    fig.update_layout(
-        title=f"💰 投注量即時變動 (熱門在前)",
+    fig_inv.update_layout(
+        title="💰 投注量走勢 (對齊賠率排序)",
         template="plotly_dark",
-        xaxis=dict(title="時間", showgrid=True, gridcolor='rgba(255,255,255,0.05)'),
-        yaxis=dict(
-            title="金額 ($)", 
-            # 投注量通常建議用線性軸，或者 Log 軸看「增長率」
-            type='linear', 
-            gridcolor='rgba(255,255,255,0.1)',
-            tickformat=",.0f" # 加入千分位
-        ),
-        dragmode=False,
-        hovermode="x",
-        legend=dict(itemclick="toggle"),
-        height=500,
-        margin=dict(t=50, b=50, l=50, r=60)
+        yaxis=dict(side='right', tickformat=",.0f", gridcolor='rgba(255,255,255,0.1)'),
+        xaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.05)'),
+        dragmode=False, hovermode="x unified",
+        legend=dict(itemclick="toggle", itemdoubleclick="toggleothers", traceorder="normal"),
+        height=600, margin=dict(t=80, b=50, l=20, r=60)
     )
 
-    st.plotly_chart(fig, width='stretch',config={'displayModeBar': False})
+    # ---------------------------------------------------------
+    # 5. Streamlit Layout 併排顯示
+    # ---------------------------------------------------------
+    c1, c2 = st.columns(2)
+    with c1:
+        st.plotly_chart(fig_odds, width='content, config={'displayModeBar': False})
+    with c2:
+        st.plotly_chart(fig_inv, width='content, config={'displayModeBar': False})
 # ==================== 4. 主介面邏輯 ====================
 
 # --- 輸入區 ---
@@ -2720,8 +2688,7 @@ if monitoring_on:
                 print_bar_chart(time_now)
             if show_move_bar:
                 print_plotly_advanced_bar(race_no,print_list)
-            create_odds_chart()
-            plot_investment_trend()
+            plot_racing_monitor_dashboard()
             # B. 實時預測排名
             st.markdown("### 🤖 實時資金流綜合預測排名")
             prediction_df = calculate_smart_score(race_no)
