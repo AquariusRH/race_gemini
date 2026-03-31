@@ -1820,7 +1820,7 @@ def create_odds_chart():
         margin=dict(t=80, b=50, l=60, r=50)
     )
     
-    st.plotly_chart(fig, width='width',config={'displayModeBar': False})
+    st.plotly_chart(fig, width='stretch',config={'displayModeBar': False})
 # ==================== 4. 主介面邏輯 ====================
 
 # --- 輸入區 ---
