@@ -1856,7 +1856,7 @@ def plot_investment_trend():
             x=df_invest.index,
             y=df_invest[item],
             name=f"{item} 號",
-            mode=lines+markers',
+            mode='lines+markers',
             visible=True if is_top_6 else "legendonly",
             line=dict(
                 width=3 if is_top_6 else 1.5,
