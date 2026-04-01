@@ -682,24 +682,42 @@ def weird_data(time_now, investments, odds, methodlist):
             pass
 
 def weird_data(investments):
-  for method in methodlist:
-    if st.session_state.investment_dict[method].empty:
-      continue
-    latest_investment = st.session_state.investment_dict[method].tail(1).values
-    last_time_odds = st.session_state.odds_dict[method].tail(2).head(1)
-    expected_investment = investments[method][0] / 1000 / last_time_odds
-    diff = round(latest_investment - expected_investment,0)
-    if method in ['WIN','PLA']:
-        st.session_state.diff_dict[method] = st.session_state.diff_dict[method]._append(diff)
-    elif method in ['QIN','QPL']:
-        st.session_state.diff_dict[method] = st.session_state.diff_dict[method]._append(investment_combined(time_now,method,diff))
+    for method in methodlist:
+        if st.session_state.investment_dict[method].empty:
+            continue
+            
+        latest_investment = st.session_state.investment_dict[method].tail(1).values
+        last_time_odds = st.session_state.odds_dict[method].tail(2).head(1)
+        
+        # Calculation logic remains the same
+        expected_investment = investments[method][0] / 1000 / last_time_odds
+        diff = (latest_investment - expected_investment).round(0)
+        
+        if method in ['WIN', 'PLA']:
+            # Replace _append with pd.concat
+            st.session_state.diff_dict[method] = pd.concat(
+                [st.session_state.diff_dict[method], diff]
+            )
+        elif method in ['QIN', 'QPL']:
+            # Replace _append with pd.concat
+            combined_diff = investment_combined(time_now, method, diff)
+            st.session_state.diff_dict[method] = pd.concat(
+                [st.session_state.diff_dict[method], combined_diff]
+            )
     
 def change_overall(time_now):
-  total_investment = 0
-  for method in methodlist:
-    total_investment += st.session_state.diff_dict[method].sum(axis=0)
-  total_investment_df = pd.DataFrame([total_investment],index = [time_now])
-  st.session_state.diff_dict['overall'] = st.session_state.diff_dict['overall']._append(total_investment_df)
+    total_investment = 0
+    for method in methodlist:
+        # Summing the diffs for each method
+        total_investment += st.session_state.diff_dict[method].sum(axis=0)
+    
+    # Create the single-row DataFrame for the current time
+    total_investment_df = pd.DataFrame([total_investment], index=[time_now])
+    
+    # Replace _append with pd.concat
+    st.session_state.diff_dict['overall'] = pd.concat(
+        [st.session_state.diff_dict['overall'], total_investment_df]
+    )
 # ==================== 3. 繪圖函數 (簡化版) ====================
 def print_bar_chart(time_now):
   post_time = st.session_state.post_time_dict[race_no]
