@@ -619,13 +619,22 @@ def get_overall_investment(time_now,dict):
     no_of_horse = len(investment_df['WIN'].columns)
     total_investment_df = pd.DataFrame(index =[time_now], columns=np.arange(1,no_of_horse +1))
     for method in methodlist:
-      if method in ['WIN','PLA']:
-        st.session_state.overall_investment_dict[method] = st.session_state.overall_investment_dict[method]._append(st.session_state.investment_dict[method].tail(1))
-      elif method in ['QIN','QPL']:
-        if not investment_df[method].empty:
-          st.session_state.overall_investment_dict[method] = st.session_state.overall_investment_dict[method]._append(investment_combined(time_now,method,st.session_state.investment_dict[method].tail(1)))
-        else:
-          continue
+        if method in ['WIN', 'PLA']:
+            # Replace _append with pd.concat
+            new_data = st.session_state.investment_dict[method].tail(1)
+            st.session_state.overall_investment_dict[method] = pd.concat(
+                [st.session_state.overall_investment_dict[method], new_data]
+            )
+            
+        elif method in ['QIN', 'QPL']:
+            if not investment_df[method].empty:
+                # Replace _append with pd.concat
+                new_data = investment_combined(time_now, method, st.session_state.investment_dict[method].tail(1))
+                st.session_state.overall_investment_dict[method] = pd.concat(
+                    [st.session_state.overall_investment_dict[method], new_data]
+                )
+            else:
+                continue
 
     for horse in range(1,no_of_horse+1):
         total_investment = 0
