@@ -648,7 +648,7 @@ def get_overall_investment(time_now,dict):
                 continue
             total_investment += investment
         total_investment_df[horse] = total_investment
-    st.session_state.overall_investment_dict['overall'] = st.session_state.overall_investment_dict['overall']._append(total_investment_df)
+    st.session_state.overall_investment_dict['overall'] = pd.concat([st.session_state.overall_investment_dict['overall'], total_investment_df])
 
 
 def weird_data(time_now, investments, odds, methodlist):
