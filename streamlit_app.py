@@ -1619,7 +1619,8 @@ def print_henery_model(gamma=1.18):
         if win_df is not None:
             # 排除非馬號的 column (如果有)，並排序
             current_horses = sorted([c for c in win_df.columns if str(c).isdigit()], key=lambda x: int(x))
-            full_horse_list = [str(h) for h in current_horses]
+            full_horse_list = sorted(current_horses, key=lambda h: pd.to_numeric(latest_win_series.get(h, 999), errors='coerce'))
+            full_horse_list = [str(h) for h in full_horse_list]
             sync_time = win_df.index[-1]
         else:
             full_horse_list = [str(h) for h in sorted(win_probs.keys())]
@@ -1654,7 +1655,7 @@ def print_henery_model(gamma=1.18):
             active_cols = [c for c in plot_data.columns if plot_data[c].iloc[-1] >2]
             
             if active_cols:
-                active_cols = sorted(active_cols, key=lambda x: int(x))
+                active_cols = [h for h in full_horse_list if h in active_cols]
                 z_df = plot_data[active_cols].T.iloc[::-1] # 轉置讓 Y 軸是馬號
                 # 3. 從 win_df 抽取對應的賠率矩陣 (Text 軸)
                 # 確保 win_df 的 columns 與 active_cols 格式一致 (處理 int/str 差異)
