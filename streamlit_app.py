@@ -1618,6 +1618,7 @@ def print_henery_model(gamma=1.18):
         st.subheader("🔥 歷史熱度掃描 (Heatmap)")
         if win_df is not None:
             # 排除非馬號的 column (如果有)，並排序
+            latest_win_series = win_df.iloc[-1]
             current_horses = sorted([c for c in win_df.columns if str(c).isdigit()], key=lambda x: int(x))
             full_horse_list = sorted(current_horses, key=lambda h: pd.to_numeric(latest_win_series.get(h, 999), errors='coerce'))
             full_horse_list = [str(h) for h in full_horse_list]
