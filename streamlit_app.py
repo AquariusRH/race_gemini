@@ -2724,27 +2724,28 @@ if monitoring_on:
     
             if not prediction_df.empty:
                 # --- 新增：篩選邏輯區 ---
-                st.write("#### 🔍 快速篩選")
-                c1, c2, c3 = st.columns(3)
+                st.write("#### 🔍 快速篩選 (未勾選時顯示全部)")
+    
+                # 1. 馬齡篩選 (橫向 Checkbox)
+                age_list = sorted(prediction_df['馬齡'].unique().tolist())
+                age_cols = st.columns(len(age_list) if len(age_list) > 0 else 1)
+                selected_ages = []
                 
-                with c1:
-                    # 1. 馬齡篩選
-                    age_list = sorted(prediction_df['馬齡'].unique().tolist())
-                    sel_ages = st.multiselect("馬齡選擇", options=age_list, default=age_list)
-                    
+                for i, age in enumerate(age_list):
+                    # 預設為 False，沒按時 selected_ages 會是空的
+                    if age_cols[i].checkbox(f"{age} 歲", value=False, key=f"age_{age}"):
+                        selected_ages.append(age)
+                
+                st.divider()
+                c2, c3 = st.columns(2)
                 with c2:
-                    # 2. 賠率區間篩選
-                    odds_options = ["全部", "熱門 (<10)", "冷門 (>=10)"]
-                    sel_odds_cat = st.selectbox("賠率區間", options=odds_options)
-                    
+                    sel_odds_cat = st.selectbox("賠率區間", options=["全部", "熱門 (<10)", "冷門 (>=10)"])
                 with c3:
-                    # 3. 檔位篩選 (排位)
-                    gate_options = ["全部", "內中檔 (1-7)", "外檔 (>7)"]
-                    sel_gate_cat = st.selectbox("檔位區間", options=gate_options)
+                    sel_gate_cat = st.selectbox("檔位區間", options=["全部", "內中檔 (1-7)", "外檔 (>7)"])
             
-                # 開始過濾數據
+                # --- 執行過濾邏輯 ---
                 filtered_df = prediction_df.copy()
-                
+                            
                 # 執行馬齡過濾
                 filtered_df = filtered_df[filtered_df['馬齡'].isin(sel_ages)]
                 
@@ -2814,24 +2815,24 @@ if monitoring_on:
                     else:
                         return [''] * len(row)
     
-                st.markdown("""
-                    <style>
-                    /* 強制所有表格的數據內容 (td) 不准換行 */
-                    .stTable td {
-                        white-space: nowrap !important;
-                        vertical-align: middle;
-                    }
-                    /* 允許標題 (th) 換行，並縮小字體以騰出空間 */
-                    .stTable th {
-                        white-space: normal !important;
-                        min-width: 60px; /* 給標題一個最小寬度，迫使它太擠時自動換行 */
-                        font-size: 14px !important;
-                        line-height: 1.1;
-                    }
-                    </style>
-                    """, unsafe_allow_html=True)
-                # 應用高亮函數
-                st.table(display_df.style.apply(highlight_top_realtime, axis=1).hide(axis='index'))                
+                    st.markdown("""
+                        <style>
+                        /* 強制所有表格的數據內容 (td) 不准換行 */
+                        .stTable td {
+                            white-space: nowrap !important;
+                            vertical-align: middle;
+                        }
+                        /* 允許標題 (th) 換行，並縮小字體以騰出空間 */
+                        .stTable th {
+                            white-space: normal !important;
+                            min-width: 60px; /* 給標題一個最小寬度，迫使它太擠時自動換行 */
+                            font-size: 14px !important;
+                            line-height: 1.1;
+                        }
+                        </style>
+                        """, unsafe_allow_html=True)
+                    # 應用高亮函數
+                    st.table(display_df.style.apply(highlight_top_realtime, axis=1).hide(axis='index'))                
                 #if len(st.session_state.top_rank_history) > 20:
                     #st.session_state.top_rank_history.pop(0)
                 #if len(st.session_state.top_4_history) > 80:
