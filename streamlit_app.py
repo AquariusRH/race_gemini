@@ -2739,9 +2739,9 @@ if monitoring_on:
                 st.divider()
                 c2, c3 = st.columns(2)
                 with c2:
-                    sel_odds_cat = st.selectbox("賠率區間", options=["全部", "熱門 (<10)", "冷門 (>=10)"])
+                    sel_odds_cat = st.selectbox("賠率區間", options=["全部", "熱門 (<10)", "冷門 (>=10)"],key=f"odd_{time_now.strftime('%H%M%S')}")
                 with c3:
-                    sel_gate_cat = st.selectbox("檔位區間", options=["全部", "內中檔 (1-7)", "外檔 (>7)"])
+                    sel_gate_cat = st.selectbox("檔位區間", options=["全部", "內中檔 (1-7)", "外檔 (>7)"],key=f"gate_{time_now.strftime('%H%M%S')}")
             
                 # --- 執行過濾邏輯 ---
                 filtered_df = prediction_df.copy()
