@@ -2779,61 +2779,62 @@ if monitoring_on:
                         display_df['近期資金流(K)'] = display_df['近期資金流(K)'].apply(lambda x: f"{x:.1f}")
                         #display_df['近績評分'] = display_df['近績評分'].astype(float).round(0).astype('Int64')
                         display_df['🔥綜合推薦分'] = display_df['🔥綜合推薦分'].astype(float).round(0).astype('Int64')
-                    def highlight_top_realtime(row):
-                        # 【關鍵修正：檢查 NaN】
-                        # 如果 '🔥綜合推薦分' 是 NaN (空值)，則不進行高亮，返回空字串列表
-                        if pd.isna(row['🔥綜合推薦分']):
-                            return [''] * len(row)
-                
-                        # 這裡假設 prediction_df 已經排序，並取其最大值作為比較基礎
-                        # 由於 TotalScore 來自於計算，它應該是 float 或 NaN。
-                        top_score = prediction_df['TotalScore'].max()
-                        
-                        # 【修正：使用 row 的值】
-                        # row['🔥綜合推薦分'] 已經是 float 或 Int64 類型，可以直接比較，不需要再次 float() 轉換。
-                        current_score = row['🔥綜合推薦分']
-                        
-                        # 確保 top_score 不是 NaN，避免與 NaN 比較
-                        if pd.isna(top_score):
-                            return [''] * len(row)
-                
-                        # 比較邏輯
-                        # 這裡的比較值應根據您的業務邏輯定義 (例如: 總分最高 vs 總分第二高)
-                        # 由於 prediction_df 應該是排序好的，top_score 應該是 prediction_df['TotalScore'].iloc[0] (最高分)
-                        
-                        # 為了安全，我們使用 max()
-                        # 假設您的邏輯是與最高分和第二高分比較：
+                        def highlight_top_realtime(row):
+                            # 【關鍵修正：檢查 NaN】
+                            # 如果 '🔥綜合推薦分' 是 NaN (空值)，則不進行高亮，返回空字串列表
+                            if pd.isna(row['🔥綜合推薦分']):
+                                return [''] * len(row)
+                    
+                            # 這裡假設 prediction_df 已經排序，並取其最大值作為比較基礎
+                            # 由於 TotalScore 來自於計算，它應該是 float 或 NaN。
+                            top_score = prediction_df['TotalScore'].max()
+                            
+                            # 【修正：使用 row 的值】
+                            # row['🔥綜合推薦分'] 已經是 float 或 Int64 類型，可以直接比較，不需要再次 float() 轉換。
+                            current_score = row['🔥綜合推薦分']
+                            
+                            # 確保 top_score 不是 NaN，避免與 NaN 比較
+                            if pd.isna(top_score):
+                                return [''] * len(row)
+                    
+                            # 比較邏輯
+                            # 這裡的比較值應根據您的業務邏輯定義 (例如: 總分最高 vs 總分第二高)
+                            # 由於 prediction_df 應該是排序好的，top_score 應該是 prediction_df['TotalScore'].iloc[0] (最高分)
+                            
+                            # 為了安全，我們使用 max()
+                            # 假設您的邏輯是與最高分和第二高分比較：
+            
+                            # 1. 找出最高分
+                            top_score = prediction_df['TotalScore'].max()
+                            # 2. 找出第二高分 (如果只有一匹馬，這個會是 NaN 或與最高分相同)
+                            second_top_score = prediction_df['TotalScore'].nlargest(2).iloc[-1] if len(prediction_df) >= 2 else top_score
+                    
+                            # 紅色高亮：最高分
+                            if current_score == top_score:
+                                return ['background-color: #ffcccc'] * len(row)
+                            # 黃色高亮：第二高分 (或與最高分接近的分數)
+                            elif current_score == second_top_score:
+                                 return ['background-color: #ffffcc'] * len(row)
+                            else:
+                                return [''] * len(row)
         
-                        # 1. 找出最高分
-                        top_score = prediction_df['TotalScore'].max()
-                        # 2. 找出第二高分 (如果只有一匹馬，這個會是 NaN 或與最高分相同)
-                        second_top_score = prediction_df['TotalScore'].nlargest(2).iloc[-1] if len(prediction_df) >= 2 else top_score
-                
-                        # 紅色高亮：最高分
-                        if current_score == top_score:
-                            return ['background-color: #ffcccc'] * len(row)
-                        # 黃色高亮：第二高分 (或與最高分接近的分數)
-                        elif current_score == second_top_score:
-                             return ['background-color: #ffffcc'] * len(row)
-                        else:
-                            return [''] * len(row)
-        
-                    st.markdown("""
-                        <style>
-                        /* 強制所有表格的數據內容 (td) 不准換行 */
-                        .stTable td {
-                            white-space: nowrap !important;
-                            vertical-align: middle;
-                        }
-                        /* 允許標題 (th) 換行，並縮小字體以騰出空間 */
-                        .stTable th {
-                            white-space: normal !important;
-                            min-width: 60px; /* 給標題一個最小寬度，迫使它太擠時自動換行 */
-                            font-size: 14px !important;
-                            line-height: 1.1;
-                        }
-                        </style>
-                        """, unsafe_allow_html=True)
+                        st.markdown("""
+                            <style>
+                            /* 強制所有表格的數據內容 (td) 不准換行 */
+                            .stTable td {
+                                white-space: nowrap !important;
+                                vertical-align: middle;
+                            }
+                            /* 允許標題 (th) 換行，並縮小字體以騰出空間 */
+                            .stTable th {
+                                white-space: normal !important;
+                                min-width: 60px; /* 給標題一個最小寬度，迫使它太擠時自動換行 */
+                                font-size: 14px !important;
+                                line-height: 1.1;
+                            }
+                            </style>
+                            """, unsafe_allow_html=True)
+                         st.table(display_df.style.apply(highlight_top_realtime, axis=1).hide(axis='index'))   
 
             if not prediction_df.empty:
                 render_filtered_table(prediction_df)
