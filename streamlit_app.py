@@ -2723,11 +2723,50 @@ if monitoring_on:
             prediction_df = calculate_smart_score(race_no)
     
             if not prediction_df.empty:
-                current_winner = prediction_df.iloc[0]['顯示名稱']
-                st.session_state.top_rank_history.append(current_winner)
-                current_top_4 = prediction_df.head(4)['顯示名稱'].tolist()
-                st.session_state.top_4_history.extend(current_top_4)
-                display_df = prediction_df.copy()
+                # --- 新增：篩選邏輯區 ---
+                st.write("#### 🔍 快速篩選")
+                c1, c2, c3 = st.columns(3)
+                
+                with c1:
+                    # 1. 馬齡篩選
+                    age_list = sorted(prediction_df['馬齡'].unique().tolist())
+                    sel_ages = st.multiselect("馬齡選擇", options=age_list, default=age_list)
+                    
+                with c2:
+                    # 2. 賠率區間篩選
+                    odds_options = ["全部", "熱門 (<10)", "冷門 (>=10)"]
+                    sel_odds_cat = st.selectbox("賠率區間", options=odds_options)
+                    
+                with c3:
+                    # 3. 檔位篩選 (排位)
+                    gate_options = ["全部", "內中檔 (1-7)", "外檔 (>7)"]
+                    sel_gate_cat = st.selectbox("檔位區間", options=gate_options)
+            
+                # 開始過濾數據
+                filtered_df = prediction_df.copy()
+                
+                # 執行馬齡過濾
+                filtered_df = filtered_df[filtered_df['馬齡'].isin(sel_ages)]
+                
+                # 執行賠率過濾
+                if sel_odds_cat == "熱門 (<10)":
+                    filtered_df = filtered_df[filtered_df['Odds'] < 10]
+                elif sel_odds_cat == "冷門 (>=10)":
+                    filtered_df = filtered_df[filtered_df['Odds'] >= 10]
+                    
+                # 執行檔位過濾 (假設 '排位' 欄位是數字)
+                if sel_gate_cat == "內中檔 (1-7)":
+                    filtered_df = filtered_df[filtered_df['排位'].astype(int) <= 7]
+                elif sel_gate_cat == "外檔 (>7)":
+                    filtered_df = filtered_df[filtered_df['排位'].astype(int) > 7]
+                if not filtered_df.empty:
+                display_df = filtered_df.copy()
+                #current_winner = prediction_df.iloc[0]['顯示名稱']
+                #st.session_state.top_rank_history.append(current_winner)
+                #current_top_4 = prediction_df.head(4)['顯示名稱'].tolist()
+                #st.session_state.top_4_history.extend(current_top_4)
+                
+                #display_df = prediction_df.copy()
                 #display_df = display_df[['馬名','騎師','馬齡','Odds', 'MoneyFlow', 'TotalFormScore', 'TotalScore']]
                 #display_df.columns = ['馬名','騎師','馬齡','當前賠率', '近期資金流(K)', '近績評分', '🔥綜合推薦分']
                 display_df = display_df[['馬名','馬齡','騎師','排位','練馬師','Odds', 'MoneyFlow', 'TotalScore']]
@@ -2793,10 +2832,10 @@ if monitoring_on:
                     """, unsafe_allow_html=True)
                 # 應用高亮函數
                 st.table(display_df.style.apply(highlight_top_realtime, axis=1).hide(axis='index'))                
-                if len(st.session_state.top_rank_history) > 20:
-                    st.session_state.top_rank_history.pop(0)
-                if len(st.session_state.top_4_history) > 80:
-                    st.session_state.top_4_history = st.session_state.top_4_history[4:]
+                #if len(st.session_state.top_rank_history) > 20:
+                    #st.session_state.top_rank_history.pop(0)
+                #if len(st.session_state.top_4_history) > 80:
+                    #st.session_state.top_4_history = st.session_state.top_4_history[4:]
 
                 #st.markdown("### 🏆 第一名佔有率")
                 #counts_1 = Counter(st.session_state.top_rank_history)
