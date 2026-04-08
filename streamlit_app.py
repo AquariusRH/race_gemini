@@ -2733,7 +2733,8 @@ if monitoring_on:
                 
                 for i, age in enumerate(age_list):
                     # 預設為 False，沒按時 selected_ages 會是空的
-                    if age_cols[i].checkbox(f"{age} 歲", value=False, key=f"age_{age}_{time_now}"):
+                    if age_cols[i].checkbox(f"{age} 歲", value=False):
+                                            #key=f"age_{age}_{time_now}"):
                         selected_ages.append(age)
                 
                 st.divider()
