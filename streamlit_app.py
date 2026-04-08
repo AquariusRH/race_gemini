@@ -2834,7 +2834,8 @@ if monitoring_on:
                             }
                             </style>
                             """, unsafe_allow_html=True)
-                         st.table(display_df.style.apply(highlight_top_realtime, axis=1).hide(axis='index'))   
+                         
+                        st.table(display_df.style.apply(highlight_top_realtime, axis=1).hide(axis='index'))   
 
             if not prediction_df.empty:
                 render_filtered_table(prediction_df)
