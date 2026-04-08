@@ -2760,21 +2760,21 @@ if monitoring_on:
                 elif sel_gate_cat == "外檔 (>7)":
                     filtered_df = filtered_df[filtered_df['排位'].astype(int) > 7]
                 if not filtered_df.empty:
-                display_df = filtered_df.copy()
-                #current_winner = prediction_df.iloc[0]['顯示名稱']
-                #st.session_state.top_rank_history.append(current_winner)
-                #current_top_4 = prediction_df.head(4)['顯示名稱'].tolist()
-                #st.session_state.top_4_history.extend(current_top_4)
-                
-                #display_df = prediction_df.copy()
-                #display_df = display_df[['馬名','騎師','馬齡','Odds', 'MoneyFlow', 'TotalFormScore', 'TotalScore']]
-                #display_df.columns = ['馬名','騎師','馬齡','當前賠率', '近期資金流(K)', '近績評分', '🔥綜合推薦分']
-                display_df = display_df[['馬名','馬齡','騎師','排位','練馬師','Odds', 'MoneyFlow', 'TotalScore']]
-                display_df.columns = ['馬名','馬齡','騎師','排位','練馬師','當前賠率', '近期資金流(K)', '🔥綜合推薦分']
-                display_df['當前賠率'] = display_df['當前賠率'].apply(lambda x: f"{x:.1f}")
-                display_df['近期資金流(K)'] = display_df['近期資金流(K)'].apply(lambda x: f"{x:.1f}")
-                #display_df['近績評分'] = display_df['近績評分'].astype(float).round(0).astype('Int64')
-                display_df['🔥綜合推薦分'] = display_df['🔥綜合推薦分'].astype(float).round(0).astype('Int64')
+                    display_df = filtered_df.copy()
+                    #current_winner = prediction_df.iloc[0]['顯示名稱']
+                    #st.session_state.top_rank_history.append(current_winner)
+                    #current_top_4 = prediction_df.head(4)['顯示名稱'].tolist()
+                    #st.session_state.top_4_history.extend(current_top_4)
+                    
+                    #display_df = prediction_df.copy()
+                    #display_df = display_df[['馬名','騎師','馬齡','Odds', 'MoneyFlow', 'TotalFormScore', 'TotalScore']]
+                    #display_df.columns = ['馬名','騎師','馬齡','當前賠率', '近期資金流(K)', '近績評分', '🔥綜合推薦分']
+                    display_df = display_df[['馬名','馬齡','騎師','排位','練馬師','Odds', 'MoneyFlow', 'TotalScore']]
+                    display_df.columns = ['馬名','馬齡','騎師','排位','練馬師','當前賠率', '近期資金流(K)', '🔥綜合推薦分']
+                    display_df['當前賠率'] = display_df['當前賠率'].apply(lambda x: f"{x:.1f}")
+                    display_df['近期資金流(K)'] = display_df['近期資金流(K)'].apply(lambda x: f"{x:.1f}")
+                    #display_df['近績評分'] = display_df['近績評分'].astype(float).round(0).astype('Int64')
+                    display_df['🔥綜合推薦分'] = display_df['🔥綜合推薦分'].astype(float).round(0).astype('Int64')
                 def highlight_top_realtime(row):
                     # 【關鍵修正：檢查 NaN】
                     # 如果 '🔥綜合推薦分' 是 NaN (空值)，則不進行高亮，返回空字串列表
