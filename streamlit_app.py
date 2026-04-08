@@ -2733,15 +2733,15 @@ if monitoring_on:
                 
                 for i, age in enumerate(age_list):
                     # 預設為 False，沒按時 selected_ages 會是空的
-                    if age_cols[i].checkbox(f"{age} 歲", value=False, key=f"age_{age}_{time_now.strftime('%H%M%S')}"):
+                    if age_cols[i].checkbox(f"{age} 歲", value=False, key=f"age_{age}"):
                         selected_ages.append(age)
                 
                 st.divider()
                 c2, c3 = st.columns(2)
                 with c2:
-                    sel_odds_cat = st.selectbox("賠率區間", options=["全部", "熱門 (<10)", "冷門 (>=10)"],key=f"odd_{time_now.strftime('%H%M%S')}")
+                    sel_odds_cat = st.selectbox("賠率區間", options=["全部", "熱門 (<10)", "冷門 (>=10)"],key=f"odd")
                 with c3:
-                    sel_gate_cat = st.selectbox("檔位區間", options=["全部", "內中檔 (1-7)", "外檔 (>7)"],key=f"gate_{time_now.strftime('%H%M%S')}")
+                    sel_gate_cat = st.selectbox("檔位區間", options=["全部", "內中檔 (1-7)", "外檔 (>7)"],key=f"gate")
             
                 # --- 執行過濾邏輯 ---
                 filtered_df = prediction_df.copy()
