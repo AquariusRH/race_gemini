@@ -2747,7 +2747,8 @@ if monitoring_on:
                 filtered_df = prediction_df.copy()
                             
                 # 執行馬齡過濾
-                filtered_df = filtered_df[filtered_df['馬齡'].isin(sel_ages)]
+                if selected_ages:
+                    filtered_df = filtered_df[filtered_df['馬齡'].isin(selected_ages)]
                 
                 # 執行賠率過濾
                 if sel_odds_cat == "熱門 (<10)":
