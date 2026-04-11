@@ -2723,117 +2723,80 @@ if monitoring_on:
             prediction_df = calculate_smart_score(race_no)
 
             if not prediction_df.empty:
-                # --- 新增：篩選邏輯區 ---
-                st.write("#### 🔍 快速篩選 (未勾選時顯示全部)")
-    
-                # 1. 馬齡篩選 (橫向 Checkbox)
-                age_list = sorted(prediction_df['馬齡'].unique().tolist())
-                age_cols = st.columns(len(age_list) if len(age_list) > 0 else 1)
-                selected_ages = []
-                
-                for i, age in enumerate(age_list):
-                    # 預設為 False，沒按時 selected_ages 會是空的
-                    if age_cols[i].checkbox(f"{age} 歲", value=False, key=f"age_{age}"):
-                        selected_ages.append(age)
-                
-                st.divider()
-                c2, c3 = st.columns(2)
-                with c2:
-                    sel_odds_cat = st.selectbox("賠率區間", options=["全部", "熱門 (<10)", "冷門 (>=10)"],key=f"odd")
-                with c3:
-                    sel_gate_cat = st.selectbox("檔位區間", options=["全部", "內中檔 (1-7)", "外檔 (>7)"],key=f"gate")
             
                 # --- 執行過濾邏輯 ---
-                filtered_df = prediction_df.copy()
-                            
-                # 執行馬齡過濾
-                if selected_ages:
-                    filtered_df = filtered_df[filtered_df['馬齡'].isin(selected_ages)]
+                display_df = prediction_df.copy() 
+                #current_winner = prediction_df.iloc[0]['顯示名稱']
+                #st.session_state.top_rank_history.append(current_winner)
+                #current_top_4 = prediction_df.head(4)['顯示名稱'].tolist()
+                #st.session_state.top_4_history.extend(current_top_4)
                 
-                # 執行賠率過濾
-                if sel_odds_cat == "熱門 (<10)":
-                    filtered_df = filtered_df[filtered_df['Odds'] < 10]
-                elif sel_odds_cat == "冷門 (>=10)":
-                    filtered_df = filtered_df[filtered_df['Odds'] >= 10]
+                #display_df = prediction_df.copy()
+                #display_df = display_df[['馬名','騎師','馬齡','Odds', 'MoneyFlow', 'TotalFormScore', 'TotalScore']]
+                #display_df.columns = ['馬名','騎師','馬齡','當前賠率', '近期資金流(K)', '近績評分', '🔥綜合推薦分']
+                display_df = display_df[['馬名','馬齡','騎師','排位','練馬師','Odds', 'MoneyFlow', 'TotalScore']]
+                display_df.columns = ['馬名','馬齡','騎師','排位','練馬師','當前賠率', '近期資金流(K)', '🔥綜合推薦分']
+                display_df['當前賠率'] = display_df['當前賠率'].apply(lambda x: f"{x:.1f}")
+                display_df['近期資金流(K)'] = display_df['近期資金流(K)'].apply(lambda x: f"{x:.1f}")
+                #display_df['近績評分'] = display_df['近績評分'].astype(float).round(0).astype('Int64')
+                display_df['🔥綜合推薦分'] = display_df['🔥綜合推薦分'].astype(float).round(0).astype('Int64')
+                def highlight_top_realtime(row):
+                    # 【關鍵修正：檢查 NaN】
+                    # 如果 '🔥綜合推薦分' 是 NaN (空值)，則不進行高亮，返回空字串列表
+                    if pd.isna(row['🔥綜合推薦分']):
+                        return [''] * len(row)
+            
+                    # 這裡假設 prediction_df 已經排序，並取其最大值作為比較基礎
+                    # 由於 TotalScore 來自於計算，它應該是 float 或 NaN。
+                    top_score = prediction_df['TotalScore'].max()
                     
-                # 執行檔位過濾 (假設 '排位' 欄位是數字)
-                if sel_gate_cat == "內中檔 (1-7)":
-                    filtered_df = filtered_df[filtered_df['排位'].astype(int) <= 7]
-                elif sel_gate_cat == "外檔 (>7)":
-                    filtered_df = filtered_df[filtered_df['排位'].astype(int) > 7]
-                if not filtered_df.empty:
-                    display_df = filtered_df.copy()
-                    #current_winner = prediction_df.iloc[0]['顯示名稱']
-                    #st.session_state.top_rank_history.append(current_winner)
-                    #current_top_4 = prediction_df.head(4)['顯示名稱'].tolist()
-                    #st.session_state.top_4_history.extend(current_top_4)
+                    # 【修正：使用 row 的值】
+                    # row['🔥綜合推薦分'] 已經是 float 或 Int64 類型，可以直接比較，不需要再次 float() 轉換。
+                    current_score = row['🔥綜合推薦分']
                     
-                    #display_df = prediction_df.copy()
-                    #display_df = display_df[['馬名','騎師','馬齡','Odds', 'MoneyFlow', 'TotalFormScore', 'TotalScore']]
-                    #display_df.columns = ['馬名','騎師','馬齡','當前賠率', '近期資金流(K)', '近績評分', '🔥綜合推薦分']
-                    display_df = display_df[['馬名','馬齡','騎師','排位','練馬師','Odds', 'MoneyFlow', 'TotalScore']]
-                    display_df.columns = ['馬名','馬齡','騎師','排位','練馬師','當前賠率', '近期資金流(K)', '🔥綜合推薦分']
-                    display_df['當前賠率'] = display_df['當前賠率'].apply(lambda x: f"{x:.1f}")
-                    display_df['近期資金流(K)'] = display_df['近期資金流(K)'].apply(lambda x: f"{x:.1f}")
-                    #display_df['近績評分'] = display_df['近績評分'].astype(float).round(0).astype('Int64')
-                    display_df['🔥綜合推薦分'] = display_df['🔥綜合推薦分'].astype(float).round(0).astype('Int64')
-                    def highlight_top_realtime(row):
-                        # 【關鍵修正：檢查 NaN】
-                        # 如果 '🔥綜合推薦分' 是 NaN (空值)，則不進行高亮，返回空字串列表
-                        if pd.isna(row['🔥綜合推薦分']):
-                            return [''] * len(row)
-                
-                        # 這裡假設 prediction_df 已經排序，並取其最大值作為比較基礎
-                        # 由於 TotalScore 來自於計算，它應該是 float 或 NaN。
-                        top_score = prediction_df['TotalScore'].max()
-                        
-                        # 【修正：使用 row 的值】
-                        # row['🔥綜合推薦分'] 已經是 float 或 Int64 類型，可以直接比較，不需要再次 float() 轉換。
-                        current_score = row['🔥綜合推薦分']
-                        
-                        # 確保 top_score 不是 NaN，避免與 NaN 比較
-                        if pd.isna(top_score):
-                            return [''] * len(row)
-                
-                        # 比較邏輯
-                        # 這裡的比較值應根據您的業務邏輯定義 (例如: 總分最高 vs 總分第二高)
-                        # 由於 prediction_df 應該是排序好的，top_score 應該是 prediction_df['TotalScore'].iloc[0] (最高分)
-                        
-                        # 為了安全，我們使用 max()
-                        # 假設您的邏輯是與最高分和第二高分比較：
-        
-                        # 1. 找出最高分
-                        top_score = prediction_df['TotalScore'].max()
-                        # 2. 找出第二高分 (如果只有一匹馬，這個會是 NaN 或與最高分相同)
-                        second_top_score = prediction_df['TotalScore'].nlargest(2).iloc[-1] if len(prediction_df) >= 2 else top_score
-                
-                        # 紅色高亮：最高分
-                        if current_score == top_score:
-                            return ['background-color: #ffcccc'] * len(row)
-                        # 黃色高亮：第二高分 (或與最高分接近的分數)
-                        elif current_score == second_top_score:
-                             return ['background-color: #ffffcc'] * len(row)
-                        else:
-                            return [''] * len(row)
+                    # 確保 top_score 不是 NaN，避免與 NaN 比較
+                    if pd.isna(top_score):
+                        return [''] * len(row)
+            
+                    # 比較邏輯
+                    # 這裡的比較值應根據您的業務邏輯定義 (例如: 總分最高 vs 總分第二高)
+                    # 由於 prediction_df 應該是排序好的，top_score 應該是 prediction_df['TotalScore'].iloc[0] (最高分)
+                    
+                    # 為了安全，我們使用 max()
+                    # 假設您的邏輯是與最高分和第二高分比較：
     
-                    st.markdown("""
-                        <style>
-                        /* 強制所有表格的數據內容 (td) 不准換行 */
-                        .stTable td {
-                            white-space: nowrap !important;
-                            vertical-align: middle;
-                        }
-                        /* 允許標題 (th) 換行，並縮小字體以騰出空間 */
-                        .stTable th {
-                            white-space: normal !important;
-                            min-width: 60px; /* 給標題一個最小寬度，迫使它太擠時自動換行 */
-                            font-size: 14px !important;
-                            line-height: 1.1;
-                        }
-                        </style>
-                        """, unsafe_allow_html=True)
-                     
-                    st.table(display_df.style.apply(highlight_top_realtime, axis=1).hide(axis='index'))   
+                    # 1. 找出最高分
+                    top_score = prediction_df['TotalScore'].max()
+                    # 2. 找出第二高分 (如果只有一匹馬，這個會是 NaN 或與最高分相同)
+                    second_top_score = prediction_df['TotalScore'].nlargest(2).iloc[-1] if len(prediction_df) >= 2 else top_score
+            
+                    # 紅色高亮：最高分
+                    if current_score == top_score:
+                        return ['background-color: #ffcccc'] * len(row)
+                    # 黃色高亮：第二高分 (或與最高分接近的分數)
+                    elif current_score == second_top_score:
+                         return ['background-color: #ffffcc'] * len(row)
+                    else:
+                        return [''] * len(row)
+
+                st.markdown("""
+                    <style>
+                    /* 強制所有表格的數據內容 (td) 不准換行 */
+                    .stTable td {
+                        white-space: nowrap !important;
+                        vertical-align: middle;
+                    }
+                    /* 允許標題 (th) 換行，並縮小字體以騰出空間 */
+                    .stTable th {
+                        white-space: normal !important;
+                        min-width: 60px; /* 給標題一個最小寬度，迫使它太擠時自動換行 */
+                        font-size: 14px !important;
+                        line-height: 1.1;
+                    }
+                    </style>
+                    """, unsafe_allow_html=True)
+                 
+                st.table(display_df.style.apply(highlight_top_realtime, axis=1).hide(axis='index'))   
 
                 # 應用高亮函數
                 #st.table(display_df.style.apply(highlight_top_realtime, axis=1).hide(axis='index'))                
