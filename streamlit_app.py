@@ -993,6 +993,8 @@ def top(method_odds_df, method_investment_df, method):
         "plus_df": None,
         "notice_table": None
     }
+    one_min_no = int (60 / time_delay + 1) 
+    third_min_no = int ((one_min_no - 1) * 3 + 1)
     # Extract the first row from odds DataFrame
     first_row_odds = method_odds_df.iloc[0]
     first_row_odds_df = first_row_odds.to_frame(name='Odds').reset_index()
@@ -1002,12 +1004,12 @@ def top(method_odds_df, method_investment_df, method):
     last_row_odds = method_odds_df.iloc[-1]
     last_row_odds_df = last_row_odds.to_frame(name='Odds').reset_index()
     last_row_odds_df.columns = ['Combination', 'Odds']
-    third_last_row_index = max(-len(method_odds_df), -11)
+    third_last_row_index = max(-len(method_odds_df), -third_min_no)
     third_last_row_odds = method_odds_df.iloc[third_last_row_index]
     third_last_row_odds_df = third_last_row_odds.to_frame(name='Odds').reset_index()
     third_last_row_odds_df.columns = ['Combination', 'Odds']
     # Extract the second last row from odds DataFrame (or the closest available row)
-    second_last_row_index = max(-len(method_odds_df), -3)
+    second_last_row_index = max(-len(method_odds_df), -one_min_no)
     second_last_row_odds = method_odds_df.iloc[second_last_row_index]
     second_last_row_odds_df = second_last_row_odds.to_frame(name='Odds').reset_index()
     second_last_row_odds_df.columns = ['Combination', 'Odds']
@@ -1055,11 +1057,11 @@ def top(method_odds_df, method_investment_df, method):
     last_row_investment_df.columns = ['Combination', 'Investment']
 
     # Extract the second last row from investment DataFrame (or the closest available row)
-    second_last_row_index = max(-len(method_investment_df), -3)
+    second_last_row_index = max(-len(method_investment_df), -one_min_no)
     second_last_row_investment = method_investment_df.iloc[second_last_row_index]
     second_last_row_investment_df = second_last_row_investment.to_frame(name='Investment').reset_index()
     second_last_row_investment_df.columns = ['Combination', 'Investment']
-    third_last_row_index = max(-len(method_investment_df), -7)
+    third_last_row_index = max(-len(method_investment_df), -third_min_no)
     third_last_row_investment = method_investment_df.iloc[third_last_row_index]
     third_last_row_investment_df = third_last_row_investment.to_frame(name='Investment').reset_index()
     third_last_row_investment_df.columns = ['Combination', 'Investment']
@@ -2637,6 +2639,7 @@ else:
 # ==================== 5. 監控循環邏輯 ====================
 
 methodlist = ['WIN', 'PLA', 'QIN', 'QPL'] # 簡化預設
+time_delay = 15
 if len(st.session_state.race_dataframes[race_no]['馬名'])<7:
     print_list = ['WIN&QIN','PLA']
 else:
@@ -2837,7 +2840,7 @@ if monitoring_on:
                 print_top()
             if show_henery:
                 print_henery_model(gamma=1.18)
-            time.sleep(15)
+            time.sleep(time_delay)
         
 
 
